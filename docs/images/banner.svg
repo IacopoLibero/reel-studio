@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="280" viewBox="0 0 1200 280" role="img" aria-labelledby="t d">
+  <title id="t">Reel Hub</title>
+  <desc id="d">Reel Hub: a local reel factory. One line in, a finished vertical video out.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#1b1f26"/>
+      <stop offset="1" stop-color="#0c0e11"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="280" rx="20" fill="url(#bg)"/>
+  <rect x="0.5" y="0.5" width="1199" height="279" rx="19.5" fill="none" stroke="#2a2f38"/>
+  <!-- play mark: a vertical 9:16 frame with a play triangle -->
+  <g transform="translate(96 70)">
+    <rect width="92" height="140" rx="16" fill="none" stroke="#d94a3d" stroke-width="8"/>
+    <path d="M34 48 L34 92 L66 70 Z" fill="#d94a3d"/>
+  </g>
+  <g font-family="Inter, 'Segoe UI', Helvetica, Arial, sans-serif">
+    <text x="228" y="148" font-size="84" font-weight="800" fill="#f2f3f5" letter-spacing="-1">Reel <tspan fill="#d94a3d">Hub</tspan></text>
+    <text x="231" y="196" font-size="28" fill="#aab0bb">One line in, a finished vertical reel out. Runs on your own computer.</text>
+    <text x="231" y="236" font-size="20" fill="#7d8592" letter-spacing="1">VOICE  ·  CAPTIONS  ·  MOTION GRAPHICS  ·  INSTAGRAM SCHEDULING</text>
+  </g>
+</svg>

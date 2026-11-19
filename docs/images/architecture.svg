@@ -1,0 +1,92 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="800" viewBox="0 0 1200 800" role="img" aria-labelledby="t d">
+  <title id="t">Reel Hub architecture</title>
+  <desc id="d">Your browser talks to the hub inside one Docker container published on 127.0.0.1. The hub starts Claude Code, the voice engine, Blender, Remotion and an Instagram browser. Claude talks to Anthropic, the browser to Instagram, the hub reads analytics through Composio. All brand data stays on your machine.</desc>
+  <defs>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#8b93a1"/></marker>
+    <marker id="r" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#d94a3d"/></marker>
+  </defs>
+  <style>
+    text { font-family: Inter, 'Segoe UI', Helvetica, Arial, sans-serif; fill: #e8eaee; }
+    .h { font-size: 20px; font-weight: 700; }
+    .s { font-size: 14px; fill: #aab0bb; }
+    .c { font-size: 13px; fill: #8b93a1; letter-spacing: 1px; }
+    .box { fill: #1b1f26; stroke: #3a414d; stroke-width: 1.5; }
+    .hub { fill: #2a1b1d; stroke: #d94a3d; stroke-width: 2; }
+    .ext { fill: #14171c; stroke: #4a525f; stroke-width: 1.5; stroke-dasharray: 6 5; }
+    .data { fill: #17221b; stroke: #4f9a6a; stroke-width: 1.5; }
+    .ln { stroke: #8b93a1; stroke-width: 1.8; fill: none; }
+    .lr { stroke: #d94a3d; stroke-width: 2.4; fill: none; }
+  </style>
+  <rect width="1200" height="800" rx="20" fill="#0f1216"/>
+  <rect x="0.5" y="0.5" width="1199" height="799" rx="19.5" fill="none" stroke="#2a2f38"/>
+
+  <rect class="box" x="40" y="300" width="150" height="96" rx="12"/>
+  <text class="h" x="115" y="338" text-anchor="middle">Your browser</text>
+  <text class="s" x="115" y="361" text-anchor="middle">127.0.0.1:4000</text>
+  <text class="s" x="115" y="380" text-anchor="middle">token login</text>
+
+  <rect x="230" y="30" width="700" height="745" rx="18" fill="#12151a" stroke="#d94a3d" stroke-opacity="0.55" stroke-width="2"/>
+  <text class="c" x="254" y="58">DOCKER CONTAINER reel-hub (127.0.0.1 only)</text>
+
+  <rect class="hub" x="255" y="80" width="200" height="520" rx="14"/>
+  <text class="h" x="355" y="130" text-anchor="middle">Hub</text>
+  <text class="s" x="355" y="158" text-anchor="middle">Node 22, Fastify,</text>
+  <text class="s" x="355" y="177" text-anchor="middle">React web app</text>
+  <text class="s" x="355" y="220" text-anchor="middle">job queue, progress</text>
+  <text class="s" x="355" y="240" text-anchor="middle">factory</text>
+  <text class="s" x="355" y="260" text-anchor="middle">calendar</text>
+  <text class="s" x="355" y="280" text-anchor="middle">daily loop</text>
+  <text class="s" x="355" y="300" text-anchor="middle">Instagram scheduler</text>
+  <text class="s" x="355" y="320" text-anchor="middle">brand creator</text>
+  <text class="s" x="355" y="340" text-anchor="middle">settings, terminal</text>
+
+  <rect class="box" x="510" y="80" width="395" height="76" rx="12"/>
+  <text class="h" x="707" y="112" text-anchor="middle">Claude Code</text>
+  <text class="s" x="707" y="136" text-anchor="middle">headless, your own login: scripts, ideas, readouts</text>
+
+  <rect class="box" x="510" y="170" width="395" height="76" rx="12"/>
+  <text class="h" x="707" y="202" text-anchor="middle">Voice engine</text>
+  <text class="s" x="707" y="226" text-anchor="middle">VoiceStudio + VoxCPM2, GPU or CPU, port 3900</text>
+
+  <rect class="box" x="510" y="260" width="395" height="76" rx="12"/>
+  <text class="h" x="707" y="292" text-anchor="middle">Blender</text>
+  <text class="s" x="707" y="316" text-anchor="middle">headless, optional: character moves as image frames</text>
+
+  <rect class="box" x="510" y="350" width="395" height="76" rx="12"/>
+  <text class="h" x="707" y="382" text-anchor="middle">Remotion, ffmpeg, whisper.cpp</text>
+  <text class="s" x="707" y="406" text-anchor="middle">motion graphics, word timing, MP4 render, cover</text>
+
+  <rect class="box" x="510" y="440" width="395" height="76" rx="12"/>
+  <text class="h" x="707" y="472" text-anchor="middle">Instagram browser</text>
+  <text class="s" x="707" y="496" text-anchor="middle">Chromium + Playwright, one profile per brand, noVNC login</text>
+
+  <rect class="data" x="255" y="640" width="650" height="112" rx="14"/>
+  <text class="h" x="580" y="672" text-anchor="middle">Per-brand data on your machine, outside git</text>
+  <text class="s" x="580" y="698" text-anchor="middle">brand/&lt;slug&gt;/ and reels/&lt;slug&gt;/ (your project folder, same path inside and out)</text>
+  <text class="s" x="580" y="720" text-anchor="middle">platform/data/brands/&lt;slug&gt;/ (settings, daily plans, analytics, series)</text>
+  <text class="s" x="580" y="742" text-anchor="middle">Instagram login profile (Docker volume)</text>
+
+  <rect class="ext" x="975" y="80" width="195" height="76" rx="12"/>
+  <text class="h" x="1072" y="112" text-anchor="middle">Anthropic</text>
+  <text class="s" x="1072" y="136" text-anchor="middle">your Claude subscription</text>
+
+  <rect class="ext" x="975" y="440" width="195" height="76" rx="12"/>
+  <text class="h" x="1072" y="472" text-anchor="middle">Instagram</text>
+  <text class="s" x="1072" y="496" text-anchor="middle">posts you scheduled</text>
+
+  <rect class="ext" x="975" y="540" width="195" height="76" rx="12"/>
+  <text class="h" x="1072" y="572" text-anchor="middle">Composio</text>
+  <text class="s" x="1072" y="596" text-anchor="middle">read-only analytics, optional</text>
+
+  <!-- arrows -->
+  <path class="lr" d="M190 348 H253" marker-end="url(#r)"/>
+  <path class="ln" d="M455 118 H508" marker-end="url(#a)"/>
+  <path class="ln" d="M455 208 H508" marker-end="url(#a)"/>
+  <path class="ln" d="M455 298 H508" marker-end="url(#a)"/>
+  <path class="ln" d="M455 388 H508" marker-end="url(#a)"/>
+  <path class="ln" d="M455 478 H508" marker-end="url(#a)"/>
+  <path class="ln" d="M905 118 H973" marker-end="url(#a)"/>
+  <path class="ln" d="M905 478 H973" marker-end="url(#a)"/>
+  <path class="ln" d="M455 578 H973" marker-end="url(#a)"/>
+  <path class="ln" d="M355 600 V638" marker-end="url(#a)"/>
+</svg>

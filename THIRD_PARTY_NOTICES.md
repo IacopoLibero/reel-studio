@@ -8,13 +8,18 @@ summary, not legal advice: read each project's own license before you rely on it
 | Component | Where | License |
 |---|---|---|
 | Ootto content skills (`claude-content-skills`, https://github.com/Ootto-AI/claude-content-skills) | `platform/skills/ootto/` (unmodified, with their LICENSE and `SOURCE.md`) | MIT |
-| Remotion agent skills (`remotion-dev/skills`) | `.agents/skills/remotion-*`, linked from `.claude/skills/`, pinned in `skills-lock.json` | No license is declared by that repository (GitHub reports none). Check https://github.com/remotion-dev/skills before you redistribute them; remove `.agents/` and the `remotion-*` links in `.claude/skills/` if unsure. |
+
+## Downloaded from upstream at install time, not part of this repository
+
+- **Remotion agent skills** (https://github.com/remotion-dev/skills): `./install.sh` and `./update.sh` fetch them from the upstream repository
+  through the `skills` CLI (`scripts/install-remotion-skills.sh`). They are not included in this repository and are not redistributed by it.
+  The upstream repository declares no license, so check its terms yourself. If the download fails, the install continues without them.
 
 ## npm dependencies (installed by `npm ci`, not copied here)
 
-- **Remotion** (`remotion`, `@remotion/*`). Remotion has its own license, not MIT: free for individuals, for-profit
-  organizations with up to 3 employees, and non-profits; a paid company license is required for larger for-profit companies.
-  Check https://www.remotion.dev/license before you use this project to make videos for a company.
+- **Remotion** (`remotion`, `@remotion/*`). Remotion has its own license, not MIT. As stated by the maintainer of this project (check it
+  yourself, it can change): it is free for individuals and for teams of up to 3 people, and companies above that need a company license.
+  Read https://www.remotion.dev/license before you use this project to make videos for a company.
 - React, Fastify, Playwright, node-pty, ws, zod, Vite, vitest and the other packages in `package.json` and
   `platform/hub/package.json`: each has its own license (mostly MIT or Apache-2.0). `npm ls` and the packages' own files list them.
 
@@ -24,9 +29,10 @@ summary, not legal advice: read each project's own license before you rely on it
   runs as a separate local service reached over HTTP. It is not copied into this repository or the image. If you modify and
   offer VoiceStudio itself to other people over a network, the AGPL has obligations for that modified VoiceStudio.
   It also installs many Python packages (PyTorch, transformers and others) with their own licenses.
-- **VoxCPM2** voice model (`openbmb/VoxCPM2` on Hugging Face) and the `voxcpm` package: the Hugging Face model card states
-  Apache-2.0. VoiceStudio's own license review lists it as "unreviewed" for distribution, so read the model card
-  (https://huggingface.co/openbmb/VoxCPM2) yourself. Cloning a person's voice needs that person's consent.
+- **VoxCPM2** voice model (`openbmb/VoxCPM2` on Hugging Face) and the `voxcpm` code (https://github.com/OpenBMB/VoxCPM): the Hugging Face model card
+  declares Apache-2.0 and the GitHub repository carries an Apache-2.0 license file (both checked on 2026-11-20). VoiceStudio's own license review
+  lists the engine as "unreviewed" for distribution, so read the model card (https://huggingface.co/openbmb/VoxCPM2) yourself.
+  Cloning a person's voice needs that person's consent.
 - **Blender 5.3** (https://www.blender.org): GPL-2.0-or-later. The official tarball is downloaded while building the image and
   used as a separate program. Output you render with Blender belongs to you.
 - **whisper.cpp** (https://github.com/ggml-org/whisper.cpp, built by `@remotion/install-whisper-cpp`): MIT. The OpenAI Whisper
@@ -41,5 +47,5 @@ summary, not legal advice: read each project's own license before you rely on it
 ## Brand content
 
 The repository contains no brand content. Whatever you keep in `brand/`, `reels/`, `mascot/` and your reel compositions is yours,
-and you are responsible for the rights to it (logos, voices you clone, sound files, character designs). Check the origin of the
-sound effects in `public/a1/` before you reuse them in your own videos.
+and you are responsible for the rights to it (logos, voices you clone, sound files, character designs). The four short
+sound effects in `public/a1/` (`ding`, `pop`, `slash`, `tick`) have no recorded origin yet (see TODO.md): check them before you reuse them in your own videos.

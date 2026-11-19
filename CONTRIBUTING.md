@@ -32,3 +32,17 @@ CI runs the same checks (`.github/workflows/ci.yml`).
 The repository holds no brand. Your brands live in `brand/<slug>/`, `reels/`, `mascot/` and the branded compositions in `src/`,
 all git-ignored by one rule block in `.gitignore`. Create one with `./scripts/new-brand.sh my-brand` or the hub's "New brand".
 The generic platform (`platform/`, `scripts/`, `install.sh`, `src/kit`) works with no brand present.
+
+## Documentation and screenshots
+
+The README and `platform/docs/` describe what the code does today: change them in the same pull request as the behaviour.
+The images in `docs/images/` are screenshots of a scratch hub with an **invented brand** (Acme Bakery) and two hand-drawn diagrams (`*.svg`).
+Never put a real brand, account, number, path or token in a screenshot. To retake one:
+
+1. Copy the public tree (`git ls-files -c -o --exclude-standard`) to a scratch folder and create a brand there with `BrandRegistry.create`
+   (`platform/hub/src/brands/registry.ts`) or the hub's own "New brand" page.
+2. Add invented questions, reels (a cover from `npx remotion still src/index.ts Cover`, a short MP4 made with ffmpeg), a scheduled-posts fixture
+   (`HUB_SCHEDULER_MODULE` pointing at a stand-in module like `platform/hub/tests/fixtures/fake-scheduler.mjs`), an analytics snapshot and a daily plan under the scratch data folder.
+3. Start a second hub on another port with `HUB_PORT`, `HUB_TOKEN`, `HUB_DATA` and `REEL_ROOT` pointing at the scratch copy and `HUB_CLAUDE_BIN=/bin/false`
+   (see "Running the hub without Docker" in `platform/README.md`). Never use a running installation for screenshots.
+4. Take the screenshots with Playwright at 1440 x 900, look at every one, keep each under about 250 KB, then delete the scratch folder.
