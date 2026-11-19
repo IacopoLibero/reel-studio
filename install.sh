@@ -200,6 +200,8 @@ dexec() { docker exec -u "$(id -u)" -w "$REPO_ROOT" "$CONTAINER" "$@"; }
 dexec bash -lc 'if [ ! -d node_modules/remotion ]; then npm ci; else echo "node_modules already installed"; fi'
 dexec node scripts/setup-whisper.mjs
 ok "Remotion and whisper.cpp are ready"
+say "Fetching the Remotion agent skills from upstream (not bundled in this repository)..."
+dexec bash scripts/install-remotion-skills.sh --quiet || warn "Remotion skills not fetched; retry with: scripts/install-remotion-skills.sh"
 if [ "$RENDER_MASCOT" -eq 1 ]; then
   say "  rendering every move of the characters in mascot/ (this takes a while)..."
   for script in "$REPO_ROOT"/mascot/*.py; do

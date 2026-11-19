@@ -24,4 +24,5 @@ for _ in $(seq 1 120); do curl -fsS -m 3 "$(hub_url)/api/health" >/dev/null 2>&1
 curl -fsS -m 3 "$(hub_url)/api/health" >/dev/null 2>&1 || die "The hub did not come back. Logs: docker exec $CONTAINER tail -n 80 /var/log/reel-hub/hub.log"
 ok "Hub is up on $(hub_url)"
 docker exec -u "$(id -u)" -w "$REPO_ROOT" "$CONTAINER" bash -lc 'npm ci --silent >/dev/null 2>&1 || npm install --silent >/dev/null 2>&1; true'
+docker exec -u "$(id -u)" -w "$REPO_ROOT" "$CONTAINER" bash scripts/install-remotion-skills.sh --quiet || warn "Remotion skills not refreshed; retry with: scripts/install-remotion-skills.sh"
 docker exec -u "$(id -u)" -w "$REPO_ROOT" "$CONTAINER" bash scripts/smoke-test.sh || warn "The smoke test reported a problem (above)."

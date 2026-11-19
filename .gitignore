@@ -55,3 +55,8 @@ public/a1/italian.wav
 
 # --- local state: which Ootto skills are switched on (symlinks made by scripts/ootto-skills.sh) ---
 .claude/skills/ootto-*
+
+# --- Remotion agent skills: downloaded from upstream at install time (scripts/install-remotion-skills.sh), not redistributed ---
+.agents/
+skills-lock.json
+.claude/skills/remotion-*
