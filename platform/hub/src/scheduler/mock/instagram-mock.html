@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>Mock scheduled content</title>
+<style>body{font-family:sans-serif} [role=dialog]{border:1px solid #888;padding:12px;width:600px;background:#fff;position:relative}
+.hidden{display:none} #cal{display:flex;gap:8px} .col{width:150px;border:1px solid #ccc;min-height:100px}
+.post{border:1px solid #444;margin:4px;padding:4px;cursor:pointer;height:60px;overflow:hidden}
+input[role=spinbutton]{width:30px}</style></head>
+<body>
+<div id="top"><div><button id="today">Today</button></div><div id="title"></div>
+<div role="button" aria-label="Previous week" id="prevw">&lt;</div><div role="button" aria-label="Next week" id="nextw">&gt;</div></div>
+<div role="button" id="open">Schedule content</div>
+<div id="cal"></div>
+<div id="modal"></div>
+<script>
+const KEY='mock-posts';
+const MONTHS=['January','February','March','April','May','June','July','August','September','October','November','December'];
+const SM=MONTHS.map(m=>m.slice(0,3)), DW=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+const TODAY=Date.UTC(2026,10,19);
+let weekStart=TODAY-4*864e5;
+const posts=()=>JSON.parse(localStorage.getItem(KEY)||'[]');
+const save=a=>localStorage.setItem(KEY,JSON.stringify(a));
+window.__share=0;
+const ymd=t=>{const d=new Date(t);return d.getUTCFullYear()+'-'+String(d.getUTCMonth()+1).padStart(2,'0')+'-'+String(d.getUTCDate()).padStart(2,'0')};
+const label=p=>{const h=p.h%12||12;return h+':'+String(p.mi).padStart(2,'0')+' '+(p.h>=12?'PM':'AM')};
+function renderCal(){
+  const days=[...Array(7)].map((_,i)=>new Date(weekStart+i*864e5));
+  const a=days[0],b=days[6];
+  $('title').textContent=a.getUTCMonth()===b.getUTCMonth()?MONTHS[a.getUTCMonth()]+' '+a.getUTCFullYear()
+    :(a.getUTCFullYear()===b.getUTCFullYear()?MONTHS[a.getUTCMonth()]+' – '+MONTHS[b.getUTCMonth()]+' '+b.getUTCFullYear()
+      :MONTHS[a.getUTCMonth()]+' '+a.getUTCFullYear()+' – '+MONTHS[b.getUTCMonth()]+' '+b.getUTCFullYear());
+  $('cal').innerHTML=days.map(d=>{
+    const k=ymd(d);
+    const ps=posts().map((p,i)=>({p,i})).filter(x=>x.p.date===k).sort((x,y)=>(x.p.h*60+x.p.mi)-(y.p.h*60+y.p.mi));
+    return `<div class="col"><div>${DW[d.getUTCDay()]} ${d.getUTCDate()}</div>`+ps.map(x=>`<div role="button" class="post" data-i="${x.i}"><div>${x.p.caption.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/\n/g,'<br>')}</div><div>${label(x.p)}</div></div>`).join('')+'</div>';
+  }).join('');
+  document.querySelectorAll('.post').forEach(e=>e.onclick=()=>openEdit(+e.dataset.i));
+}
+const $=id=>document.getElementById(id);
+$('nextw').onclick=()=>{weekStart+=7*864e5;renderCal()};
+$('prevw').onclick=()=>{weekStart-=7*864e5;renderCal()};
+$('today').onclick=()=>{weekStart=TODAY-4*864e5;renderCal()};
+// ---- dialog state
+let st={};
+const fresh=()=>({mode:'create',step:0,date:{y:2026,m:10,d:19},view:{y:2026,m:10},h:12,mi:0,ap:'AM',sched:false,menu:false,picker:false,cap:'',confirm:false});
+function dateLabel(){const{y,m,d}=st.date;return `${DW[new Date(Date.UTC(y,m,d)).getUTCDay()]}, ${SM[m]} ${d}, ${y}`}
+function p2(n){return String(n).padStart(2,'0')}
+function dateTimeHtml(){
+  let h=`<div role="switch" tabindex="0" id="sw" aria-checked="${st.sched}" aria-label="Schedule content">Schedule content (toggle)</div>`;
+  if(st.sched||st.mode==='edit'){h+=`<button id="datebtn">${dateLabel()}</button>`;
+    if(st.picker){h+=`<div id="picker"><button aria-label="Previous month">&lt;</button><span>${MONTHS[st.view.m]} ${st.view.y}</span><button aria-label="Next month">&gt;</button><div role="grid">`;
+      const first=new Date(Date.UTC(st.view.y,st.view.m,1)).getUTCDay();
+      const n=new Date(Date.UTC(st.view.y,st.view.m+1,0)).getUTCDate();
+      const prevN=new Date(Date.UTC(st.view.y,st.view.m,0)).getUTCDate();
+      for(let i=first-1;i>=0;i--)h+=`<button role="gridcell" class="day other">${prevN-i}</button>`;
+      for(let d=1;d<=n;d++)h+=`<button role="gridcell" class="day">${d}</button>`;
+      for(let d=1;d<=5;d++)h+=`<button role="gridcell" class="day other">${d}</button>`;
+      h+=`</div></div>`}
+    const v=(k)=>k==='h'?(st.h%12||12):k==='mi'?st.mi:(st.ap==='PM'?1:0);
+    h+=`<input role="spinbutton" aria-label="Hours" id="hh" value="" aria-valuenow="${v('h')}"><input role="spinbutton" aria-label="Minutes" id="mm" value="" aria-valuenow="${v('mi')}"><input role="spinbutton" aria-label="AM PM" id="ap" value="" aria-valuenow="${v('ap')}" aria-valuetext="${st.ap}">`}
+  return h;
+}
+function draw(){
+  const m=$('modal'); let h='<div role="dialog">';
+  if(st.step===0){h+=`<h2>Create new post</h2><input type="file" id="f1" accept="video/mp4">`}
+  if(st.step===1){h+=`<h2>Crop</h2><button aria-label="Select crop">crop</button>`;
+    if(st.menu)h+=`<ul><li>Original</li><li>1:1</li><li id="r916">9:16</li><li>16:9</li></ul>`;
+    h+=`<div>${st.ratio||'none'}</div><button id="next">Next</button>`}
+  if(st.step===2){h+=`<h2>Edit</h2><div>Cover photo</div><input type="file" id="f2"><button id="share">Share</button><button id="next">Next</button>`}
+  if(st.step===3){h+=`<h2>New reel</h2><div contenteditable="true" role="textbox" id="cap" aria-label="Write a caption..."></div>`+dateTimeHtml()+`<button id="sch">Schedule</button> <button id="share">Share</button>`}
+  if(st.step===4){h+=`<p>Your reel has been scheduled.</p><button id="done">Done</button>`}
+  if(st.step===5){h+=`<h2>Edit</h2><div contenteditable="true" role="textbox" id="cap" aria-label="Add a caption..."></div>`+dateTimeHtml()+
+     `<div role="button" id="del">Delete scheduled content</div><div role="button" id="share">Share</div><div role="button" id="save">Save</div>`}
+  h+='</div>';
+  if(st.confirm)h+=`<div role="dialog"><p>Delete post?</p><button id="cdel">Delete</button><button id="ccancel">Cancel</button></div>`;
+  if(st.step===1&&localStorage.getItem('mock-notice')==='1'&&!st.noticeDone)h+=`<div role="dialog"><h2>Video posts are now shared as reels</h2><p>Your account is public.</p><button id="notice-ok">OK</button></div>`;
+  if(st.step===1&&localStorage.getItem('mock-notice')==='terms'&&!st.noticeDone)h+=`<div role="dialog"><h2>Accept the new terms</h2><button id="notice-ok">Agree</button></div>`;
+  m.innerHTML=h; wire();
+  const nok=document.getElementById('notice-ok'); if(nok) nok.onclick=()=>{st.noticeDone=true; localStorage.setItem('mock-notice-clicked', nok.textContent); draw();};
+}
+function close(){$('modal').innerHTML='';st={};renderCal()}
+function openEdit(i){
+  const p=posts()[i]; const [y,mo,d]=p.date.split('-').map(Number);
+  st=fresh(); Object.assign(st,{mode:'edit',step:5,idx:i,sched:true,date:{y,m:mo-1,d},view:{y,m:mo-1},h:p.h,mi:p.mi,ap:p.h>=12?'PM':'AM',cap:p.caption}); draw();
+}
+function wire(){
+  const cap=$('cap'); if(cap){cap.innerText=st.cap;
+    cap.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();document.execCommand('insertLineBreak')}});
+    cap.addEventListener('input',()=>st.cap=cap.innerText)}
+  document.querySelectorAll('#share').forEach(b=>b.onclick=()=>{window.__share++});
+  if($('f1'))$('f1').onchange=()=>{st.step=1;draw()};
+  if($('f2'))$('f2').onchange=()=>{st.cover=true};
+  const sc=document.querySelector('[aria-label="Select crop"]'); if(sc)sc.onclick=()=>{st.menu=!st.menu;draw()};
+  if($('r916'))$('r916').onclick=()=>{st.ratio='9:16';st.menu=false;draw()};
+  if($('next'))$('next').onclick=()=>{ if(st.step===1&&st.ratio!=='9:16')return; if(st.step===2&&!st.cover)return; st.step++;draw()};
+  if($('sw'))$('sw').onclick=()=>{st.sched=!st.sched;draw()};
+  if($('datebtn'))$('datebtn').onclick=()=>{st.picker=!st.picker;draw()};
+  document.querySelectorAll('[aria-label="Next month"]').forEach(b=>b.onclick=()=>{st.view.m++;if(st.view.m>11){st.view.m=0;st.view.y++}draw()});
+  document.querySelectorAll('[aria-label="Previous month"]').forEach(b=>b.onclick=()=>{st.view.m--;if(st.view.m<0){st.view.m=11;st.view.y--}draw()});
+  document.querySelectorAll('.day').forEach(b=>b.onclick=()=>{
+    if(b.classList.contains('other'))return;
+    st.date={y:st.view.y,m:st.view.m,d:+b.textContent};st.picker=false;draw()});
+  for(const [id,key] of [['hh','h'],['mm','mi'],['ap','ap']]){
+    const el=$(id); if(!el)continue; let buf='';
+    el.onclick=()=>{buf=''};
+    el.onkeydown=e=>{
+      if(key==='ap'){ if(/^[ap]$/i.test(e.key)){st.ap=e.key.toUpperCase()+'M';el.setAttribute('aria-valuenow',st.ap==='PM'?1:0);el.setAttribute('aria-valuetext',st.ap)} return}
+      if(/^\d$/.test(e.key)){buf=(buf+e.key).slice(-2);const n=+buf;
+        if(key==='h'){st.h=(n%12)+(st.ap==='PM'?12:0)}else st.mi=n;
+        el.setAttribute('aria-valuenow',n)} };
+  }
+  const rec=()=>({date:ymd(Date.UTC(st.date.y,st.date.m,st.date.d)),h:st.ap==='PM'?(st.h%12)+12:(st.h%12),mi:st.mi,caption:st.cap});
+  if($('sch'))$('sch').onclick=()=>{ if(!st.sched)return; const a=posts(); a.push(rec()); save(a); st.step=4;draw()};
+  if($('done'))$('done').onclick=close;
+  if($('save'))$('save').onclick=()=>{const a=posts(); const r=rec(); r.caption=a[st.idx].caption; a[st.idx]=r; save(a); close()};
+  if($('del'))$('del').onclick=()=>{st.confirm=true;draw()};
+  if($('ccancel'))$('ccancel').onclick=()=>{st.confirm=false;draw()};
+  if($('cdel'))$('cdel').onclick=()=>{const a=posts(); a.splice(st.idx,1); save(a); close()};
+}
+$('open').onclick=()=>{st=fresh();draw()};
+renderCal();
+</script></body></html>

@@ -1,0 +1,8 @@
+{
+ "successful": false,
+ "data": {
+  "message": "API Error: The Media Insights API does not support the ig_reels_avg_watch_time metric for this media product type.. The requested metric(s) ['reach', 'views'] are not compatible with this media's product type. Universally supported metrics: views, reach, saved, likes, comments, shares, total_interactions.",
+  "status_code": 400
+ },
+ "error": "API Error: The Media Insights API does not support the ig_reels_avg_watch_time metric for this media product type.. Universally supported metrics: views, reach, saved, likes, comments, shares, total_interactions."
+}

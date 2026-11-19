@@ -1,0 +1,438 @@
+{
+ "source": "https://github.com/Ootto-AI/claude-content-skills",
+ "license": "MIT",
+ "skills": [
+  {
+   "name": "ab-hook-tester",
+   "risk": "safe",
+   "reason": "",
+   "defaultEnabled": false,
+   "hidden": true,
+   "group": "absorbed"
+  },
+  {
+   "name": "agent-reach",
+   "risk": "outward",
+   "reason": "Reads public pages and video subtitles for research. Never uses logins or cookies.",
+   "defaultEnabled": true,
+   "hidden": false,
+   "group": "kept"
+  },
+  {
+   "name": "ai-brain",
+   "risk": "conflict",
+   "reason": "writes memory to an Obsidian vault",
+   "defaultEnabled": false,
+   "hidden": true,
+   "group": "removed"
+  },
+  {
+   "name": "analytics-readout",
+   "risk": "safe",
+   "reason": "",
+   "defaultEnabled": false,
+   "hidden": true,
+   "group": "absorbed"
+  },
+  {
+   "name": "audience-personas",
+   "risk": "safe",
+   "reason": "",
+   "defaultEnabled": false,
+   "hidden": true,
+   "group": "removed"
+  },
+  {
+   "name": "b-roll-shot-list",
+   "risk": "conflict",
+   "reason": "filmed content, not used",
+   "defaultEnabled": false,
+   "hidden": true,
+   "group": "removed"
+  },
+  {
+   "name": "best-time-scheduler",
+   "risk": "safe",
+   "reason": "",
+   "defaultEnabled": true,
+   "hidden": false,
+   "group": "kept"
+  },
+  {
+   "name": "bio-profile-optimizer",
+   "risk": "safe",
+   "reason": "",
+   "defaultEnabled": true,
+   "hidden": false,
+   "group": "kept"
+  },
+  {
+   "name": "campaign-brief",
+   "risk": "safe",
+   "reason": "",
+   "defaultEnabled": false,
+   "hidden": true,
+   "group": "removed"
+  },
+  {
+   "name": "caption-and-hashtags",
+   "risk": "safe",
+   "reason": "",
+   "defaultEnabled": false,
+   "hidden": true,
+   "group": "absorbed"
+  },
+  {
+   "name": "carousel-builder",
+   "risk": "safe",
+   "reason": "Planned: carousels need their own pipeline (see TODO.md).",
+   "defaultEnabled": false,
+   "hidden": false,
+   "group": "kept"
+  },
+  {
+   "name": "collab-outreach",
+   "risk": "outward",
+   "reason": "messages other accounts",
+   "defaultEnabled": false,
+   "hidden": true,
+   "group": "removed"
+  },
+  {
+   "name": "comment-mining",
+   "risk": "safe",
+   "reason": "",
+   "defaultEnabled": false,
+   "hidden": true,
+   "group": "removed"
+  },
+  {
+   "name": "comment-responder",
+   "risk": "outward",
+   "reason": "replies to comments and sends DMs on the account",
+   "defaultEnabled": false,
+   "hidden": true,
+   "group": "removed"
+  },
+  {
+   "name": "community-engagement-plan",
+   "risk": "outward",
+   "reason": "engagement on the account",
+   "defaultEnabled": false,
+   "hidden": true,
+   "group": "absorbed"
+  },
+  {
+   "name": "competitor-positioning",
+   "risk": "safe",
+   "reason": "",
+   "defaultEnabled": false,
+   "hidden": true,
+   "group": "removed"
+  },
+  {
+   "name": "competitor-teardown",
+   "risk": "safe",
+   "reason": "",
+   "defaultEnabled": false,
+   "hidden": true,
+   "group": "removed"
+  },
+  {
+   "name": "content-audit",
+   "risk": "safe",
+   "reason": "",
+   "defaultEnabled": false,
+   "hidden": true,
+   "group": "absorbed"
+  },
+  {
+   "name": "content-calendar",
+   "risk": "safe",
+   "reason": "",
+   "defaultEnabled": true,
+   "hidden": false,
+   "group": "kept"
+  },
+  {
+   "name": "content-factory",
+   "risk": "conflict",
+   "reason": "orchestrator that builds and posts reels by itself: replaces our reel skill",
+   "defaultEnabled": false,
+   "hidden": true,
+   "group": "removed"
+  },
+  {
+   "name": "content-pillar-builder",
+   "risk": "safe",
+   "reason": "",
+   "defaultEnabled": false,
+   "hidden": true,
+   "group": "removed"
+  },
+  {
+   "name": "content-repurposer",
+   "risk": "safe",
+   "reason": "",
+   "defaultEnabled": false,
+   "hidden": true,
+   "group": "removed"
+  },
+  {
+   "name": "content-research",
+   "risk": "safe",
+   "reason": "",
+   "defaultEnabled": false,
+   "hidden": true,
+   "group": "absorbed"
+  },
+  {
+   "name": "cover-thumbnail-brief",
+   "risk": "safe",
+   "reason": "",
+   "defaultEnabled": false,
+   "hidden": true,
+   "group": "absorbed"
+  },
+  {
+   "name": "creator-outreach",
+   "risk": "outward",
+   "reason": "messages creators",
+   "defaultEnabled": false,
+   "hidden": true,
+   "group": "removed"
+  },
+  {
+   "name": "cross-platform-distribution",
+   "risk": "conflict",
+   "reason": "channel not used",
+   "defaultEnabled": false,
+   "hidden": true,
+   "group": "removed"
+  },
+  {
+   "name": "cross-platform-reformatter",
+   "risk": "conflict",
+   "reason": "channel not used",
+   "defaultEnabled": false,
+   "hidden": true,
+   "group": "removed"
+  },
+  {
+   "name": "cta-writer",
+   "risk": "safe",
+   "reason": "",
+   "defaultEnabled": false,
+   "hidden": true,
+   "group": "absorbed"
+  },
+  {
+   "name": "dm-script-writer",
+   "risk": "outward",
+   "reason": "writes DM flows that send messages",
+   "defaultEnabled": false,
+   "hidden": true,
+   "group": "removed"
+  },
+  {
+   "name": "going-viral",
+   "risk": "safe",
+   "reason": "",
+   "defaultEnabled": false,
+   "hidden": true,
+   "group": "absorbed"
+  },
+  {
+   "name": "hashtag-keyword-research",
+   "risk": "safe",
+   "reason": "",
+   "defaultEnabled": false,
+   "hidden": true,
+   "group": "absorbed"
+  },
+  {
+   "name": "hook-mining",
+   "risk": "safe",
+   "reason": "",
+   "defaultEnabled": true,
+   "hidden": false,
+   "group": "kept"
+  },
+  {
+   "name": "influencer-partnerships",
+   "risk": "outward",
+   "reason": "outreach to influencers",
+   "defaultEnabled": false,
+   "hidden": true,
+   "group": "removed"
+  },
+  {
+   "name": "launch-retrospective",
+   "risk": "safe",
+   "reason": "",
+   "defaultEnabled": false,
+   "hidden": true,
+   "group": "removed"
+  },
+  {
+   "name": "linkedin-thought-leadership",
+   "risk": "conflict",
+   "reason": "channel not used",
+   "defaultEnabled": false,
+   "hidden": true,
+   "group": "removed"
+  },
+  {
+   "name": "on-screen-text-writer",
+   "risk": "safe",
+   "reason": "",
+   "defaultEnabled": false,
+   "hidden": true,
+   "group": "absorbed"
+  },
+  {
+   "name": "paid-social-brief",
+   "risk": "safe",
+   "reason": "Planned: paid campaigns come later (see TODO.md).",
+   "defaultEnabled": false,
+   "hidden": false,
+   "group": "kept"
+  },
+  {
+   "name": "positioning-audit",
+   "risk": "safe",
+   "reason": "",
+   "defaultEnabled": true,
+   "hidden": false,
+   "group": "kept"
+  },
+  {
+   "name": "profile-conversion-audit",
+   "risk": "safe",
+   "reason": "",
+   "defaultEnabled": false,
+   "hidden": true,
+   "group": "removed"
+  },
+  {
+   "name": "reel-analyzer",
+   "risk": "safe",
+   "reason": "",
+   "defaultEnabled": true,
+   "hidden": false,
+   "group": "kept"
+  },
+  {
+   "name": "reel-builder",
+   "risk": "conflict",
+   "reason": "builds reels without the brand's own pipeline: conflicts with the reel skill",
+   "defaultEnabled": false,
+   "hidden": true,
+   "group": "removed"
+  },
+  {
+   "name": "reel-scripter",
+   "risk": "conflict",
+   "reason": "overlaps step 2 of the reel skill",
+   "defaultEnabled": false,
+   "hidden": true,
+   "group": "removed"
+  },
+  {
+   "name": "series-planner",
+   "risk": "safe",
+   "reason": "",
+   "defaultEnabled": true,
+   "hidden": false,
+   "group": "kept"
+  },
+  {
+   "name": "social-analytics-report",
+   "risk": "safe",
+   "reason": "",
+   "defaultEnabled": false,
+   "hidden": true,
+   "group": "absorbed"
+  },
+  {
+   "name": "social-listening",
+   "risk": "outward",
+   "reason": "reads external accounts",
+   "defaultEnabled": false,
+   "hidden": true,
+   "group": "removed"
+  },
+  {
+   "name": "social-proof-mining",
+   "risk": "safe",
+   "reason": "",
+   "defaultEnabled": false,
+   "hidden": true,
+   "group": "removed"
+  },
+  {
+   "name": "story-sequencer",
+   "risk": "safe",
+   "reason": "Planned: stories need their own pipeline (see TODO.md).",
+   "defaultEnabled": false,
+   "hidden": false,
+   "group": "kept"
+  },
+  {
+   "name": "trend-spotter",
+   "risk": "safe",
+   "reason": "",
+   "defaultEnabled": false,
+   "hidden": true,
+   "group": "absorbed"
+  },
+  {
+   "name": "ugc-creator-brief",
+   "risk": "conflict",
+   "reason": "not used",
+   "defaultEnabled": false,
+   "hidden": true,
+   "group": "removed"
+  },
+  {
+   "name": "utm-campaign-plan",
+   "risk": "safe",
+   "reason": "Planned: paid campaigns come later (see TODO.md).",
+   "defaultEnabled": false,
+   "hidden": false,
+   "group": "kept"
+  },
+  {
+   "name": "viral-carousel",
+   "risk": "safe",
+   "reason": "Planned: carousels need their own pipeline (see TODO.md).",
+   "defaultEnabled": false,
+   "hidden": false,
+   "group": "kept"
+  },
+  {
+   "name": "viral-hook-writer",
+   "risk": "safe",
+   "reason": "",
+   "defaultEnabled": false,
+   "hidden": true,
+   "group": "absorbed"
+  },
+  {
+   "name": "virality",
+   "risk": "safe",
+   "reason": "",
+   "defaultEnabled": false,
+   "hidden": true,
+   "group": "absorbed"
+  },
+  {
+   "name": "x-thread-strategy",
+   "risk": "safe",
+   "reason": "Paused until Threads is connected (see TODO.md).",
+   "defaultEnabled": false,
+   "hidden": false,
+   "group": "kept"
+  }
+ ]
+}

@@ -1,0 +1,11 @@
+# The image is built from platform/docker only; this protects any build that uses the repo root as context.
+.git
+.env
+.env.*
+!.env.example
+node_modules
+platform/data
+whisper.cpp
+reels
+public/mascot
+out

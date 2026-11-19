@@ -1,0 +1,57 @@
+# Rule of thumb: the repo keeps the platform and the generic kit. Brand content and everything a command regenerates stay out.
+
+# --- dependencies and build output ---
+node_modules/
+dist/
+build/
+coverage/
+.vite/
+*.tsbuildinfo
+out/
+
+# --- OS / editor noise ---
+.DS_Store
+*.log
+__pycache__/
+*.pyc
+.idea/
+.vscode/
+
+# --- secrets and local settings (never commit) ---
+.env
+.env.*
+!.env.example
+platform/.env
+platform/data/
+.claude/settings.local.json
+
+# --- your own source texts for the idea jobs (HUB_BLOG_DIR defaults to sources/blog) ---
+sources/
+
+# --- built by `node scripts/setup-whisper.mjs` (binary + models, ~1.6 GB) ---
+whisper.cpp/
+whisper.cpp.build/
+
+# =====================================================================================================================
+# YOUR BRANDS LIVE ON YOUR MACHINE AND STAY OUT OF GIT. This is the one rule block for everything that belongs to a brand
+# (README, "Your brands"). Nothing here is listed by a brand's name, so the public repository holds no brand at all.
+# The platform, the generic Remotion kit (src/kit, src/cover), our skills and brand/_template are public.
+# =====================================================================================================================
+brand/*
+!brand/_template/
+/reels/
+/characters/
+/mascot/
+# branded Remotion compositions, reel folders and character components: every folder of src/ except the generic ones
+src/*/
+!src/cover/
+!src/kit/
+src/Root.private.tsx
+# sounds and frames: only the generic sound effects of public/a1 are public
+public/*
+!public/a1/
+public/a1/friendly.wav
+public/a1/italian.wav
+
+# --- local state: which Ootto skills are switched on (symlinks made by scripts/ootto-skills.sh) ---
+.claude/skills/ootto-*

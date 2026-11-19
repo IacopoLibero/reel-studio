@@ -1,0 +1,69 @@
+# The Reel Hub stack. Do not run this file by hand: ./install.sh, ./update.sh and ./uninstall.sh at the repo root
+# pass the right --env-file and the optional files (docker-compose.gpu.yml, docker-compose.blog.yml).
+# Every name and port comes from .env, so a second copy of the project can run next to the first one.
+name: ${COMPOSE_PROJECT_NAME:-reel-studio}
+services:
+  reel-hub:
+    build: ./docker
+    image: ${IMAGE_NAME:-reel-hub}:latest
+    container_name: ${CONTAINER_NAME:-reel-hub}
+    restart: unless-stopped
+    init: true
+    shm_size: 2gb
+    environment:
+      TZ: ${TZ:-Europe/Rome}
+      HUB_TOKEN: ${HUB_TOKEN:?run ./install.sh to create .env}
+      BLENDER_DEVICE: ${BLENDER_DEVICE:-cpu}
+      VOICE_DEVICE: ${VOICE_DEVICE:-gpu}
+      VOICE_ENGINE_INSTALL: ${VOICE_ENGINE_INSTALL:-1}
+      HOME: ${HOST_HOME:?}
+      HOST_USER: ${HOST_USER:?run ./install.sh to create .env}
+      HOST_UID: ${HOST_UID:?}
+      HOST_GID: ${HOST_GID:?}
+      HOST_HOME: ${HOST_HOME:?}
+      REEL_ROOT: ${REEL_ROOT:?}
+      HUB_DATA_DIR: /data
+      HUB_CLAUDE_BIN: /usr/local/bin/claude-hub
+      HUB_BLOG_DIR: ${BLOG_DIR:-}
+      IG_USER_ID: ${IG_USER_ID:-}
+      IG_ACCOUNT: ${IG_ACCOUNT:-}
+      BRAND: ${BRAND:-}
+      OFFER_LAST_DAY: ${OFFER_LAST_DAY:-}
+      OFFER_REGEX: ${OFFER_REGEX:-}
+      CHROME_NO_SANDBOX: "1"
+    ports:
+      - "127.0.0.1:${HUB_PORT:-4000}:4000"
+      - "127.0.0.1:${VOICE_PORT:-3900}:3900"
+    volumes:
+      # The project and the Claude login are mounted at the same absolute paths as on the host,
+      # so every path in the skills, scripts and logs is valid inside and outside.
+      - ${REEL_ROOT}:${REEL_ROOT}
+      - ${HOST_HOME}/.claude:${HOST_HOME}/.claude
+      - ${HOST_HOME}/.claude.json:${HOST_HOME}/.claude.json
+      - ./docker/claude-hub:/usr/local/bin/claude-hub:ro
+      - voicestudio-config:${HOST_HOME}/.config/VoiceStudio
+      - omnivoice-data:${HOST_HOME}/.omnivoice
+      - hub-data:/data
+      - chrome-profile:/data/chrome-profile
+      - uv-python:${HOST_HOME}/.local/share/uv/python
+      - uv-cache:${HOST_HOME}/.cache/uv
+      - hf-cache:${HOST_HOME}/.cache/huggingface
+      - whisper-cpp:${REEL_ROOT}/whisper.cpp
+      - hub-node-modules:${REEL_ROOT}/platform/hub/node_modules
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:4000/api/health >/dev/null && curl -fsS http://127.0.0.1:3900/health >/dev/null"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 180s
+
+volumes:
+  voicestudio-config:
+  omnivoice-data:
+  hub-data:
+  chrome-profile:
+  uv-python:
+  uv-cache:
+  hf-cache:
+  whisper-cpp:
+  hub-node-modules:
