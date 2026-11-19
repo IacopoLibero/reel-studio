@@ -1,0 +1,83 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+
+jobs:
+  hub:
+    name: Hub (typecheck and tests)
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: platform/hub
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: platform/hub/package-lock.json
+      - run: npm ci
+      - name: Typecheck the server and the web app
+        run: |
+          npx tsc -p tsconfig.json --noEmit
+          npx tsc -p web/tsconfig.json --noEmit
+      - name: Tests
+        run: npx vitest run
+        env:
+          CHROME_NO_SANDBOX: "1"
+
+  scheduler:
+    name: Instagram scheduler (end-to-end against a mock page)
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: platform/hub/src/scheduler
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: platform/hub/src/scheduler/package-lock.json
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - name: Tests (CHROME_PATH is found from the Playwright install; CHROME_NO_SANDBOX for the CI user)
+        run: npx vitest run
+        env:
+          CHROME_NO_SANDBOX: "1"
+
+  remotion:
+    name: Remotion project (typecheck)
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx tsc --noEmit
+
+  shell:
+    name: Shell scripts (shellcheck)
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: shellcheck
+        run: |
+          shellcheck -x -S warning install.sh update.sh uninstall.sh scripts/*.sh \
+            platform/docker/entrypoint.sh platform/docker/voicestudio-run platform/docker/blender-run platform/docker/claude-hub
+
+  compose:
+    name: Compose file is valid
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: docker compose config
+        run: |
+          cp .env.example .env
+          sed -i 's|^HUB_TOKEN=.*|HUB_TOKEN=ci|; s|^HOST_USER=.*|HOST_USER=ci|; s|^HOST_UID=.*|HOST_UID=1000|; s|^HOST_GID=.*|HOST_GID=1000|; s|^HOST_HOME=.*|HOST_HOME=/home/ci|; s|^REEL_ROOT=.*|REEL_ROOT=/work/reel|' .env
+          docker compose --env-file .env -f platform/docker-compose.yml config -q
