@@ -27,13 +27,11 @@ then the app, then the big features, which are born with the final structure and
 
 ### 1. Before the app (in the current setup)
 
-- **First of all: restructure the data into one data folder** (almost done). Layout: `~/ReelStudio/workspace` (brand/, reels/, mascot/, public/, the reels' own code in src/, the Remotion project) and
-  `~/ReelStudio/data` (hub settings, jobs, each brand's data and its Instagram login in `brands/<slug>/profile`); caches and models stay in Docker volumes until the packaging step.
-  Done and tested: the code (`platform/hub/src/layout/`), `scripts/migrate-layout.sh`, `docker-compose.studio.yml` (switched on by `STUDIO_HOME` in `.env`), the prepare step at hub start. A full trial on a copy of the real data
-  (separate test stack, port 4300) showed the same brands, 24 reels and states as the live hub, and a Remotion frame rendered from the new workspace identical byte for byte.
-  Left: (1) the real switch, with the hub stopped: `scripts/migrate-layout.sh --apply`, `STUDIO_HOME` in `.env`, `./update.sh`, then check a reel, a schedule and the Instagram login;
-  (2) delete the old copies in the repository and the old volumes (`chrome-profile`, `hub-data`) only after that; (3) point `install.sh`, `update.sh`, `new-brand.sh`, `smoke-test.sh` and the skill installers at the workspace
-  (they still assume the repository folder holds everything); (4) the `whisper.cpp` volume is mounted in both places for now.
+- **Finish the move to one data folder.** The switch was made on 2026-11-20: the hub now runs on `~/ReelStudio/workspace` and `~/ReelStudio/data` (`STUDIO_HOME` in `.env`), checked with the same brands, 24 reels and states,
+  Instagram read through the migrated login, an identical Remotion frame, VoiceStudio healthy and Claude finding the skills from the workspace. Not tried yet on the new folders: a real Instagram schedule, a reel made end to end, a voice.
+  Left: (1) after a few days of normal use, delete the old copies in the repository (`reels/`, `brand/<slug>/`, `mascot/`, `public/` except `a1`, `src/<reel folders>`, `src/Root.private.tsx`, `platform/data/`) and the old volumes
+  `reel-studio_chrome-profile` and `reel-studio_hub-data`: until then they are stale copies, so do not work in them; (2) point `install.sh`, `update.sh`, `new-brand.sh`, `smoke-test.sh` and the skill installers at the workspace
+  (they still assume the repository folder holds everything); (3) the `whisper.cpp` volume is mounted in both places for now.
 - **Closing keywords in the brand creator (required).** The interview must propose the closing keywords (`factory.closingRules`, product and general lists) from the brand's products, and the user confirms or edits them before the brand is created. Today it does not: they are added by hand in Settings after the brand exists. Defaults are empty, so a brand without keywords gets closing B on every reel.
 - **Voice step in the brand and character creator (required).** Today the creator makes no voice: the user must already have a sample (`voice.wav` plus its words), reuse one from another
   brand, or skip it. The step should offer two ways: (1) **Claude proposes a few example voices** from the brand's tone and character (a short description for each, the `instruct` text), and a `voice.generate` job
