@@ -117,7 +117,7 @@ folders and `scheduled.json`. The Factory page selects to-do questions and creat
   overridable per row): the question text decides first. A "product" keyword gives **A** (the brand's offer and website closing), otherwise a
   "general" keyword gives **B** (follow for tips). If the question matches nothing, the source slug is scored the same way, and A needs strictly
   more product than general hits. Ties and no match give B. Keywords match whole words; a trailing `*` matches word starts.
-  Note: the default keyword lists in the code are written for a restaurant-menu product; set your own in Settings (see TODO.md).
+  The default lists are empty, so a new brand gets closing B on every reel until you add keywords in Settings (Factory).
 - **Ideas** (`reel.ideas`): Claude proposes new questions (sources checked, deduplicated against the list), shown in the Factory to accept or reject.
 
 ## Brands

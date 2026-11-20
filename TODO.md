@@ -5,12 +5,7 @@ What is still open, on purpose. Move an item out of this file when it is done. L
 ## Before publishing
 
 
-- **A real CI badge.** The README has a static "tests: 498 passing" badge. Once the repository exists, replace it with the GitHub Actions badge for `.github/workflows/ci.yml`.
-- **Origin of the sound effects.** `public/a1/` holds four short sounds (`ding.wav`, `pop.wav`, `slash.wav`, `tick.wav`) with no recorded source or license.
-  Find where they came from, or replace them with sounds whose license is known, and say so in `THIRD_PARTY_NOTICES.md`.
-- **Neutral default closing keywords.** `DEFAULT_RULES` in `platform/hub/src/factory/classifier.ts` (and so the factory rules of every new brand) are written for a
-  restaurant-menu product ("qr", "digital menu", "kitchen screen"...). Make the defaults empty or generic, with the rules editable in Settings as today, and update the test that uses them.
-- **Check the history once more.** The two commits hold no brand content (checked 2026-11-20). Run the check again right before pushing: `git log --all -S<brand word>` for each word of your private brands.
+- **Brand name in the public history.** The check on 2026-11-20 found one trace of the first brand's name: a `slugify` test example in commit `f68b314`, already pushed (the file is neutral from now on, the old commit still holds it). Removing it means rewriting history and a force push; decide, then repeat the check (`git log --all -i -S<word>`, also with the name spelled with several spaces) right before any new push.
 
 ## Paused
 
@@ -39,6 +34,7 @@ What is still open, on purpose. Move an item out of this file when it is done. L
 - **Full-width `Stage` variant of the Remotion kit** and a generic scene toolkit: `src/kit` has only the theme and captions. Reels for a brand without a character rely on the
   `reel` skill composing full-width scenes from them.
 - **Delete brand** leaves the Instagram login in place when it cannot be moved cheaply (another volume, or a custom `instagram.profileDir`): remove that profile folder by hand.
+- **Closing keywords in the brand creator.** The interview does not propose the closing keywords (`factory.closingRules`) yet: today you add them by hand in Settings after the brand exists; let the assistant suggest them from the brand's products.
 - **Brand creator polish:** edit a brand's colours, fonts and closing lines in the hub after creation (today: edit `brand.json`); a "first reel" shortcut that proposes ten
   starting questions right after creation (today: "Find new ideas" in the Factory).
 

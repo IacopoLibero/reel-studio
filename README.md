@@ -6,7 +6,7 @@
   <a href="LICENSE"><img alt="License: MIT" src="https://img.shields.io/badge/license-MIT-blue.svg"></a>
   <img alt="Runs in Docker" src="https://img.shields.io/badge/runs%20in-Docker-2496ED?logo=docker&logoColor=white">
   <img alt="Node 22" src="https://img.shields.io/badge/node-22-339933?logo=node.js&logoColor=white">
-  <img alt="Tests: 498 passing" src="https://img.shields.io/badge/tests-498%20passing-brightgreen">
+  <a href="https://github.com/IacopoLibero/reel-studio/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/IacopoLibero/reel-studio/actions/workflows/ci.yml/badge.svg"></a>
   <img alt="Built for Claude Code" src="https://img.shields.io/badge/built%20for-Claude%20Code-d97757">
 </p>
 
