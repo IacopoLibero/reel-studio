@@ -23,15 +23,13 @@ What is still open, on purpose. Move an item out of this file when it is done. L
 
 **Fixed point: Reel Studio becomes a standalone app** (a Flatpak and a pacman package) instead of a cloned repository plus Docker. The goal is stable data: brands, reels, settings,
 the Instagram login, voices and analytics live in one folder outside the app, so updating or reinstalling the app never touches them. The order is: small things first (in the current Docker setup),
-then the app, then the big features, which are born with the final structure and are not moved twice. The data restructure comes first of all.
+then the app, then the big features, which are born with the final structure and are not moved twice. The data restructure is done.
 
 ### 1. Before the app (in the current setup)
 
-- **Finish the move to one data folder.** The switch was made on 2026-11-20: the hub now runs on `~/ReelStudio/workspace` and `~/ReelStudio/data` (`STUDIO_HOME` in `.env`), checked with the same brands, 24 reels and states,
-  Instagram read through the migrated login, an identical Remotion frame, VoiceStudio healthy and Claude finding the skills from the workspace. Not tried yet on the new folders: a real Instagram schedule, a reel made end to end, a voice.
-  Left: (1) after a few days of normal use, delete the old copies in the repository (`reels/`, `brand/<slug>/`, `mascot/`, `public/` except `a1`, `src/<reel folders>`, `src/Root.private.tsx`, `platform/data/`) and the old volumes
-  `reel-studio_chrome-profile` and `reel-studio_hub-data`: until then they are stale copies, so do not work in them; (2) point `install.sh`, `update.sh`, `new-brand.sh`, `smoke-test.sh` and the skill installers at the workspace
-  (they still assume the repository folder holds everything); (3) the `whisper.cpp` volume is mounted in both places for now.
+- **Data restructure: done (2026-11-20).** Everything of yours is in `~/ReelStudio` (`workspace/`, `data/`); the repository moved there too (`~/ReelStudio/reel-studio`) and is only the program; the old copies and volumes are deleted; install, update, new-brand,
+  uninstall, compose, CI and docs follow the new layout. Not tried yet on it: a real Instagram schedule, a reel made end to end, a voice. Leftovers on the host in the repository, safe to delete once you are sure: `node_modules/` (927 MB) and `whisper.cpp/` (1.6 GB),
+  both rebuilt in volumes by the container; the 15 disabled `reel-post-*` units in `~/.config/systemd/user/` (an old posting method, they point at a path that no longer exists).
 - **Closing keywords in the brand creator (required).** The interview must propose the closing keywords (`factory.closingRules`, product and general lists) from the brand's products, and the user confirms or edits them before the brand is created. Today it does not: they are added by hand in Settings after the brand exists. Defaults are empty, so a brand without keywords gets closing B on every reel.
 - **Voice step in the brand and character creator (required).** Today the creator makes no voice: the user must already have a sample (`voice.wav` plus its words), reuse one from another
   brand, or skip it. The step should offer two ways: (1) **Claude proposes a few example voices** from the brand's tone and character (a short description for each, the `instruct` text), and a `voice.generate` job
