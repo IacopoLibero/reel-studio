@@ -30,7 +30,8 @@ if [ -n "$VOLUMES" ]; then
   say ""; say "Docker volumes of this project (data that is NOT in the repository):"
   # shellcheck disable=SC2001
   printf '%s\n' "$VOLUMES" | sed 's/^/  /'
-  say "  chrome-profile = your Instagram login, hub-data = job history and settings, voicestudio-config / omnivoice-data / hf-cache = VoiceStudio and its models (about 20 GB, downloadable again)."
+  say "  Only caches and models: voicestudio-config / omnivoice-data / hf-cache = VoiceStudio and its models (about 20 GB, downloadable again), workspace-node-modules, whisper-cpp."
+say "  Your brands, reels, hub data and Instagram logins are NOT here: they are in your studio folder (STUDIO_HOME in .env) and are never deleted by this script."
   del=n
   if [ "$DELVOL" -eq 1 ] && [ "$YES" -eq 1 ]; then del=y
   elif [ "$YES" -eq 0 ]; then read -r -p "Delete these volumes too? This cannot be undone. [y/N] " del </dev/tty; fi

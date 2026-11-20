@@ -79,5 +79,5 @@ jobs:
       - name: docker compose config
         run: |
           cp .env.example .env
-          sed -i 's|^HUB_TOKEN=.*|HUB_TOKEN=ci|; s|^HOST_USER=.*|HOST_USER=ci|; s|^HOST_UID=.*|HOST_UID=1000|; s|^HOST_GID=.*|HOST_GID=1000|; s|^HOST_HOME=.*|HOST_HOME=/home/ci|; s|^REEL_ROOT=.*|REEL_ROOT=/work/reel|' .env
-          docker compose --env-file .env -f platform/docker-compose.yml config -q
+          sed -i 's|^HUB_TOKEN=.*|HUB_TOKEN=ci|; s|^HOST_USER=.*|HOST_USER=ci|; s|^HOST_UID=.*|HOST_UID=1000|; s|^HOST_GID=.*|HOST_GID=1000|; s|^HOST_HOME=.*|HOST_HOME=/home/ci|; s|^REEL_ROOT=.*|REEL_ROOT=/work/reel|; s|^STUDIO_HOME=.*|STUDIO_HOME=/home/ci/ReelStudio|' .env
+          docker compose --env-file .env -f platform/docker-compose.yml -f platform/docker-compose.studio.yml config -q

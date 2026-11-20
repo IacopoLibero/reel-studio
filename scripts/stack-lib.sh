@@ -33,12 +33,21 @@ env_set() {
 # Sets KEY only when it is missing or empty.
 env_default() { [ -n "$(env_get "$1")" ] || env_set "$1" "$2"; }
 
+# The studio folder holds everything of yours: workspace/ (brands, reels, the Remotion project) and data/ (hub state, Instagram logins).
+# install.sh sets STUDIO_HOME in .env; this repository is only the program.
+studio_home() { env_get STUDIO_HOME; }
+workspace_dir() {
+  local h; h="$(studio_home)"
+  [ -n "$h" ] || die "STUDIO_HOME is not set in .env. New install: run ./install.sh. Old install: run scripts/migrate-layout.sh --apply, then add STUDIO_HOME=<that folder> to .env."
+  printf '%s/workspace' "$h"
+}
+
 # docker compose with this project's env file and the optional files the .env asks for.
 dc() {
-  local f=(-f "$REPO_ROOT/platform/docker-compose.yml")
+  workspace_dir >/dev/null  # stops with a clear message when STUDIO_HOME is not set
+  local f=(-f "$REPO_ROOT/platform/docker-compose.yml" -f "$REPO_ROOT/platform/docker-compose.studio.yml")
   [ "$(env_get GPU)" = 1 ] && f+=(-f "$REPO_ROOT/platform/docker-compose.gpu.yml")
   [ -n "$(env_get BLOG_DIR)$(env_get BLOG_MOUNT)" ] && f+=(-f "$REPO_ROOT/platform/docker-compose.blog.yml")
-  [ -n "$(env_get STUDIO_HOME)" ] && f+=(-f "$REPO_ROOT/platform/docker-compose.studio.yml")
   [ -d "$(env_get HOST_HOME)/.composio" ] && f+=(-f "$REPO_ROOT/platform/docker-compose.composio.yml")
   # BLOG_MOUNT defaults to BLOG_DIR; compose substitutes it into the blog file
   BLOG_MOUNT="${BLOG_MOUNT:-$(env_get BLOG_MOUNT)}" docker compose --project-directory "$REPO_ROOT/platform" --env-file "$ENV_FILE" "${f[@]}" "$@"

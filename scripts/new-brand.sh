@@ -4,7 +4,15 @@
 # usage: scripts/new-brand.sh <slug> [--name "Display Name"] [--website example.com] [--yes]
 # <slug> is the folder name: lowercase letters, digits and "-", up to 40 characters.
 set -euo pipefail
-ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+SELF="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+# Your brands live in the workspace of your studio folder, their hub data next to it. Run from the repository, the folder comes from STUDIO_HOME in .env;
+# run from the workspace's own copy of this script, it is that workspace. HUB_DATA overrides the data folder.
+studio="$(sed -n 's/^STUDIO_HOME=//p' "$SELF/.env" 2>/dev/null | tail -n1 | tr -d "\"'")"
+if [ -f "$SELF/.reel-studio/program.json" ]; then ROOT="$SELF"; DATA="$(dirname "$SELF")/data"
+elif [ -n "$studio" ]; then ROOT="$studio/workspace"; DATA="$studio/data"
+else echo "STUDIO_HOME is not set in .env: run ./install.sh first (old install: scripts/migrate-layout.sh)." >&2; exit 1; fi
+DATA="${HUB_DATA:-$DATA}"
+[ -d "$ROOT/brand/_template" ] || { echo "$ROOT/brand/_template not found: start the hub once (it fills the workspace) or run ./update.sh." >&2; exit 1; }
 TEMPLATE="$ROOT/brand/_template"
 
 id="${1:-}"
@@ -52,10 +60,10 @@ BRAND_SLUG="$id" BRAND_NAME="$name" BRAND_SITE="$website" TEMPLATE_JSON="$TEMPLA
   process.stdout.write(JSON.stringify(b, null, 2) + "\n");
 ' > "$dest/brand.json"
 
-mkdir -p "$ROOT/reels/$id" "$dest/voice" "$ROOT/platform/data/brands/$id"/{daily,analytics,ideas,locks,shots}
+mkdir -p "$ROOT/reels/$id" "$dest/voice" "$DATA/brands/$id"/{daily,analytics,ideas,locks,shots}
 
 cat <<MSG
-Created brand/$id (brand.json, style.md, reel-questions.md), reels/$id and platform/data/brands/$id.
+Created $ROOT/brand/$id (brand.json, style.md, reel-questions.md), reels/$id and $DATA/brands/$id.
 Next:
   1. Open brand/$id/brand.json: colours, fonts, closing lines, Instagram account and user id, offer rule, source texts folder.
   2. Put your logo in brand/$id/logo.png and record the voice sample (brand/$id/voice-sample.md).

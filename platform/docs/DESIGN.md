@@ -33,8 +33,10 @@ A web platform that is always up in Docker. One container (default name `reel-hu
   live in a volume.
 - **Security.** The hub gives a shell. It is published on `127.0.0.1` only and needs a token (`HUB_TOKEN`, generated into the root `.env`,
   never committed or printed). **Changed:** the token used to live in `platform/.env`; it is the root `.env` now.
-- **Where the state is.** The hub reads `HUB_DATA`, default `platform/data` in the project folder. **Changed:** the first design kept state in a
-  Docker volume at `/data`; in practice only the browser profiles are there (see [TODO.md](../../TODO.md)).
+- **Where the state is.** In the studio folder, outside the program: the hub reads `HUB_DATA` (`<STUDIO_HOME>/data`) and works in `REEL_ROOT`
+  (`<STUDIO_HOME>/workspace`, a Remotion project); the repository is only the program (`PROGRAM_ROOT`) and the hub copies its own files into the workspace
+  at every start (`src/layout/`). **Changed:** the first design kept state in a Docker volume at `/data`, then in `platform/data` inside the project folder;
+  each brand's Instagram login moved from a volume into `<data>/brands/<slug>/profile`.
 
 ## Services in the container (supervisord)
 
@@ -95,7 +97,7 @@ Playwright (Chromium, headed on the Xvfb display, persistent profile per brand) 
 7. **Verify** on the calendar page: reload and find the post at that day and time (caption start matches). Fail the job if it is missing or duplicated.
    A reel is never scheduled twice (state per brand in `scheduled.json`).
 
-Rules: 9:16 always; one reel at a time; a failed step stops the job and saves a screenshot in `platform/data/brands/<slug>/shots/`;
+Rules: 9:16 always; one reel at a time; a failed step stops the job and saves a screenshot in `<data>/brands/<slug>/shots/`;
 credentials are never entered: if the login form shows, the job fails with `login_required`. Instagram accepts posts about 30 days ahead.
 
 The posting pattern is a setting per brand (`slotPattern` in the brand's `settings.json`, edited on the Settings page). The default is Sunday,
@@ -122,10 +124,10 @@ folders and `scheduled.json`. The Factory page selects to-do questions and creat
 
 ## Brands
 
-Everything brand-specific is scoped to one brand: `brand/<slug>/brand.json` (zod-validated), `platform/data/brands/<slug>/` (settings, daily plans,
+Everything brand-specific is scoped to one brand: `brand/<slug>/brand.json` (zod-validated), `<data>/brands/<slug>/` (settings, daily plans,
 analytics, ideas, series, `scheduled.json`, locks, notifications, screenshots) and the Instagram browser profile
-(`/data/chrome-profile/<slug>/`, or the folder named by `instagram.profileDir`). Global settings (Blender device, Claude model, brand assistant)
-stay in `platform/data/settings.json`. The job queue is shared (one browser flow at a time); each job carries `brand`.
+(`<data>/brands/<slug>/profile/`, or the folder named by `instagram.profileDir`). Global settings (Blender device, Claude model, brand assistant)
+stay in `<data>/settings.json`. The job queue is shared (one browser flow at a time); each job carries `brand`.
 First start after the multi-brand release: `platform/hub/src/brands/migrate.ts` makes a backup (`platform/data/backup-pre-brands-<time>/`) and
 moves single-brand data into the brand folder (idempotent, logged). More in [BRANDS.md](BRANDS.md).
 

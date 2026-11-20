@@ -34,7 +34,7 @@ Source: Instagram insights through Composio (`INSTAGRAM_GET_IG_USER_MEDIA` and `
 user id is in the brand's `brand.json` (`instagram.userId`). **Changed:** it used to be `IG_USER_ID` in `.env`. The Composio login is read from
 `~/.composio` on the host, mounted read-only (the compose overlay `docker-compose.composio.yml` is added when that folder exists); the key is never printed.
 
-- `analytics.collect` stores a snapshot in `platform/data/brands/<slug>/analytics/<date>.json` (per post: id, permalink, caption start, posted time,
+- `analytics.collect` stores a snapshot in `<data>/brands/<slug>/analytics/<date>.json` (per post: id, permalink, caption start, posted time,
   plays, reach, likes, comments, saves, shares, average watch time where the API gives it, matched to the reel folder by caption) and exports
   `hooks.csv` for hook mining. It is read-only on Instagram, respects the Graph API limits, handles "insights not available yet" and missing metrics,
   and says `composio link instagram` when the connection is invalid.
@@ -67,7 +67,7 @@ One `daily.run` per brand per calendar day (Europe/Rome by default), started by 
 4. **Ideas.** The same machinery as `reel.ideas` (research with `agent-reach`, `reel-research`, `reel-hooks`, a quality gate, dedupe against the question list)
    for the configured number of ideas (default 3), each with hook, source, closing A or B, why, and a "based on your data" reason. Optionally a Threads text
    per idea (generated, never posted).
-5. **Alert.** The plan `platform/data/brands/<slug>/daily/<date>.json` gets the status `awaiting_approval` and the hub adds a notification
+5. **Alert.** The plan `<data>/brands/<slug>/daily/<date>.json` gets the status `awaiting_approval` and the hub adds a notification
    (`GET /api/notifications`). Optional, on the host: `scripts/reel-hub-notify.sh` polls the hub every 60 seconds (token read from `.env`) and shows a desktop
    notification with `notify-send` that opens the Daily page. Install it as a systemd user service with `scripts/install-notifier.sh` (`--uninstall` removes it, `--print` shows the unit). The container does not get the host's D-Bus socket.
 6. **Approval 1 (manual).** The Daily page shows readout, proposals and ideas with checkboxes and an editable closing each. **Create selected** or **Skip today**.

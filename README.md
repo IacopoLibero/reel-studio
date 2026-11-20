@@ -117,7 +117,7 @@ The daily loop ends its automatic part here and waits for you. Nothing is made b
 
 ![Reels page: every reel folder with its files and Instagram state](docs/images/reels-list.png)
 
-- Every folder in `reels/<slug>/` with its cover, files (MP4, caption, cover) and state: not scheduled, in queue, scheduled.
+- Every folder in the brand's `reels/<slug>/` (in your studio folder) with its cover, files (MP4, caption, cover) and state: not scheduled, in queue, scheduled.
 - **Schedule** picks a free slot of your pattern and queues the Instagram job.
 
 ### New brand
@@ -170,7 +170,7 @@ claude                # once, on the host: log in to Claude Code, then quit (the
 
 `./install.sh --yes` asks nothing. `./install.sh --help` lists the options (CPU mode, other ports, a second copy next to the first).
 The installer also downloads the Remotion agent skills from their upstream repository (it needs internet; `./update.sh` refreshes them).
-`./update.sh` pulls and rebuilds; `./uninstall.sh` removes the stack and asks before deleting the volumes.
+`./update.sh` pulls and rebuilds; `./uninstall.sh` removes the stack and asks before deleting the volumes. Neither touches your studio folder (your brands, reels and data).
 Day-to-day operation (start, stop, logs, backup, ports) is in [platform/README.md](platform/README.md).
 
 ## Requirements
@@ -209,8 +209,8 @@ image tool (flat 2D vector, your colours, a sheet with views and eight expressio
 **This is experimental: it needs iteration and may not give a finished character**, and turning an approved preview into the moves
 the reels use is still manual work. A brand with no character uses full-width scenes and works completely.
 
-**Your brands are not in git.** One block in `.gitignore` covers `brand/<slug>/` (except `brand/_template`), `reels/`, `characters/`,
-`mascot/`, the branded Remotion folders in `src/` and the frames and sounds in `public/`. Back them up yourself (a private repository, a drive).
+**Your brands are not in this repository.** They live in your studio folder (default `~/ReelStudio`): `workspace/` has your brands, reels, characters,
+the branded Remotion folders in `src/` and the frames and sounds in `public/`; `data/` has the hub state and each brand's Instagram login. Back that folder up yourself (a private repository, a drive).
 
 ## The daily loop and its approvals
 
@@ -260,7 +260,8 @@ Settings live in `.env` (made by `install.sh`, documented line by line in `.env.
 | `VOICE_PORT` | `3900` | VoiceStudio API, on `127.0.0.1` only. |
 | `HUB_TOKEN` | random | Created by the installer; the hub asks for it once. |
 | `HOST_USER`, `HOST_UID`, `HOST_GID`, `HOST_HOME` | detected | The container runs as you, so files belong to you. |
-| `REEL_ROOT` | this folder | Absolute project path, mounted at the same path in the container. |
+| `REEL_ROOT` | this folder | Absolute path of this repository (the program), mounted at the same path in the container. |
+| `STUDIO_HOME` | `~/ReelStudio` | Your studio folder: `workspace/` (brands, reels, Remotion project) and `data/` (hub state, Instagram logins). Never touched by update or uninstall. |
 | `GPU` | `0` | `1` passes the NVIDIA GPU to the container. |
 | `VOICE_DEVICE` | `cpu` | `gpu` or `cpu`: where the voice engine runs. |
 | `BLENDER_DEVICE` | `cpu` | `cpu`, `gpu` or `auto`. Also a setting in the hub. |
@@ -279,7 +280,7 @@ An installation made before brands existed may still carry `BRAND`, `IG_USER_ID`
   login. If you start Claude by hand in the container, use `claude-hub`.
 - **Instagram "Reels" notice or the month picker blocks the scheduler.** Instagram shows a one-time notice about reels and a month picker
   for the date. The scheduler handles both (see the scheduler section of [platform/docs/DESIGN.md](platform/docs/DESIGN.md)). If a job fails,
-  look at the screenshot of the failed step in `platform/data/brands/<slug>/shots/`, dismiss the notice once in the browser window of the Instagram page,
+  look at the screenshot of the failed step in `<studio folder>/data/brands/<slug>/shots/`, dismiss the notice once in the browser window of the Instagram page,
   and run the job again. A `login_required` failure means: log in again on the Instagram page.
 - **Instagram scheduling limits.** About 30 days ahead, at least 20 minutes of lead time, 9:16 only.
 - **Out of GPU memory (8 GB).** Only one VoiceStudio can use the GPU: do not run another copy on the host. Voice jobs wait in a queue
@@ -307,7 +308,7 @@ An installation made before brands existed may still carry `BRAND`, `IG_USER_ID`
 
 **Can I use another AI than Claude?** The jobs run headless Claude Code. Only the brand interview can use `codex` or a custom command, and those are untested.
 
-**Where is my data?** `brand/`, `reels/`, `characters/`, `mascot/` and `platform/data/` in the project folder, plus Docker volumes for the Instagram login and the voice engine. [platform/README.md](platform/README.md) shows how to back it up.
+**Where is my data?** In your studio folder, `~/ReelStudio` by default: `workspace/` (brands, reels, characters) and `data/` (hub state and Instagram logins). Docker volumes hold only the voice engine, its models and caches. [platform/README.md](platform/README.md) shows how to back it up.
 
 ## Project layout
 
@@ -316,8 +317,8 @@ install.sh update.sh uninstall.sh   install, update, remove
 .env.example                        every setting, documented
 platform/                           compose files, Dockerfile, the hub (platform/hub), docs, vendored Ootto skills
 platform/docs/                      DESIGN (the hub), DAILY (skills, analytics, daily loop), BRANDS (multi-brand)
-scripts/                            voice, slot queue, new-brand, smoke test, helpers
-src/                                generic Remotion kit (src/kit) and cover (src/cover); your reel code stays outside git
+scripts/                            voice, slot queue, new-brand, migrate-layout, smoke test, helpers
+src/                                generic Remotion kit (src/kit) and cover (src/cover); your reel code is in your workspace, outside this repository
 brand/_template/                    the template new brands are made from
 .claude/skills/                     the reel skill and its helpers (reel, reel-hooks, reel-research, reel-insights, reel-threads)
 docs/images/                        screenshots and diagrams of this README

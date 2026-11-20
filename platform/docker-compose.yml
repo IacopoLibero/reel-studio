@@ -44,11 +44,9 @@ services:
       - ./docker/claude-hub:/usr/local/bin/claude-hub:ro
       - voicestudio-config:${HOST_HOME}/.config/VoiceStudio
       - omnivoice-data:${HOST_HOME}/.omnivoice
-      - chrome-profile:/data/chrome-profile
       - uv-python:${HOST_HOME}/.local/share/uv/python
       - uv-cache:${HOST_HOME}/.cache/uv
       - hf-cache:${HOST_HOME}/.cache/huggingface
-      - whisper-cpp:${REEL_ROOT}/whisper.cpp
       - hub-node-modules:${REEL_ROOT}/platform/hub/node_modules
     healthcheck:
       test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:4000/api/health >/dev/null && curl -fsS http://127.0.0.1:3900/health >/dev/null"]
@@ -60,7 +58,6 @@ services:
 volumes:
   voicestudio-config:
   omnivoice-data:
-  chrome-profile:
   uv-python:
   uv-cache:
   hf-cache:

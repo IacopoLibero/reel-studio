@@ -1,4 +1,4 @@
-# Added by the scripts when STUDIO_HOME is set in .env: the user's files live in one folder outside the program.
+# Always added by the scripts (STUDIO_HOME in .env): the user's files live in one folder outside the program.
 #   ${STUDIO_HOME}/workspace  brand/, reels/, mascot/, public/, the reels' own code and the Remotion project (REEL_ROOT inside the container)
 #   ${STUDIO_HOME}/data       hub settings, jobs, each brand's data and its Instagram login (HUB_DATA inside the container)
 # The repository stays mounted as the program (PROGRAM_ROOT): the hub runs from it and copies its own files into the workspace at every start.

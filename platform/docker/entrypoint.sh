@@ -19,10 +19,10 @@ mkdir -p "$H" "$H/.cache" "$H/.config" "$H/.local/share/uv"
 own "$H"
 d="$(dirname "$P")"; while [ "$d" != "/" ] && [ "$d" != "$H" ] && [ "$d" != "." ]; do own "$d"; d="$(dirname "$d")"; done
 for v in "$H/.cache" "$H/.cache/huggingface" "$H/.cache/uv" "$H/.config" "$H/.local" "$H/.local/share" "$H/.local/share/uv" "$H/.local/share/uv/python" \
-         /data /data/chrome-profile "$H/.config/VoiceStudio" "$H/.omnivoice" "$P/whisper.cpp" "$P/node_modules" "$PR/platform/hub/node_modules"; do
+         /data "$H/.config/VoiceStudio" "$H/.omnivoice" "$P/whisper.cpp" "$P/node_modules" "$PR/platform/hub/node_modules"; do
   own "$v"
 done
-mkdir -p /data/chrome-profile /data/shots /var/log/reel-hub
+mkdir -p /var/log/reel-hub
 [ "$P" != "$PR" ] && mkdir -p "$P" && own "$P"
 [ -n "${HUB_DATA:-}" ] && mkdir -p "$HUB_DATA" && own "$HUB_DATA"
 chown -R "$UID_:$GID_" /data /var/log/reel-hub 2>/dev/null

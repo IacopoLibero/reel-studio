@@ -117,6 +117,7 @@ for kv in COMPOSE_PROJECT_NAME=reel-studio CONTAINER_NAME=reel-hub IMAGE_NAME=re
 done
 env_set HOST_USER "$(id -un)"; env_set HOST_UID "$(id -u)"; env_set HOST_GID "$(id -g)"
 env_set HOST_HOME "$HOME"; env_set REEL_ROOT "$REPO_ROOT"
+env_default STUDIO_HOME "$HOME/ReelStudio"
 if [ "$MODE" = gpu ]; then env_set GPU 1; env_set VOICE_DEVICE gpu; else env_set GPU 0; env_set VOICE_DEVICE cpu; fi
 if [ -z "$(env_get TZ)" ]; then
   tz="$( (timedatectl show -p Timezone --value 2>/dev/null || cat /etc/timezone 2>/dev/null || echo Europe/Rome) | head -n1)"
@@ -144,8 +145,10 @@ fi
 # Claude login files must exist as files/folders, otherwise Docker would create them as root-owned directories.
 mkdir -p "$HOME/.claude"
 [ -e "$HOME/.claude.json" ] || { printf '{}\n' >"$HOME/.claude.json"; chmod 600 "$HOME/.claude.json"; }
-mkdir -p "$REPO_ROOT/whisper.cpp" "$REPO_ROOT/platform/hub/node_modules" "$REPO_ROOT/platform/data"
-"$REPO_ROOT/scripts/ootto-skills.sh" defaults >/dev/null 2>&1 || warn "Could not switch on the default content skills (scripts/ootto-skills.sh defaults)."
+# Your files live in the studio folder (workspace/ and data/), outside this repository. Create the folders as you, so Docker does not make them root-owned.
+STUDIO="$(studio_home)"; WORKSPACE="$(workspace_dir)"
+mkdir -p "$REPO_ROOT/platform/hub/node_modules" "$WORKSPACE/whisper.cpp" "$WORKSPACE/node_modules" "$STUDIO/data"
+ok "Your files will live in $STUDIO (workspace/ and data/)"
 
 if [ "$START" -eq 0 ]; then ok "Stopped before building (--no-start). Run ./install.sh again to continue."; exit 0; fi
 
@@ -166,6 +169,8 @@ for i in $(seq 1 240); do
   sleep 5
 done
 ok "Hub answers on $(hub_url)"
+# The hub has filled the workspace with the program's files by now; the content skills are switched on there.
+"$WORKSPACE/scripts/ootto-skills.sh" defaults >/dev/null 2>&1 || warn "Could not switch on the default content skills (scripts/ootto-skills.sh defaults)."
 
 # --------------------------------------------------------------------------------------------------
 step "6/8 Installing VoiceStudio and the voice engine inside the container (official sources, downloaded now)"
@@ -196,7 +201,7 @@ else
 fi
 
 step "7/8 Installing the reel tools (Remotion packages, whisper.cpp with the medium model)"
-dexec() { docker exec -u "$(id -u)" -w "$REPO_ROOT" "$CONTAINER" "$@"; }
+dexec() { docker exec -u "$(id -u)" -w "$WORKSPACE" "$CONTAINER" "$@"; }
 dexec bash -lc 'if [ ! -d node_modules/remotion ]; then npm ci; else echo "node_modules already installed"; fi'
 dexec node scripts/setup-whisper.mjs
 ok "Remotion and whisper.cpp are ready"
@@ -204,7 +209,7 @@ say "Fetching the Remotion agent skills from upstream (not bundled in this repos
 dexec bash scripts/install-remotion-skills.sh --quiet || warn "Remotion skills not fetched; retry with: scripts/install-remotion-skills.sh"
 if [ "$RENDER_MASCOT" -eq 1 ]; then
   say "  rendering every move of the characters in mascot/ (this takes a while)..."
-  for script in "$REPO_ROOT"/mascot/*.py; do
+  for script in "$WORKSPACE"/mascot/*.py; do
     [ -f "$script" ] || { say "  no character script in mascot/: nothing to render"; break; }
     dexec blender -b -P "mascot/$(basename "$script")" -- move all >/dev/null
   done
@@ -232,9 +237,9 @@ Next steps:
      The container mounts ~/.claude and ~/.claude.json, so it uses the same login (no API key is stored).
   2. Open the hub, paste the token.
   3. Instagram: in the hub open the Instagram page, press the login button, and type your own password in the window
-     that opens (noVNC). The session stays in the Docker volume $(env_get COMPOSE_PROJECT_NAME)_chrome-profile.
+     that opens (noVNC). The session is saved in $STUDIO/data/brands/<brand>/profile.
   4. Your first brand: in the hub choose "New brand" in the menu, or run   ./scripts/new-brand.sh my-brand
-     (brands live on your machine, outside git; each brand has its own Instagram login, data and settings).
+     (your brands live in $STUDIO/workspace, outside git; each brand has its own Instagram login, data and settings).
   5. Optional analytics: install the Composio CLI, run   composio link instagram   and put the numeric Instagram user id
      of the brand in its brand.json (instagram.userId).
   Update later with ./update.sh, remove with ./uninstall.sh.

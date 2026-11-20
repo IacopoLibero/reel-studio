@@ -12,7 +12,7 @@ provides the prompt. For a brand without a character you fill in the needed fiel
 The public repository holds the platform, a generic Remotion kit, our skills and `brand/_template`. It holds NO brand content: nothing of
 Acme Cafe (style guide, question list, logo, voice sample, reel scripts and captions, branded compositions), nothing of Pip (the mascot model,
 its Blender builder and renders). A real brand and its character keep working on the owner's machine, outside git, and are "just another brand" created by the same mechanism.
-- Private (git-ignored by rule, never listed by name in the public repo): `brand/<slug>/` for every slug except `_template`, `reels/`, `public/` (except the generic `public/a1` sounds), branded Remotion compositions (every folder of `src/` except `src/kit` and `src/cover`, and the characters' components), `mascot/` and
+- Private (in your studio folder's `workspace/`, outside this repository; the paths below are relative to that workspace): `brand/<slug>/` for every slug except `_template`, `reels/`, `public/` (except the generic `public/a1` sounds), branded Remotion compositions (every folder of `src/` except `src/kit` and `src/cover`, and the characters' components), `mascot/` and
   `characters/<slug>/`. One rule block in `.gitignore` covers all of it; the README explains it ("Your brands are not in git").
 - The public tree must typecheck, test, build and start with all of that absent. `src/Root.tsx` registers only generic compositions (`Cover`, shell);
   every reel is rendered from its own entry (`npx remotion render src/r<n>/index.ts ...`) as today, so branded code can simply be absent.
@@ -40,9 +40,9 @@ fonts, closing, offer and Instagram (`language` is the language of the reels, `r
 ## 3. "Each brand has its own hub"
 Everything in the hub is scoped to the current brand: Jobs, Daily, Calendar, Factory, Analytics, Series, Reels, Instagram, Character, Settings.
 - Brand switcher in the nav (name, small colour dot), current brand in the URL hash (`#/<brand>/<page>`) and remembered; a "New brand" entry.
-- Data: `platform/data/brands/<slug>/` holds that brand's settings (slot pattern, daily loop, factory rules, Threads toggle), jobs (job records carry
+- Data: `<data>/brands/<slug>/` (`~/ReelStudio/data/brands/<slug>/`) holds that brand's settings (slot pattern, daily loop, factory rules, Threads toggle), jobs (job records carry
   `brand`), daily plans, analytics snapshots and hooks.csv, ideas, series, scheduled.json, locks. Global settings (Blender device, Claude model,
-  assistant command, ports) stay in `platform/data/settings.json`. The Instagram browser profile is per brand: `/data/chrome-profile/<slug>/`;
+  assistant command, ports) stay in `<data>/settings.json`. The Instagram browser profile is per brand: `<data>/brands/<slug>/profile/` (the folder in `instagram.profileDir` when set);
   the Instagram page logs in and shows the account of the current brand; the scheduler, collector and calendar use that brand's profile, user id and
   account. Only one browser flow runs at a time across all brands (existing queue).
 - API: every brand-scoped route is `/api/brands/:slug/...`; the old `/api/...` paths still answer for the first brand. The daily loop runs per brand (own switch, own earliest time); the connectivity gate and heavy-job gate are shared.

@@ -25,12 +25,12 @@ CI runs the same checks (`.github/workflows/ci.yml`).
 - Comments in English, no emojis in code or docs. Commit messages follow Conventional Commits: `feat:`, `fix:`, `docs:`, ...
 - No machine-specific paths, no personal ids, no brand names in the generic code: use `.env` (see `.env.example`).
   Brand content belongs in `brand/<name>/`.
-- Never commit secrets (`.env`, tokens, anything under `platform/data/`). Run a quick `grep -rn "HUB_TOKEN=" .` before you push.
+- Never commit secrets (`.env`, tokens, anything from your studio folder). Run a quick `grep -rn "HUB_TOKEN=" .` before you push.
 
 ## Using the project for your own brand
 
-The repository holds no brand. Your brands live in `brand/<slug>/`, `reels/`, `mascot/` and the branded compositions in `src/`,
-all git-ignored by one rule block in `.gitignore`. Create one with `./scripts/new-brand.sh my-brand` or the hub's "New brand".
+The repository holds no brand. Your brands live in your studio folder (`~/ReelStudio/workspace`: `brand/<slug>/`, `reels/`, `mascot/` and the branded compositions in `src/`),
+outside this repository. Create one with `./scripts/new-brand.sh my-brand` or the hub's "New brand".
 The generic platform (`platform/`, `scripts/`, `install.sh`, `src/kit`) works with no brand present.
 
 ## Documentation and screenshots

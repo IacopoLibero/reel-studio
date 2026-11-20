@@ -70,69 +70,50 @@ All published on `127.0.0.1` only. Change them in `.env` and run `./update.sh`.
 
 ## Where things live
 
+Everything of yours lives in **one folder**, `STUDIO_HOME` (default `~/ReelStudio`, written into `.env` by `./install.sh`). This repository is only the program, so updating or reinstalling it never touches your files.
+
 | What | Where | In git? |
 |---|---|---|
-| Settings of the stack | `.env` in the project root | no |
-| A brand: `brand.json`, style guide, questions, logo, voice sample | `brand/<slug>/` | no (only `brand/_template`) |
-| Reels: script, MP4, caption, cover | `reels/<slug>/<n>-<name>/` | no |
-| Hub state: jobs, settings, daily plans, analytics, ideas, series, schedule state, failed-step screenshots | `platform/data/` (`jobs.json`, `settings.json`, `brands/<slug>/...`) | no |
-| Characters, sounds and frames | `characters/`, `mascot/`, `public/` | no (except `public/a1`) |
-| Instagram login (browser profiles, one folder per brand) | Docker volume `<project>_chrome-profile`, mounted at `/data/chrome-profile` | n/a |
-| VoiceStudio and the voice engine and models | volumes `voicestudio-config`, `omnivoice-data`, `hf-cache`, `uv-python`, `uv-cache` | n/a |
-| whisper.cpp binary and model | volume `whisper-cpp` | n/a |
-| The hub's `node_modules` (built for Ubuntu, not for the host) | volume `hub-node-modules` | n/a |
-| Deleted brands | `platform/data/trash/<slug>-<time>/` | no |
+| A brand: `brand.json`, style guide, questions, logo, voice sample | `$STUDIO_HOME/workspace/brand/<slug>/` | no (only `brand/_template`) |
+| Reels: script, MP4, caption, cover | `$STUDIO_HOME/workspace/reels/<slug>/<n>-<name>/` | no |
+| Characters, sounds and frames, the reels' own code | `$STUDIO_HOME/workspace/` (`mascot/`, `public/`, `src/r<n>/`, `src/Root.private.tsx`) | no (except `public/a1`) |
+| Hub state: jobs, settings | `$STUDIO_HOME/data/` (`jobs.json`, `settings.json`) | no |
+| Per brand: schedule state, daily plans, analytics, ideas, series, failed-step screenshots | `$STUDIO_HOME/data/brands/<slug>/` | no |
+| Instagram login of a brand (browser profile) | `$STUDIO_HOME/data/brands/<slug>/profile/` | no |
+| Deleted brands | `$STUDIO_HOME/data/trash/<slug>-<time>/` | no |
+| Settings of the stack (token, ports) | `.env` in the repository | no |
+| The program: hub, scripts, Remotion kit, base skills | this repository | yes |
+| VoiceStudio, the voice engine and its models | Docker volumes `voicestudio-config`, `omnivoice-data`, `hf-cache`, `uv-python`, `uv-cache` | n/a |
+| whisper.cpp binary and model | volume `whisper-cpp` (mounted in the workspace) | n/a |
+| The hub's `node_modules` (built for Ubuntu, not for the host) and the workspace's | volumes `hub-node-modules`, `workspace-node-modules` | n/a |
 
-Volume names are prefixed with `COMPOSE_PROJECT_NAME` (default `reel-studio`).
+Volume names are prefixed with `COMPOSE_PROJECT_NAME` (default `reel-studio`). The volumes hold only caches and models that can be downloaded again.
 
-Note: the compose file also sets `HUB_DATA_DIR=/data` and mounts a volume `hub-data` there, but the hub reads `HUB_DATA` (not
-`HUB_DATA_DIR`) and defaults to `platform/data` in the project folder, so the hub's state is in the project folder and not in that volume
-(see [TODO.md](../TODO.md)).
+**The workspace is a Remotion project.** Brands, reels and your own reel code sit in it, and the program fills in its own files next to them: the Remotion kit (`src/kit`, `src/cover`), `scripts/`, the base skills, `brand/_template`, `platform/skills`. The hub copies those at every start (`workspace/.reel-studio/program.json` lists them), so an update replaces them. If you edited one, your version is first saved in `workspace/.reel-studio/overwritten/<time>/`. Put your own changes in your own folders (`src/<brand>/`).
 
-Volume names are prefixed with `COMPOSE_PROJECT_NAME` (default `reel-studio`). The volume `hub-data` and the setting `HUB_DATA_DIR` were never used and are gone.
-
-### One studio folder (optional, the new layout)
-
-Set `STUDIO_HOME` in `.env` (for example `/home/me/ReelStudio`) and everything of yours lives outside the program, so updating or reinstalling the program never touches it:
-
-| What | Where |
-|---|---|
-| Brands, reels, character files, the reels' own code, the Remotion project | `$STUDIO_HOME/workspace/` (`brand/`, `reels/`, `mascot/`, `public/`, `src/`) |
-| Hub state and each brand's Instagram login | `$STUDIO_HOME/data/` (`brands/<slug>/profile` holds the login) |
-| The program: hub, scripts, Remotion kit, base skills | this repository; at every start the hub copies its own files into the workspace (`.reel-studio/program.json` lists them) |
-
-The workspace holds the program's files as copies: the Remotion kit (`src/kit`, `src/cover`), `scripts/` and the base skills are overwritten by an update. If you edited one, the update saves your version in `workspace/.reel-studio/overwritten/<time>/` first. Put your own changes in your own folders (`src/<brand>/`).
-
-Moving from the old layout: stop the hub, run `scripts/migrate-layout.sh` (it only shows the plan), then `scripts/migrate-layout.sh --apply`. It copies, never moves: your originals stay until you delete them. Then set `STUDIO_HOME` in `.env` and run `./update.sh`.
+**Moving from the old layout** (everything in the repository folder): stop the hub, run `scripts/migrate-layout.sh` (it only shows the plan), then `scripts/migrate-layout.sh --apply`. It copies, never moves: your originals stay until you delete them. Then add `STUDIO_HOME=<folder>` to `.env` and run `./update.sh`.
 
 ## Backup and restore
 
-Nothing is backed up automatically. What matters, small to large:
-
-1. **Your brands and the hub state** (small): `brand/`, `reels/`, `characters/`, `mascot/`, `public/` (your sounds), `platform/data/` and `.env`.
-2. **The Instagram login** (small): the volume `<project>_chrome-profile`. If you lose it you only log in again.
-3. The voice engine and models (10 to 15 GB): can be downloaded again, no need to back them up. Your voice samples are in `brand/<slug>/voice/`.
+Nothing is backed up automatically. Your files are the studio folder (`workspace/` and `data/`, a few hundred MB to a few GB, mostly your reels and character frames). The voice engine and its models (10 to 15 GB) can be downloaded again, no need to back them up. Your voice samples are in `workspace/brand/<slug>/voice/`.
 
 ```bash
 source scripts/stack-lib.sh
 mkdir -p ~/reel-hub-backup && chmod 700 ~/reel-hub-backup
-dc stop                                                        # a consistent copy of the browser profile
-tar czf ~/reel-hub-backup/project-$(date +%F).tgz brand reels characters mascot public platform/data .env 2>/dev/null
-docker run --rm -v "$(env_get COMPOSE_PROJECT_NAME)_chrome-profile":/v:ro -v ~/reel-hub-backup:/b alpine \
-  tar czf /b/chrome-profile-$(date +%F).tgz -C /v .
+dc stop                                                        # a consistent copy of the browser profiles
+tar czf ~/reel-hub-backup/studio-$(date +%F).tgz -C "$(studio_home)" workspace data
 dc start
 ```
 
-The archive of the project contains `.env` and so the hub token: keep it private. Restore, with the stack stopped:
+`.env` (the hub token and ports) is not in that archive: copy it by hand if you want it, and keep it private. Restore into an empty studio folder, with the stack stopped:
 
 ```bash
-tar xzf ~/reel-hub-backup/project-<date>.tgz                   # from the repository root
-docker run --rm -v "$(env_get COMPOSE_PROJECT_NAME)_chrome-profile":/v -v ~/reel-hub-backup:/b alpine \
-  sh -c 'cd /v && tar xzf /b/chrome-profile-<date>.tgz'
+source scripts/stack-lib.sh
+tar xzf ~/reel-hub-backup/studio-<date>.tgz -C "$(studio_home)"
 dc start
 ```
 
-`./uninstall.sh --yes` keeps the volumes; `./uninstall.sh --yes --delete-volumes` deletes them.
+To use the same studio on another computer, copy the folder, run `./install.sh` there with `STUDIO_HOME` pointing at it, and log in to Claude and Instagram again if the browser profiles were not copied.
 
 ## Update
 
@@ -157,7 +138,7 @@ docker exec "$(env_get CONTAINER_NAME)" bash scripts/smoke-test.sh              
 ```
 
 Every job also keeps its own log, shown on the Jobs page. A failed Instagram step leaves a screenshot in
-`platform/data/brands/<slug>/shots/`.
+`$STUDIO_HOME/data/brands/<slug>/shots/`.
 
 ## Hub environment variables
 
@@ -168,11 +149,13 @@ Set by the compose file from `.env`; useful when you run the hub yourself.
 | `HUB_PORT` | `4000` | Port to listen on. |
 | `HUB_HOST` | `0.0.0.0` in Docker, else `127.0.0.1` | Address to listen on. Docker publishes the port on `127.0.0.1` only. |
 | `HUB_TOKEN` | none | Access token. If unset the hub makes one in `<data>/dev-token` and says so in the log. |
-| `HUB_DATA` | `<root>/platform/data` | Where the hub keeps its state. |
-| `REEL_ROOT` | three levels above the hub | The project folder (brands, reels, skills). |
+| `REEL_STUDIO_HOME` | `~/ReelStudio` | The studio folder; with it set, the workspace is `<it>/workspace` and the data `<it>/data`. In Docker the compose file sets the two below directly. |
+| `HUB_DATA` | `<REEL_STUDIO_HOME>/data` | Where the hub keeps its state (settings, jobs, each brand's data and Instagram login). |
+| `REEL_ROOT` | `<REEL_STUDIO_HOME>/workspace` | The workspace (brands, reels, the Remotion project); Claude jobs run in it. |
+| `PROGRAM_ROOT` | three levels above the hub | The program folder (this repository): the hub's code and the files it copies into the workspace. |
 | `HUB_CLAUDE_BIN` | `claude` | The Claude command; in Docker `/usr/local/bin/claude-hub`. |
 | `HUB_BLOG_DIR` | `<root>/sources/blog` | Default folder of source texts for the idea jobs (a brand can set its own). |
-| `CHROME_PROFILE_ROOT` | `/data/chrome-profile` | Where the Instagram browser profiles live, one folder per brand. |
+| `CHROME_PROFILE_ROOT` | none | Old setting: a shared folder with one browser profile per brand. Without it each brand's login is in `<data>/brands/<slug>/profile`. |
 | `HUB_SCHEDULER` | on | `off` replaces the Instagram scheduler with a stub that does nothing. |
 | `HUB_SCHEDULER_MODULE` | `./scheduler/index.js` | Another module with the scheduler interface (a test fixture, for example). |
 | `HUB_NOVNC_URL` | `http://127.0.0.1:6080` | Where the Instagram page finds noVNC. |
@@ -200,14 +183,14 @@ Set `VOICE_ENGINE_INSTALL=0` in `.env` to skip the engine and model (voices will
 ## Log in to Instagram
 
 Open the hub, choose the brand, open the Instagram page and press the login button: a noVNC window opens on the Chromium running in the
-container. Log in yourself (the hub never types your password). The profile of each brand is kept in the volume under
-`/data/chrome-profile/<slug>/`.
+container. Log in yourself (the hub never types your password). The profile of each brand is kept in your studio folder, in
+`data/brands/<slug>/profile/`.
 
 ## Blender device
 
 `BLENDER_DEVICE=cpu|gpu|auto` in `.env` (or on the Settings page), then `dc up -d` to apply. `/usr/local/bin/blender-run` (also installed
 as `blender`) reads it: `cpu` is Mesa software GL on Xvfb, `gpu` is NVIDIA GL, `auto` is `gpu` if `nvidia-smi` works.
-Test with a character: `docker exec <name> blender -b -P <project>/mascot/<character>.py -- still idle` (writes `mascot/work/still-idle-0-0.png`).
+Test with a character: `docker exec <name> blender -b -P <workspace>/mascot/<character>.py -- still idle` (writes `mascot/work/still-idle-0-0.png`).
 
 ## Running the hub without Docker
 
@@ -216,13 +199,12 @@ use `HUB_SCHEDULER=off` or a stand-in scheduler module.
 
 ```bash
 cd platform/hub && npm ci && npm run build:web
-HUB_PORT=4300 HUB_TOKEN=any-token REEL_ROOT=/path/to/a/copy HUB_DATA=/path/to/a/data-folder npx tsx src/index.ts
+HUB_PORT=4300 HUB_TOKEN=any-token REEL_STUDIO_HOME=/path/to/a/scratch-folder npx tsx src/index.ts
 ```
 
-`npm run dev` builds the web app and starts the hub on the defaults; `npm run test` runs the 498 tests.
+`npm run dev` builds the web app and starts the hub on the defaults; `npm run test` runs the tests.
 
 ## Removing everything
 
 `./uninstall.sh` removes the container and image and asks before deleting the volumes. `--yes` keeps the volumes, `--yes --delete-volumes`
-deletes them (the Instagram login and the voice engine go with them). Your brands, reels and `platform/data/` are in the project folder and
-are never touched by it.
+deletes them (the voice engine and its models go with them: about 20 GB to download again). Your studio folder (brands, reels, hub data, Instagram logins) is never touched by it.
