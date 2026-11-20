@@ -89,6 +89,22 @@ Note: the compose file also sets `HUB_DATA_DIR=/data` and mounts a volume `hub-d
 `HUB_DATA_DIR`) and defaults to `platform/data` in the project folder, so the hub's state is in the project folder and not in that volume
 (see [TODO.md](../TODO.md)).
 
+Volume names are prefixed with `COMPOSE_PROJECT_NAME` (default `reel-studio`). The volume `hub-data` and the setting `HUB_DATA_DIR` were never used and are gone.
+
+### One studio folder (optional, the new layout)
+
+Set `STUDIO_HOME` in `.env` (for example `/home/me/ReelStudio`) and everything of yours lives outside the program, so updating or reinstalling the program never touches it:
+
+| What | Where |
+|---|---|
+| Brands, reels, character files, the reels' own code, the Remotion project | `$STUDIO_HOME/workspace/` (`brand/`, `reels/`, `mascot/`, `public/`, `src/`) |
+| Hub state and each brand's Instagram login | `$STUDIO_HOME/data/` (`brands/<slug>/profile` holds the login) |
+| The program: hub, scripts, Remotion kit, base skills | this repository; at every start the hub copies its own files into the workspace (`.reel-studio/program.json` lists them) |
+
+The workspace holds the program's files as copies: the Remotion kit (`src/kit`, `src/cover`), `scripts/` and the base skills are overwritten by an update. If you edited one, the update saves your version in `workspace/.reel-studio/overwritten/<time>/` first. Put your own changes in your own folders (`src/<brand>/`).
+
+Moving from the old layout: stop the hub, run `scripts/migrate-layout.sh` (it only shows the plan), then `scripts/migrate-layout.sh --apply`. It copies, never moves: your originals stay until you delete them. Then set `STUDIO_HOME` in `.env` and run `./update.sh`.
+
 ## Backup and restore
 
 Nothing is backed up automatically. What matters, small to large:

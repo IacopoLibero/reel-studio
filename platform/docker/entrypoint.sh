@@ -1,8 +1,9 @@
 #!/bin/bash
 # Container start: create the host's user inside, hand the named volumes to it, then run supervisord.
-# All paths are the same as on the host: HOST_HOME is the host HOME, REEL_ROOT the project folder.
+# All paths are the same as on the host: HOST_HOME is the host HOME, REEL_ROOT the workspace (the project folder in the old layout),
+# PROGRAM_ROOT the repository with the hub's code (the same folder as REEL_ROOT in the old layout).
 set -u
-U="${HOST_USER:?}"; UID_="${HOST_UID:?}"; GID_="${HOST_GID:?}"; H="${HOST_HOME:?}"; P="${REEL_ROOT:?}"
+U="${HOST_USER:?}"; UID_="${HOST_UID:?}"; GID_="${HOST_GID:?}"; H="${HOST_HOME:?}"; P="${REEL_ROOT:?}"; PR="${PROGRAM_ROOT:-$P}"
 
 getent group "$GID_" >/dev/null || groupadd -g "$GID_" "$U"
 if ! getent passwd "$UID_" >/dev/null; then
@@ -18,10 +19,12 @@ mkdir -p "$H" "$H/.cache" "$H/.config" "$H/.local/share/uv"
 own "$H"
 d="$(dirname "$P")"; while [ "$d" != "/" ] && [ "$d" != "$H" ] && [ "$d" != "." ]; do own "$d"; d="$(dirname "$d")"; done
 for v in "$H/.cache" "$H/.cache/huggingface" "$H/.cache/uv" "$H/.config" "$H/.local" "$H/.local/share" "$H/.local/share/uv" "$H/.local/share/uv/python" \
-         /data /data/chrome-profile "$H/.config/VoiceStudio" "$H/.omnivoice" "$P/whisper.cpp" "$P/platform/hub/node_modules"; do
+         /data /data/chrome-profile "$H/.config/VoiceStudio" "$H/.omnivoice" "$P/whisper.cpp" "$P/node_modules" "$PR/platform/hub/node_modules"; do
   own "$v"
 done
 mkdir -p /data/chrome-profile /data/shots /var/log/reel-hub
+[ "$P" != "$PR" ] && mkdir -p "$P" && own "$P"
+[ -n "${HUB_DATA:-}" ] && mkdir -p "$HUB_DATA" && own "$HUB_DATA"
 chown -R "$UID_:$GID_" /data /var/log/reel-hub 2>/dev/null
 ln -sfn "$P" /workspace
 

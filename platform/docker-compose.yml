@@ -22,7 +22,8 @@ services:
       HOST_GID: ${HOST_GID:?}
       HOST_HOME: ${HOST_HOME:?}
       REEL_ROOT: ${REEL_ROOT:?}
-      HUB_DATA_DIR: /data
+      # The program folder (the hub's code). With STUDIO_HOME set (docker-compose.studio.yml) REEL_ROOT becomes the workspace and this stays the repository.
+      PROGRAM_ROOT: ${REEL_ROOT:?}
       HUB_CLAUDE_BIN: /usr/local/bin/claude-hub
       HUB_BLOG_DIR: ${BLOG_DIR:-}
       IG_USER_ID: ${IG_USER_ID:-}
@@ -43,7 +44,6 @@ services:
       - ./docker/claude-hub:/usr/local/bin/claude-hub:ro
       - voicestudio-config:${HOST_HOME}/.config/VoiceStudio
       - omnivoice-data:${HOST_HOME}/.omnivoice
-      - hub-data:/data
       - chrome-profile:/data/chrome-profile
       - uv-python:${HOST_HOME}/.local/share/uv/python
       - uv-cache:${HOST_HOME}/.cache/uv
@@ -60,7 +60,6 @@ services:
 volumes:
   voicestudio-config:
   omnivoice-data:
-  hub-data:
   chrome-profile:
   uv-python:
   uv-cache:

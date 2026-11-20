@@ -38,6 +38,7 @@ dc() {
   local f=(-f "$REPO_ROOT/platform/docker-compose.yml")
   [ "$(env_get GPU)" = 1 ] && f+=(-f "$REPO_ROOT/platform/docker-compose.gpu.yml")
   [ -n "$(env_get BLOG_DIR)$(env_get BLOG_MOUNT)" ] && f+=(-f "$REPO_ROOT/platform/docker-compose.blog.yml")
+  [ -n "$(env_get STUDIO_HOME)" ] && f+=(-f "$REPO_ROOT/platform/docker-compose.studio.yml")
   [ -d "$(env_get HOST_HOME)/.composio" ] && f+=(-f "$REPO_ROOT/platform/docker-compose.composio.yml")
   # BLOG_MOUNT defaults to BLOG_DIR; compose substitutes it into the blog file
   BLOG_MOUNT="${BLOG_MOUNT:-$(env_get BLOG_MOUNT)}" docker compose --project-directory "$REPO_ROOT/platform" --env-file "$ENV_FILE" "${f[@]}" "$@"

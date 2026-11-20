@@ -27,12 +27,13 @@ then the app, then the big features, which are born with the final structure and
 
 ### 1. Before the app (in the current setup)
 
-- **First of all: restructure the data into one data folder** (in progress). Layout: `~/ReelStudio/workspace` (brand/, reels/, mascot/, public/, the reels' own code in src/, the Remotion project) and
+- **First of all: restructure the data into one data folder** (almost done). Layout: `~/ReelStudio/workspace` (brand/, reels/, mascot/, public/, the reels' own code in src/, the Remotion project) and
   `~/ReelStudio/data` (hub settings, jobs, each brand's data and its Instagram login in `brands/<slug>/profile`); caches and models stay in Docker volumes until the packaging step.
-  Done and tested (`platform/hub/src/layout/`, `npm run migrate:layout`): the list of program files and their sync into the workspace, the copy-only migration with verification, the new default place of a brand's login.
-  Left: (1) wire the container: mount workspace and data, `REEL_ROOT` and `HUB_DATA` pointing at them, a volume for the workspace's `node_modules`, `whisper.cpp` under the workspace; try it on a copy first;
-  (2) stop the hub, run the migration on the real data (`--apply`), start the hub on the new folders and check a reel, a schedule and an Instagram login; (3) delete the originals only after that;
-  (4) point `scripts/new-brand.sh`, `install.sh`, `update.sh`, the Remotion and Ootto skill installers and the docs at the workspace; (5) the Remotion kit is overwritten by a sync (saved aside if you edited it): say so in the README.
+  Done and tested: the code (`platform/hub/src/layout/`), `scripts/migrate-layout.sh`, `docker-compose.studio.yml` (switched on by `STUDIO_HOME` in `.env`), the prepare step at hub start. A full trial on a copy of the real data
+  (separate test stack, port 4300) showed the same brands, 24 reels and states as the live hub, and a Remotion frame rendered from the new workspace identical byte for byte.
+  Left: (1) the real switch, with the hub stopped: `scripts/migrate-layout.sh --apply`, `STUDIO_HOME` in `.env`, `./update.sh`, then check a reel, a schedule and the Instagram login;
+  (2) delete the old copies in the repository and the old volumes (`chrome-profile`, `hub-data`) only after that; (3) point `install.sh`, `update.sh`, `new-brand.sh`, `smoke-test.sh` and the skill installers at the workspace
+  (they still assume the repository folder holds everything); (4) the `whisper.cpp` volume is mounted in both places for now.
 - **Closing keywords in the brand creator (required).** The interview must propose the closing keywords (`factory.closingRules`, product and general lists) from the brand's products, and the user confirms or edits them before the brand is created. Today it does not: they are added by hand in Settings after the brand exists. Defaults are empty, so a brand without keywords gets closing B on every reel.
 - **Voice step in the brand and character creator (required).** Today the creator makes no voice: the user must already have a sample (`voice.wav` plus its words), reuse one from another
   brand, or skip it. The step should offer two ways: (1) **Claude proposes a few example voices** from the brand's tone and character (a short description for each, the `instruct` text), and a `voice.generate` job
@@ -42,7 +43,6 @@ then the app, then the big features, which are born with the final structure and
 - **The job type `voice.generate` stays**: it is declared (type, queue lane, daily gate) but no handler creates it yet. It becomes the job of the voice step above: Claude proposes the example voices and the job makes them with VoiceStudio. Voices for reels are still made inside `reel.make` by `scripts/voice.mjs`.
 - **Brand creator polish:** edit a brand's colours, fonts and closing lines in the hub after creation (today: edit `brand.json`); a "first reel" shortcut that proposes ten
   starting questions right after creation (today: "Find new ideas" in the Factory).
-- **Dead setting.** `HUB_DATA_DIR=/data` in `platform/docker-compose.yml` and `supervisord.conf` is read by nothing (the hub uses `HUB_DATA`), so the volume `hub-data` is unused: remove both.
 - **Retake the screenshots** in `docs/images/` when a page changes visibly (see CONTRIBUTING.md). The Reels page changed (Posted and yellow Scheduled badges).
 
 ### 2. The app
