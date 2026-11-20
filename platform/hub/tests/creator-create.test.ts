@@ -61,6 +61,20 @@ describe("brand.create from the form", () => {
     expect(env.svc.uploads.get(logo.id, "logo")).toBeNull();
   });
 
+  it("saves the closing keywords of the request in the brand's settings, once each", async () => {
+    await create({ brand: formBrand(), closingRules: { product: ["Menu", "menu", "qr code"], general: ["tax", "QR code", "hiring"] } });
+    const s = env.svc.settings.get("acme-bakery");
+    expect(s.factory.closingRules).toEqual({ product: ["Menu", "qr code"], general: ["tax", "hiring"] });
+    expect(s.daily.enabled).toBe(false);
+  });
+
+  it("keeps the settings defaults when the request has none or only empty lists", async () => {
+    await create({ brand: formBrand() });
+    expect(env.svc.settings.get("acme-bakery").factory.closingRules).toEqual({ product: [], general: [] });
+    await create({ brand: formBrand("Other", "other"), closingRules: { product: [], general: [] } }, "b".repeat(32));
+    expect(env.svc.settings.get("other").factory.closingRules).toEqual(DEFAULT_SETTINGS.factory.closingRules);
+  });
+
   it("uses an svg logo instead of the placeholder png", async () => {
     const logo = env.svc.uploads.put("logo", SVG);
     await create({ brand: formBrand(), logoUpload: logo.id });

@@ -15,6 +15,8 @@ export interface BrandDraft {
   colors: { background: string; text: string; accent: string; secondary: string };
   fonts: { headline: string; body: string };
   closing: { A: { label: string; line: string }; B: { label: string; line: string } };
+  /** One keyword or phrase per line (commas also split). Product words end a reel with closing A, general words with closing B. */
+  closingKeywords: { product: string; general: string };
   offerOn: boolean;
   offer: { lastDay: string; regex: string };
   instagramAccount: string;
@@ -28,8 +30,35 @@ export const emptyDraft = (): BrandDraft => ({
   colors: { background: "#f5f5f0", text: "#1a1a1a", accent: "#2f6fed", secondary: "#7a4dff" },
   fonts: { headline: "Oswald", body: "Inter" },
   closing: { A: { label: "", line: "" }, B: { label: "Follow for tips", line: "Follow me for more tips." } },
+  closingKeywords: { product: "", general: "" },
   offerOn: false, offer: { lastDay: "", regex: "" }, instagramAccount: "", blogDir: "",
 });
+
+/** The words of a keyword box: one per line or comma, trimmed, each once (case ignored), at most 60 characters. */
+export function parseKeywords(text: string): string[] {
+  const seen = new Set<string>();
+  return text.split(/[\n,]/).map((k) => k.trim().slice(0, 60)).filter((k) => {
+    const key = k.toLowerCase();
+    if (!k || seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
+export const keywordsToText = (list: readonly string[]): string => list.join("\n");
+
+/** What the create request carries: the two lists, with a word typed in both kept only as a product word. */
+export function closingRulesOf(k: { product: string; general: string }): { product: string[]; general: string[] } {
+  const product = parseKeywords(k.product);
+  const have = new Set(product.map((x) => x.toLowerCase()));
+  return { product, general: parseKeywords(k.general).filter((x) => !have.has(x.toLowerCase())) };
+}
+
+/** Words that are in both boxes, so the person can be told the product side wins. */
+export function sharedKeywords(k: { product: string; general: string }): string[] {
+  const g = new Set(parseKeywords(k.general).map((x) => x.toLowerCase()));
+  return parseKeywords(k.product).filter((x) => g.has(x.toLowerCase()));
+}
 
 /** A slug from a name, free among `taken`: "Café Roma" gives cafe-roma, then cafe-roma-2. Mirrors the hub's uniqueSlug. */
 export function slugFor(name: string, taken: readonly string[]): string {

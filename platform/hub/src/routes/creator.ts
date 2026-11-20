@@ -11,6 +11,8 @@ import { checkFont, loadFontList } from "../creator/fonts.js";
 import { FileError, LIMITS, MB, type UploadKind } from "../creator/files.js";
 import { interviewTurn, turnRequestSchema } from "../creator/interview.js";
 import { CREATE_STEPS, createRequestSchema } from "../creator/request.js";
+import { VOICE_STEPS, voiceParamsSchema } from "../creator/voice-job.js";
+import { UPLOAD_ID } from "../creator/uploads.js";
 import { readZip, ZipError } from "../creator/zip.js";
 import type { CreatorServices } from "../creator/services.js";
 import { validateBrand } from "../brands/schema.js";
@@ -106,6 +108,26 @@ export function creatorRoutes(app: FastifyInstance, d: AppDeps, svc: CreatorServ
     } catch (e) {
       throw new HttpError(424, `The assistant could not answer: ${(e as Error).message}`);
     } finally { interviewing = false; }
+  });
+
+  /** The voice step: the assistant proposes voices for the brand typed so far and VoiceStudio makes each one. The job's result lists them as staged uploads. */
+  app.post(`${prefix}/voices`, async (req, reply) => {
+    const p = voiceParamsSchema.safeParse(req.body);
+    if (!p.success) throw new HttpError(400, `${p.error.issues[0]?.path.join(".") || "request"}: ${p.error.issues[0]?.message ?? "invalid"}`);
+    const open = d.store.list().find((j) => j.type === "voice.generate" && (j.status === "queued" || j.status === "running"));
+    if (open) return { job: open }; // one round at a time: a page that lost track of it picks it up again
+    // the tag "new" is a reserved slug: no brand can ever own this job
+    const job = d.store.create({ type: "voice.generate", brand: "new", title: `Voices for ${p.data.brand.name}`, steps: VOICE_STEPS, params: p.data });
+    d.runner.enqueue(job);
+    return reply.code(202).send({ job });
+  });
+
+  /** Plays a voice the step made (or a sample uploaded and not yet used). */
+  app.get<{ Params: { id: string } }>(`${prefix}/uploads/voice/:id`, async (req, reply) => {
+    if (!UPLOAD_ID.test(req.params.id)) throw new HttpError(404, "Not found.");
+    const s = svc.uploads.get(req.params.id, "voice");
+    if (!s) throw new HttpError(404, "That voice is gone. Make the voices again.");
+    return reply.header("content-type", "audio/wav").header("cache-control", "private, max-age=3600").header("x-content-type-options", "nosniff").send(svc.uploads.read(req.params.id, "voice").data);
   });
 
   app.post("/api/brands", async (req, reply) => {

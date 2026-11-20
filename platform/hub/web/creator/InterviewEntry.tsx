@@ -1,14 +1,17 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { api, type CreatorOptions, type InterviewMessage, type InterviewTurn } from "../api";
-import { Card } from "./fields";
+import { Card, ClosingKeywords } from "./fields";
 import { Extras } from "./Extras";
-import { brandToDraft } from "./draft";
+import { voiceBrandOf } from "./FormEntry";
+import { brandToDraft, closingRulesOf, keywordsToText } from "./draft";
 import { emptyExtras, extrasProblems, extrasToRequest, type ExtrasState } from "./extras";
 import { CreateStatus, useCreate, type Created } from "./useCreate";
 
 type Summary = Record<string, unknown>;
 const obj = (v: unknown): Record<string, unknown> => (v && typeof v === "object" ? (v as Record<string, unknown>) : {});
 const text = (v: unknown): string => (typeof v === "string" ? v : "");
+
+const words = (v: unknown): string => (Array.isArray(v) ? v.filter((x): x is string => typeof x === "string").join(", ") : "");
 
 /** What the assistant has understood so far, as a short list that fills in while the conversation goes on. */
 export function SummaryPanel({ summary }: { summary: Summary }) {
@@ -19,6 +22,7 @@ export function SummaryPanel({ summary }: { summary: Summary }) {
     ["Colours", ["background", "text", "accent", "secondary"].map((k) => text(c[k])).filter(Boolean).join("  ")],
     ["Fonts", [text(f.headline), text(f.body)].filter(Boolean).join(" / ")],
     ["Closing A", text(obj(cl.A).line)], ["Closing B", text(obj(cl.B).line)],
+    ["Closing A words", words(obj(summary.closingRules).product)], ["Closing B words", words(obj(summary.closingRules).general)],
     ["Offer", [text(o.lastDay), text(o.regex)].filter(Boolean).join(" · ")], ["Instagram", text(summary.instagramAccount)],
     ["Character", ch.wanted === false ? "none" : [text(ch.name), text(ch.description)].filter(Boolean).join(": ")],
   ];
@@ -42,6 +46,7 @@ export function InterviewEntry({ options, onCreated }: { options: CreatorOptions
   const [json, setJson] = useState("");
   const [style, setStyle] = useState("");
   const [extras, setExtras] = useState<ExtrasState>(emptyExtras);
+  const [keywords, setKeywords] = useState({ product: "", general: "" });
   const [checkErrors, setCheckErrors] = useState<string[]>([]);
   const started = useRef(false);
   const end = useRef<HTMLDivElement>(null);
@@ -54,7 +59,7 @@ export function InterviewEntry({ options, onCreated }: { options: CreatorOptions
       const t = await api.interview(next);
       setTurn(t);
       setMessages([...next, { role: "assistant", text: t.say }]);
-      if (t.done && t.draft) { setJson(JSON.stringify(t.draft.brand, null, 2)); setStyle(t.draft.styleMd); setCheckErrors(t.draft.errors); }
+      if (t.done && t.draft) { setJson(JSON.stringify(t.draft.brand, null, 2)); setStyle(t.draft.styleMd); setCheckErrors(t.draft.errors); setKeywords({ product: keywordsToText(t.draft.closingRules.product), general: keywordsToText(t.draft.closingRules.general) }); }
     } catch (e) { setError((e as Error).message); } finally { setBusy(false); }
   };
   useEffect(() => { if (!started.current) { started.current = true; void ask([]); } }, []);
@@ -77,7 +82,7 @@ export function InterviewEntry({ options, onCreated }: { options: CreatorOptions
     const v = await api.validateBrand(parsed).catch((e: Error) => ({ ok: false, errors: [e.message] }));
     setCheckErrors(v.errors);
     if (!v.ok) return;
-    void create.start({ source: "interview", brand: parsed, styleMd: style, ...extrasToRequest(extras, {}) });
+    void create.start({ source: "interview", brand: parsed, styleMd: style, closingRules: closingRulesOf(keywords), ...extrasToRequest(extras, {}) });
   };
 
   return (
@@ -110,7 +115,10 @@ export function InterviewEntry({ options, onCreated }: { options: CreatorOptions
             <textarea id="iv-style" className="mono tall" rows={14} spellCheck={false} value={style} onChange={(e) => setStyle(e.target.value)} />
             {checkErrors.length > 0 && <ul className="error" role="alert">{checkErrors.map((e) => <li key={e}>{e}</li>)}</ul>}
           </Card>
-          <Extras value={extras} onChange={setExtras} options={options} brandName={draft?.name ?? ""} colors={draft?.colors ?? { background: "#ffffff", text: "#000000", accent: "#2f6fed", secondary: "#7a4dff" }} problems={problems} />
+          <Card title="Which closing a reel gets" intro="The assistant proposed these words from what the brand sells. A question with a word from A ends with closing A, the others with B. Add or remove words.">
+            <ClosingKeywords value={keywords} onChange={setKeywords} />
+          </Card>
+          <Extras value={extras} onChange={setExtras} options={options} brandName={draft?.name ?? ""} colors={draft?.colors ?? { background: "#ffffff", text: "#000000", accent: "#2f6fed", secondary: "#7a4dff" }} problems={problems} {...(draft ? { voiceBrand: voiceBrandOf(draft) } : {})} />
           <div className="create-bar"><span className="muted">Creates brand/{draft?.slug || "…"}/ and everything around it.</span><span className="grow" /><button type="button" className="btn primary" disabled={create.busy} onClick={() => void submit()}>{create.busy ? "Creating" : "Create brand"}</button></div>
           <CreateStatus job={create.job} error={create.error} />
         </>

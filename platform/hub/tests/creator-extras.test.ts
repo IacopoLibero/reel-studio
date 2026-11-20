@@ -40,3 +40,19 @@ describe("extras: the request", () => {
     expect(extrasToRequest(withChar({ mode: "import", id: "bun" })).character).toEqual({ mode: "import", id: "bun", name: "bun" });
   });
 });
+
+describe("the suggested voice", () => {
+  const cand = { id: "a".repeat(32), label: "Warm and calm", instruct: "female, warm", text: "Welcome to our little bakery, fresh every morning.", seconds: 4 };
+  const designed = (over: Partial<ExtrasState["voice"]> = {}): ExtrasState => ({ ...emptyExtras(), voice: { ...emptyExtras().voice, mode: "design", candidates: [cand], ...over } });
+  it("asks for a pick before creating", () => {
+    expect(extrasProblems(designed()).voice).toMatch(/pick one/);
+    expect(extrasProblems(designed({ wav: { id: cand.id, name: cand.label }, text: cand.text }))).toEqual({});
+  });
+  it("is sent as the picked voice upload with its words", () => {
+    const e = designed({ wav: { id: cand.id, name: cand.label }, text: `  ${cand.text} ` });
+    expect(extrasToRequest(e).voice).toEqual({ mode: "upload", wavUpload: cand.id, text: cand.text });
+  });
+  it("sends nothing in the import, which has its own voice files", () => {
+    expect(extrasToRequest(designed({ wav: { id: cand.id, name: "x" }, text: cand.text }), { hideVoice: true }).voice).toEqual({ mode: "later" });
+  });
+});

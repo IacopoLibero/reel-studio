@@ -1,17 +1,20 @@
 import { EMPTY_CHARACTER_FIELDS, type CharacterFields } from "../../src/shared/character-prompt";
-import type { CreateRequest } from "../api";
+import type { CreateRequest, VoiceCandidate } from "../api";
 
 /** The choices around the brand itself: logo, voice, character and the daily loop. Shared by the form, the interview review and the import. */
 export interface ExtrasState {
   logo: { id: string; name: string; url: string } | null;
-  voice: { mode: "later" | "reuse" | "upload"; from: string; wav: { id: string; name: string } | null; text: string };
+  /** "design": the voices the hub made for the brand. The picked one sits in `wav` and `text`, so it is sent like an uploaded sample. */
+  voice: { mode: "later" | "reuse" | "upload" | "design"; from: string; wav: { id: string; name: string } | null; text: string; candidates: VoiceCandidate[];
+    /** `instruct` of every voice heard so far in this form (newest last), so a new round proposes others. */
+    heard: string[] };
   character: { mode: "none" | "create" | "import"; name: string; id: string; fields: CharacterFields; sheet: { id: string; name: string; url: string } | null };
   daily: boolean;
 }
 
 export const emptyExtras = (): ExtrasState => ({
   logo: null,
-  voice: { mode: "later", from: "", wav: null, text: "" },
+  voice: { mode: "later", from: "", wav: null, text: "", candidates: [], heard: [] },
   character: { mode: "none", name: "", id: "", fields: { ...EMPTY_CHARACTER_FIELDS }, sheet: null },
   daily: false,
 });
@@ -23,7 +26,8 @@ export function extrasProblems(e: ExtrasState, s: ExtrasScope = {}): Record<stri
   if (!s.hideVoice) {
     if (e.voice.mode === "reuse" && !e.voice.from) p.voice = "Choose the brand whose voice you want to reuse.";
     if (e.voice.mode === "upload" && !e.voice.wav) p.voice = "Upload the WAV sample.";
-    if (e.voice.mode === "upload" && e.voice.wav && e.voice.text.trim().length < 3) p.voiceText = "Type the words spoken in the sample.";
+    if (e.voice.mode === "design" && !e.voice.wav) p.voice = "Make some voices, listen, and pick one.";
+    if ((e.voice.mode === "upload" || e.voice.mode === "design") && e.voice.wav && e.voice.text.trim().length < 3) p.voiceText = "Type the words spoken in the sample.";
   }
   if (e.character.mode === "create" && !e.character.name.trim()) p.character = "Give the character a name.";
   if (e.character.mode === "import" && !e.character.id) p.character = "Choose which character to use.";

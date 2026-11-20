@@ -9,6 +9,8 @@ export interface CreatorServices {
   brands: BrandRegistry;
   uploads: UploadStore;
   settings: SettingsStore;
+  /** Base URL of VoiceStudio for the voice step. Default http://127.0.0.1:3900. */
+  voiceUrl?: string;
   /** Starts the daily loop of a brand (startDailyLoops(...).ensure). */
   ensureDaily: (slug: string) => boolean;
 }

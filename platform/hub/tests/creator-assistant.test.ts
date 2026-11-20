@@ -104,6 +104,17 @@ describe("the interview", () => {
     expect((r.draft?.brand.instagram as { profileDir: unknown }).profileDir).toBeNull();
     expect(r.draft?.styleMd).toContain("# Style guide: Acme Bakery");
   });
+  it("carries the proposed closing keywords into the draft, empty when none came", () => {
+    const rules = { product: ["menu", "qr code"], general: ["tax"] };
+    expect(makeDraft({ name: "Acme Bakery" }, undefined, [], rules).closingRules).toEqual(rules);
+    expect(makeDraft({ name: "Acme Bakery" }, undefined, []).closingRules).toEqual({ product: [], general: [] });
+  });
+  it("accepts closing keywords in a turn and asks for them in the prompt", () => {
+    const t = parseTurn(JSON.stringify({ say: "ok", summary: { closingRules: { product: ["menu"] } }, closingRules: { product: ["menu"], general: ["tax"] } }));
+    expect(t.ok && t.turn.closingRules).toEqual({ product: ["menu"], general: ["tax"] });
+    expect(t.ok && t.turn.summary.closingRules).toEqual({ product: ["menu"], general: [] });
+    expect(buildInterviewPrompt([])).toContain("closing keywords");
+  });
   it("retries once when the answer is not JSON, then gives up with a clear message", async () => {
     process.env.FAKE_MODE = "retry"; process.env.FAKE_STATE = join(tmp, "state");
     expect((await interviewTurn([], { run: run({ kind: "claude", command: "" }), takenSlugs: [] })).say).toContain("brand called");

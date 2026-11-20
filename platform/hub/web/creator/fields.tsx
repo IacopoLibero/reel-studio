@@ -1,6 +1,6 @@
 import { useId, type ReactNode } from "react";
 import { Row } from "../components/SettingsParts";
-import { contrastNote, wordCount } from "./draft";
+import { contrastNote, sharedKeywords, wordCount } from "./draft";
 
 export function Text({ label, help, problem, value, onChange, placeholder, multiline, type = "text" }: { label: string; help?: string; problem?: string | undefined; value: string; onChange: (v: string) => void; placeholder?: string; multiline?: boolean; type?: string }) {
   const id = useId();
@@ -63,5 +63,17 @@ export function Card({ title, children, intro }: { title: string; intro?: string
       {intro && <p className="muted set-intro">{intro}</p>}
       {children}
     </section>
+  );
+}
+
+/** The two keyword boxes that decide which closing a reel gets from its question. */
+export function ClosingKeywords({ value, onChange }: { value: { product: string; general: string }; onChange: (v: { product: string; general: string }) => void }) {
+  const shared = sharedKeywords(value);
+  return (
+    <>
+      <Text label="Words for closing A (what the brand offers)" multiline value={value.product} placeholder={"menu\nqr code\ntranslat*"} help="One per line. A question with one of these words ends with option A. A * at the end means any word starting with it." onChange={(v) => onChange({ ...value, product: v })} />
+      <Text label="Words for closing B (advice, rules, daily work)" multiline value={value.general} placeholder={"tax\nhiring\nregulation"} help="One per line. A question with one of these and none from A ends with option B. A reel that matches nothing also gets B." onChange={(v) => onChange({ ...value, general: v })} />
+      {shared.length > 0 && <p className="note large-text-only">In both boxes: {shared.join(", ")}. The word counts for closing A only.</p>}
+    </>
   );
 }

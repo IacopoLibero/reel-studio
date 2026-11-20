@@ -1,9 +1,9 @@
 import { useMemo, useState } from "react";
 import type { CreatorOptions, FontList } from "../api";
-import { Card, ClosingPreview, ColorField, FontField, Text } from "./fields";
+import { Card, ClosingKeywords, ClosingPreview, ColorField, FontField, Text } from "./fields";
 import { Extras } from "./Extras";
 import { Row } from "../components/SettingsParts";
-import { draftToBrand, emptyDraft as emptyDraftValue, LANGUAGES, SLUG_OK, validateDraft, withName, type BrandDraft } from "./draft";
+import { closingRulesOf, draftToBrand, emptyDraft as emptyDraftValue, LANGUAGES, SLUG_OK, validateDraft, withName, type BrandDraft } from "./draft";
 import { emptyExtras, extrasProblems, extrasToRequest, type ExtrasState } from "./extras";
 import { CreateStatus, useCreate, type Created } from "./useCreate";
 
@@ -46,6 +46,10 @@ export function BrandFields({ draft, onChange, options, fonts, problems }: { dra
         ))}
       </Card>
 
+      <Card title="Which closing a reel gets" intro="Each reel starts from a question. The words below pick its closing: A when the question is about what the brand offers, B when it is general advice. You can change them later in Settings.">
+        <ClosingKeywords value={draft.closingKeywords} onChange={(v) => set({ closingKeywords: v })} />
+      </Card>
+
       <Card title="Offer, Instagram and sources (all optional)">
         <Row label="Running an offer" help="After its last day the offer line is left out of captions automatically.">
           <button type="button" className="switch" role="switch" aria-checked={draft.offerOn} aria-label="Running an offer" onClick={() => set({ offerOn: !draft.offerOn })} />
@@ -59,6 +63,9 @@ export function BrandFields({ draft, onChange, options, fonts, problems }: { dra
   );
 }
 
+/** What the voice step needs to know about a brand typed so far. */
+export const voiceBrandOf = (d: BrandDraft) => ({ name: d.name.trim(), language: d.language, about: d.about.trim(), audience: d.audience.trim(), tone: d.tone.trim() });
+
 /** Entry 1: the form. */
 export function FormEntry({ options, fonts, onCreated }: { options: CreatorOptions; fonts: FontList; onCreated: (c: Created) => void }) {
   const [draft, setDraft] = useState<BrandDraft>(() => withName({ ...emptyDraftValue() }, "", options.slugs));
@@ -70,13 +77,13 @@ export function FormEntry({ options, fonts, onCreated }: { options: CreatorOptio
   const submit = () => {
     setTried(true);
     if (count) return;
-    void create.start({ source: "form", brand: draftToBrand(draft), ...extrasToRequest(extras) });
+    void create.start({ source: "form", brand: draftToBrand(draft), closingRules: closingRulesOf(draft.closingKeywords), ...extrasToRequest(extras) });
   };
   const shown = tried ? problems : filterTouched(problems, draft);
   return (
     <>
       <BrandFields draft={draft} onChange={setDraft} options={options} fonts={fonts} problems={shown} />
-      <Extras value={extras} onChange={setExtras} options={options} brandName={draft.name} colors={draft.colors} problems={shown} />
+      <Extras value={extras} onChange={setExtras} options={options} brandName={draft.name} colors={draft.colors} problems={shown} voiceBrand={voiceBrandOf(draft)} />
       <div className="create-bar">
         <span className={count && tried ? "error" : "muted"}>{count && tried ? `${count} ${count === 1 ? "field needs" : "fields need"} fixing.` : SLUG_OK.test(draft.slug) ? `Creates brand/${draft.slug}/, reels/${draft.slug}/ and the hub's data folder for it.` : "Fill in the name to begin."}</span>
         <span className="grow" />

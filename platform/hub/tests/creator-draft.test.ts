@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { brandToDraft, contrastNote, draftToBrand, emptyDraft, slugFor, validateDraft, withName, wordCount, type BrandDraft } from "../web/creator/draft";
+import { brandToDraft, closingRulesOf, parseKeywords, sharedKeywords, contrastNote, draftToBrand, emptyDraft, slugFor, validateDraft, withName, wordCount, type BrandDraft } from "../web/creator/draft";
 import { validateBrand } from "../src/brands/schema";
 
 const ctx = { taken: ["acme"], fontNames: ["Oswald", "Inter"], fontsChecked: true };
@@ -61,5 +61,21 @@ describe("brand to form values", () => {
     const back = brandToDraft(draftToBrand(d));
     expect(draftToBrand(back)).toEqual(draftToBrand(d));
     expect(brandToDraft({}).colors.accent).toBe("#2f6fed");
+  });
+});
+
+describe("closing keywords in the form", () => {
+  it("splits lines and commas, trims and drops repeats", () => {
+    expect(parseKeywords(" menu\nQR code, menu ,,translat*\n")).toEqual(["menu", "QR code", "translat*"]);
+    expect(parseKeywords("")).toEqual([]);
+  });
+  it("keeps a word in both boxes only on the product side", () => {
+    const k = { product: "menu\nqr", general: "Menu\ntax" };
+    expect(sharedKeywords(k)).toEqual(["menu"]);
+    expect(closingRulesOf(k)).toEqual({ product: ["menu", "qr"], general: ["tax"] });
+  });
+  it("starts empty and is not part of brand.json", () => {
+    expect(emptyDraft().closingKeywords).toEqual({ product: "", general: "" });
+    expect(draftToBrand(filled())).not.toHaveProperty("closingKeywords");
   });
 });

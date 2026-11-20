@@ -190,9 +190,10 @@ In the hub open the menu at the top and choose **New brand**. All three ways end
 folder and file, and registers the brand without a restart.
 
 1. **Fill in a form.** Name, slug, language, website, what it sells, audience, tone; four colours with a contrast check; two Google
-   font names; a logo (PNG or SVG, up to 1 MB); the two closing lines A and B with a live preview of the last card; an optional offer,
-   Instagram account name, folder of source texts; and the voice (reuse another brand's sample, upload a WAV with its text, or decide later).
-2. **Discuss it with an AI.** A chat that asks one question at a time and shows a running summary. You review the generated
+   font names; a logo (PNG or SVG, up to 1 MB); the two closing lines A and B with a live preview of the last card, and the words that decide which closing a reel gets (words about what
+   the brand offers give closing A, advice and daily work give B); an optional offer, Instagram account name, folder of source texts; and the
+   voice (let the assistant suggest three voices and pick the one you like, reuse another brand's sample, upload a WAV with its text, or decide later).
+2. **Discuss it with an AI.** A chat that asks one question at a time and shows a running summary. It proposes the closing lines and the closing words from what the brand sells. You review the generated
    `brand.json` and style guide before creating. The assistant is a global setting: `claude` (the default, read-only tools, no access to
    credentials or other brands), `codex`, or any command that reads the prompt on stdin. **Only `claude` has been tested.**
 3. **Import** a folder or zip with a `brand.json` at the top, to move a brand between machines. Paths that climb out of the folder,

@@ -14,8 +14,8 @@ const auth = { authorization: `Bearer ${TOKEN}` };
 const FX = join(import.meta.dirname, "fixtures");
 let tmp: string, root: string, data: string, app: FastifyInstance, deps: AppDeps;
 
-beforeAll(() => { process.env.HUB_SCHEDULER = "off"; process.env.HUB_LOG_LEVEL = "silent"; });
-afterAll(() => { delete process.env.HUB_SCHEDULER; delete process.env.HUB_LOG_LEVEL; });
+beforeAll(() => { process.env.HUB_SCHEDULER = "off"; process.env.HUB_LOG_LEVEL = "silent"; process.env.VOICE_PORT = "9"; });
+afterAll(() => { delete process.env.HUB_SCHEDULER; delete process.env.HUB_LOG_LEVEL; delete process.env.VOICE_PORT; });
 
 /** Boots the hub in a fresh scratch folder; `makeBin` may write a stand-in claude there and return its path. */
 async function bootWith(makeBin: (dir: string) => string): Promise<void> {
@@ -65,6 +65,34 @@ describe("creator options and validation", () => {
     expect(dup.errors.join(" ")).toContain("already exists");
     if (f.checked) expect((await post("/api/brand-creator/validate", { brand: { ...formBrand(), fonts: { headline: "Not A Font", body: "Inter" } } })).json().errors.join(" ")).toContain("Not A Font");
     expect((await post("/api/brand-creator/validate", {})).statusCode).toBe(400);
+  });
+});
+
+describe("the voice step", () => {
+  it("needs the token and valid params", async () => {
+    expect((await app.inject({ method: "POST", url: "/api/brand-creator/voices", payload: {} })).statusCode).toBe(401);
+    expect((await post("/api/brand-creator/voices", { brand: { name: "" } })).statusCode).toBe(400);
+  });
+  it("hands back the open voice job instead of starting a second one", async () => {
+    const open = deps.store.create({ type: "voice.generate", brand: "new", title: "open", steps: [], params: {} });
+    const r = await post("/api/brand-creator/voices", { brand: { name: "Acme" } });
+    expect(r.statusCode).toBe(200);
+    expect(r.json().job.id).toBe(open.id);
+  });
+  it("starts the job; with no VoiceStudio it fails with a message a person can act on", async () => {
+    const r = await post("/api/brand-creator/voices", { brand: { name: "Acme", language: "it" } });
+    expect(r.statusCode).toBe(202);
+    const j = await waitJob(r.json().job.id);
+    expect(j).toMatchObject({ type: "voice.generate", brand: "new", status: "failed" });
+    expect(j.error).toMatch(/VoiceStudio is not running/);
+  });
+  it("plays a staged voice and says when it is gone", async () => {
+    const id = (await raw("POST", "/api/brand-creator/uploads/voice", WAV)).json().id as string;
+    const ok = await get(`/api/brand-creator/uploads/voice/${id}`);
+    expect(ok.statusCode).toBe(200);
+    expect(ok.headers["content-type"]).toBe("audio/wav");
+    expect((await get(`/api/brand-creator/uploads/voice/${"0".repeat(32)}`)).statusCode).toBe(404);
+    expect((await get("/api/brand-creator/uploads/voice/../../etc")).statusCode).toBe(404);
   });
 });
 

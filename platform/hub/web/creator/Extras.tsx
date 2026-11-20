@@ -5,6 +5,7 @@ import type { PromptColors } from "../../src/shared/character-prompt";
 import { Card } from "./fields";
 import { CharacterPromptBuilder } from "./CharacterPromptBuilder";
 import type { ExtrasScope, ExtrasState } from "./extras";
+import { VoiceDesigner, type VoiceBrand } from "./VoiceDesigner";
 
 interface Props {
   value: ExtrasState;
@@ -14,6 +15,8 @@ interface Props {
   colors: PromptColors;
   problems: Readonly<Record<string, string>>;
   scope?: ExtrasScope;
+  /** What the voice step tells the assistant about the brand typed so far. */
+  voiceBrand?: VoiceBrand;
 }
 
 /** An upload field: sends the file to the hub at once and keeps the id. */
@@ -28,7 +31,7 @@ function useUpload(kind: "logo" | "voice" | "sheet") {
   return { send, error, busy };
 }
 
-export function Extras({ value: v, onChange, options, brandName, colors, problems, scope = {} }: Props) {
+export function Extras({ value: v, onChange, options, brandName, colors, problems, scope = {}, voiceBrand }: Props) {
   const logo = useUpload("logo"), wav = useUpload("voice"), sheet = useUpload("sheet");
   const set = (patch: Partial<ExtrasState>) => onChange({ ...v, ...patch });
   return (
@@ -44,10 +47,10 @@ export function Extras({ value: v, onChange, options, brandName, colors, problem
       )}
 
       {!scope.hideVoice && (
-        <Card title="Voice" intro="The voice that reads the reels. VoiceStudio clones it from a short sample with its text.">
+        <Card title="Voice" intro="The voice that reads the reels. VoiceStudio clones it from a short sample with its text: bring one, or let the assistant suggest voices and pick the one you like.">
           <Row label="Voice" {...(problems.voice ? { problem: problems.voice } : {})}>
             <div className="radios" role="radiogroup" aria-label="Voice">
-              {([["later", "Decide later"], ["reuse", "Reuse another brand's voice"], ["upload", "Upload a sample"]] as const).map(([m, label]) => (
+              {([["later", "Decide later"], ["design", "Suggest voices for me"], ["reuse", "Reuse another brand's voice"], ["upload", "Upload a sample"]] as const).map(([m, label]) => (
                 <label key={m} className="radio"><input type="radio" name="voice" checked={v.voice.mode === m} disabled={m === "reuse" && options.voices.length === 0} onChange={() => set({ voice: { ...v.voice, mode: m } })} /> {label}{m === "reuse" && options.voices.length === 0 ? " (no other brand has a voice sample yet)" : ""}</label>
               ))}
             </div>
@@ -56,6 +59,10 @@ export function Extras({ value: v, onChange, options, brandName, colors, problem
                 <option value="">Choose a brand</option>
                 {options.voices.map((b) => <option key={b.slug} value={b.slug}>{b.name}</option>)}
               </select>
+            )}
+            {v.voice.mode === "design" && (
+              <VoiceDesigner brand={voiceBrand ?? { name: brandName, language: "en", about: "", audience: "", tone: "" }} voice={v.voice} onChange={(voice) => set({ voice })}
+                character={v.character.mode === "create" && (v.character.name.trim() || v.character.fields.what.trim()) ? { name: v.character.name.trim(), description: [v.character.fields.what, v.character.fields.personality].map((x) => x.trim()).filter(Boolean).join(". ") } : undefined} />
             )}
             {v.voice.mode === "upload" && (
               <>

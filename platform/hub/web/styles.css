@@ -253,3 +253,7 @@ textarea.tall { width: 100%; }
 .previews { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; margin-top: 10px; } .previews figure { margin: 0; text-align: center; }
 .previews img { width: 100%; aspect-ratio: 1; object-fit: contain; border-radius: 6px; background: repeating-conic-gradient(#1d1f22 0 25%, #17191b 0 50%) 0 0 / 16px 16px; }
 .btn.danger { background: transparent; border-color: var(--accent); color: var(--accent); } .btn.danger:not(:disabled):hover { background: var(--accent); color: #fff; }
+
+.voice-designer { display: grid; gap: 0.6rem; }
+.voice-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.6rem; }
+.voice-list audio { width: 100%; margin-top: 0.4rem; }

@@ -18,6 +18,17 @@ export const NEXT_STEPS = [
   "Make the first reel.",
 ];
 
+const dedupe = (list: readonly string[]): string[] => {
+  const seen = new Set<string>();
+  return list.filter((k) => { const key = k.toLowerCase(); if (seen.has(key)) return false; seen.add(key); return true; });
+};
+/** Each keyword once; a word listed for both closings stays only in `product` (the classifier lets product win anyway). */
+export function dedupeRules(r: { product: readonly string[]; general: readonly string[] }): { product: string[]; general: string[] } {
+  const product = dedupe(r.product);
+  const have = new Set(product.map((k) => k.toLowerCase()));
+  return { product, general: dedupe(r.general).filter((k) => !have.has(k.toLowerCase())) };
+}
+
 interface Marker { requestId: string; summary?: Record<string, unknown> }
 const readMarker = (dir: string): Marker | null => { try { return JSON.parse(readFileSync(join(dir, MARKER), "utf8")) as Marker; } catch { return null; } };
 
@@ -136,10 +147,15 @@ export const brandCreate: Handler = async (job, ctx) => {
 
     step(3, "Registering the brand");
     if (!svc.brands.has(brand.slug)) throw new Error("The brand was written but cannot be read back. See brand.json.");
-    if (req.dailyLoop) {
+    const rules = req.closingRules && req.closingRules.product.length + req.closingRules.general.length > 0 ? dedupeRules(req.closingRules) : null; // empty boxes keep the settings defaults
+    if (req.dailyLoop || rules) {
       const s = svc.settings.get(brand.slug);
-      svc.settings.set({ ...s, daily: { ...s.daily, enabled: true } }, brand.slug);
-      svc.ensureDaily(brand.slug);
+      svc.settings.set({
+        ...s,
+        ...(rules ? { factory: { ...s.factory, closingRules: rules } } : {}),
+        ...(req.dailyLoop ? { daily: { ...s.daily, enabled: true } } : {}),
+      }, brand.slug);
+      if (req.dailyLoop) svc.ensureDaily(brand.slug);
     }
 
     const summary = {

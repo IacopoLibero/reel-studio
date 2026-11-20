@@ -46,7 +46,7 @@ export interface ImportPreview {
 }
 export interface InterviewMessage { role: "user" | "assistant"; text: string }
 export interface InterviewSummary { [key: string]: unknown }
-export interface InterviewTurn { say: string; summary: InterviewSummary; done: boolean; draft: { brand: Record<string, unknown>; styleMd: string; errors: string[] } | null }
+export interface InterviewTurn { say: string; summary: InterviewSummary; done: boolean; draft: { brand: Record<string, unknown>; styleMd: string; errors: string[]; closingRules: { product: string[]; general: string[] } } | null }
 export interface CreateRequest {
   source: "form" | "interview" | "import";
   brand: Record<string, unknown>;
@@ -55,8 +55,11 @@ export interface CreateRequest {
   importId?: string;
   voice?: { mode: "later" } | { mode: "reuse"; from: string } | { mode: "upload"; wavUpload: string; text: string };
   character?: { mode: "none" | "create" | "import"; name?: string; id?: string; fields?: CharacterFields; sheetUpload?: string };
+  closingRules?: { product: string[]; general: string[] };
   dailyLoop?: boolean;
 }
+export interface VoiceCandidate { id: string; label: string; instruct: string; text: string; seconds: number }
+export interface VoiceRequest { brand: { name: string; language: string; about: string; audience: string; tone: string }; character?: { name: string; description: string }; avoid?: string[] }
 export interface StudioView {
   state: { status: "draft" | "preview" | "approved"; name: string; fields: CharacterFields; notes: string[]; builds: number; updatedAt: string };
   sheet: string | null;
@@ -133,6 +136,7 @@ export const api = {
   importZip: (blob: Blob) => callRaw<ImportPreview>("POST", "/api/brand-creator/import/zip", blob),
   importFolder: (files: { path: string; data: string }[]) => call<ImportPreview>("POST", "/api/brand-creator/import/folder", { files }),
   interview: (messages: InterviewMessage[]) => call<InterviewTurn>("POST", "/api/brand-creator/interview", { messages }),
+  proposeVoices: (r: VoiceRequest) => call<{ job: Job }>("POST", "/api/brand-creator/voices", r),
   createBrand: (r: CreateRequest) => call<{ job: Job; slug: string }>("POST", "/api/brands", r),
   deleteBrand: (slug: string, confirm: string) => call<{ trash: string; moved: string[]; kept: string[] }>("POST", `/api/brands/${encodeURIComponent(slug)}/delete`, { confirm }),
   studio: () => call<StudioView>("GET", scoped("/character/studio")),

@@ -2,6 +2,7 @@ import { z } from "zod";
 import { UPLOAD_ID } from "./uploads.js";
 
 const uploadId = z.string().regex(UPLOAD_ID, "That upload is not valid.");
+const keywords = z.array(z.string().trim().min(1).max(60)).max(200);
 const slug = z.string().regex(/^[a-z0-9][a-z0-9-]{0,39}$/);
 
 /** What the three entries of the New brand page (form, interview, import) all send: the brand as brand.json will hold it, plus the files and choices around it. */
@@ -25,6 +26,8 @@ export const createRequestSchema = z.object({
     fields: z.object({ what: z.string().max(500), personality: z.string().max(500), extra: z.string().max(500) }).optional(),
     sheetUpload: uploadId.optional(),
   }).default({ mode: "none", name: "" }),
+  /** Words that make a reel close with A (the brand's offer, `product`) or B (follow for tips, `general`). Empty or missing: every reel gets B until Settings > Factory has some. */
+  closingRules: z.object({ product: keywords, general: keywords }).optional(),
   dailyLoop: z.boolean().default(false),
   /** Set by the hub when it queues the job: makes a retry of the same request a no-op. */
   requestId: z.string().regex(/^[0-9a-f]{32}$/).optional(),
