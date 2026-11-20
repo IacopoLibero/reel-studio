@@ -2,6 +2,8 @@ import type { FastifyInstance } from "fastify";
 import { NotificationStore } from "../daily/notifications.js";
 import type { BrandSummary } from "../shared/types.js";
 import type { Brand } from "../brands/schema.js";
+import { styleSchema } from "../brands/schema.js";
+import { readBrand, writeBrand } from "../brands/registry.js";
 import type { AppDeps } from "../app.js";
 import { makeScope } from "./scope.js";
 
@@ -17,6 +19,18 @@ export function brandRoutes(app: FastifyInstance, d: AppDeps): void {
 
   const scope = makeScope(d);
   app.get<{ Params: { slug: string } }>("/api/brands/:slug", async (req) => summaryOf(scope(req).brand));
+
+  app.get<{ Params: { slug: string } }>("/api/brands/:slug/style", async (req) => { const b = scope(req).brand; return { colors: b.colors, fonts: b.fonts, closing: b.closing }; });
+  // Colours, fonts and closing lines can change after the brand is created; nothing else in brand.json is touched.
+  app.put<{ Params: { slug: string } }>("/api/brands/:slug/style", async (req, reply) => {
+    const b = scope(req);
+    const p = styleSchema.safeParse(req.body);
+    if (!p.success) return reply.code(400).send({ error: p.error.issues[0]?.message ?? "Invalid style." });
+    const fresh = readBrand(d.config.root, b.slug);
+    if (!fresh) return reply.code(404).send({ error: "That brand does not exist." });
+    writeBrand(d.config.root, { ...fresh, ...p.data });
+    return p.data;
+  });
 
   const stores = () => d.brands.slugs().map((slug) => NotificationStore.at(d.brands.paths(slug).dataDir));
   app.get<{ Querystring: { unseen?: string } }>("/api/notifications", async (req) =>

@@ -34,6 +34,13 @@ const regexText = z.string().trim().max(200).refine((v) => {
   try { new RegExp(v, "i"); return true; } catch { return false; }
 }, "That is not a valid regular expression");
 
+export const styleSchema = z.object({
+  colors: z.object({ background: hex, text: hex, accent: hex, secondary: hex }),
+  fonts: z.object({ headline: text(80).min(1, "A font name is needed"), body: text(80).min(1, "A font name is needed") }),
+  closing: z.object({ A: closingOption, B: closingOption }),
+});
+export type BrandStyle = z.infer<typeof styleSchema>;
+
 export const brandSchema = z.object({
   version: z.literal(1),
   slug: z.string().refine(isValidSlug, "Slug: lowercase letters, digits and dashes, up to 40 characters"),

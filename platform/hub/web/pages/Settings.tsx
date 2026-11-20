@@ -4,11 +4,13 @@ import { api } from "../api";
 import { useLoad } from "../hooks";
 import { SkillsSection } from "../components/SkillsSection";
 import { DeleteBrand } from "../components/DeleteBrand";
+import { BrandStyleSection } from "../components/BrandStyle";
 import { Chips, CopyTimes, Row, Section, TimesEditor } from "../components/SettingsParts";
 import { fromDraft, isDirty, postsPerWeek, toDraft, validate, type SettingsDraft } from "../settings-form";
 
 const SECTIONS = [
   ["set-general", "General"],
+  ["set-style", "Colours and closings"],
   ["set-schedule", "Posting schedule"],
   ["set-daily", "Daily loop"],
   ["set-factory", "Reel factory"],
@@ -76,6 +78,10 @@ export function SettingsPage({ brand }: { brand: BrandSummary }) {
             <Row label="Claude model" htmlFor="s-model" help="Leave empty to use your default model.">
               <input id="s-model" type="text" value={s.claudeModel} placeholder="Default" onChange={(e) => set({ claudeModel: e.target.value })} />
             </Row>
+          </Section>
+
+          <Section id="set-style" title="Colours, fonts and closings" intro="Every new reel and cover is drawn with these. This part has its own Save button; reels already made are not redrawn.">
+            <BrandStyleSection brand={brand} />
           </Section>
 
           <Section id="set-schedule" title="Posting schedule" intro={`Free slots in the Calendar and the times offered when you schedule a reel. ${postsPerWeek(draft.days)} posts a week.`}>

@@ -38,6 +38,11 @@ export interface CreatorOptions {
   voices: { slug: string; name: string }[];
   characters: string[];
 }
+export interface BrandStyle {
+  colors: { background: string; text: string; accent: string; secondary: string };
+  fonts: { headline: string; body: string };
+  closing: { A: { label: string; line: string }; B: { label: string; line: string } };
+}
 export interface FontList { names: string[]; checked: boolean }
 export interface Uploaded { id: string; size: number; ext: string }
 export interface ImportPreview {
@@ -104,6 +109,8 @@ export const api = {
   login: (token: string) => call<{ ok: boolean }>("POST", "/api/login", { token }),
   logout: () => call<{ ok: boolean }>("POST", "/api/logout"),
   brands: () => call<BrandList>("GET", "/api/brands"),
+  brandStyle: () => call<BrandStyle>("GET", scoped("/style")),
+  saveBrandStyle: (s: BrandStyle) => call<BrandStyle>("PUT", scoped("/style"), s),
   jobs: () => call<Job[]>("GET", scoped("/jobs")),
   createJob: (type: string, params: Record<string, unknown>) => call<Job>("POST", scoped("/jobs"), { type, params }),
   job: (id: string) => call<Job>("GET", `/api/jobs/${id}`),
