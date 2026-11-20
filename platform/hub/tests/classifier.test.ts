@@ -1,5 +1,18 @@
 import { describe, it, expect } from "vitest";
-import { classifyClosing, DEFAULT_RULES } from "../src/factory/classifier.js";
+import { classifyClosing, DEFAULT_RULES, type ClosingRules } from "../src/factory/classifier.js";
+
+// Keyword lists of one restaurant brand: the factory ships none, each brand sets its own.
+const RESTAURANT_RULES: ClosingRules = {
+  product: [
+    "qr", "digital menu", "paper menu", "printed menu", "reprint*", "print*", "menu price*", "price*", "translate", "translation",
+    "kitchen screen*", "kitchen display*", "display system", "order mistakes", "order errors", "wrong order*",
+    "set up", "setup", "app", "paper", "going digital", "go digital", "2010",
+  ],
+  general: [
+    "allerg*", "rules", "law", "laws", "regulation*", "review*", "google", "marketing", "staff*", "rota",
+    "lunch rush", "tourist*", "languages", "number of",
+  ],
+};
 
 // The 15 reels whose closing was chosen by hand (reel-questions.md).
 const FIXTURES: [number, "A" | "B", string, string][] = [
@@ -22,23 +35,27 @@ const FIXTURES: [number, "A" | "B", string, string][] = [
 
 describe("classifyClosing", () => {
   for (const [n, want, q, src] of FIXTURES) {
-    it(`reel ${n} is ${want}`, () => expect(classifyClosing(q, src, DEFAULT_RULES)).toBe(want));
+    it(`reel ${n} is ${want}`, () => expect(classifyClosing(q, src, RESTAURANT_RULES)).toBe(want));
   }
   it("defaults to B with no match", () => {
-    expect(classifyClosing("Why does the sky look blue?", "", DEFAULT_RULES)).toBe("B");
+    expect(classifyClosing("Why does the sky look blue?", "", RESTAURANT_RULES)).toBe("B");
   });
   it("uses the source only when the question has no match", () => {
-    expect(classifyClosing("Is it worth it?", "qr-code-ordering-how-it-works", DEFAULT_RULES)).toBe("A");
-    expect(classifyClosing("What about your review?", "qr-code-ordering", DEFAULT_RULES)).toBe("B");
-    expect(classifyClosing("Is it worth it?", "qr-staff-review", DEFAULT_RULES)).toBe("B");
+    expect(classifyClosing("Is it worth it?", "qr-code-ordering-how-it-works", RESTAURANT_RULES)).toBe("A");
+    expect(classifyClosing("What about your review?", "qr-code-ordering", RESTAURANT_RULES)).toBe("B");
+    expect(classifyClosing("Is it worth it?", "qr-staff-review", RESTAURANT_RULES)).toBe("B");
   });
   it("product keywords in the question win over general ones", () => {
-    expect(classifyClosing("Do reviews appear on your QR menu?", "", DEFAULT_RULES)).toBe("A");
+    expect(classifyClosing("Do reviews appear on your QR menu?", "", RESTAURANT_RULES)).toBe("A");
   });
   it("matches whole words, not fragments", () => {
-    expect(classifyClosing("What happens next?", "", DEFAULT_RULES)).toBe("B");
+    expect(classifyClosing("What happens next?", "", RESTAURANT_RULES)).toBe("B");
   });
   it("honours custom rules", () => {
     expect(classifyClosing("Hello pizza", "", { product: ["pizza"], general: [] })).toBe("A");
+  });
+  it("ships no keywords, so every reel gets closing B until the brand sets some", () => {
+    expect(DEFAULT_RULES).toEqual({ product: [], general: [] });
+    expect(classifyClosing("Is a paper menu really cheaper?", "digital-menu-guide", DEFAULT_RULES)).toBe("B");
   });
 });

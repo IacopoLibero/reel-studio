@@ -3,19 +3,10 @@ export interface ClosingRules { product: string[]; general: string[] }
 /**
  * Closing A (the brand offer and website) when the question is about something the product offers,
  * closing B (Follow for tips) for general advice, regulation and operations.
+ * The keyword lists belong to each brand (Settings > Factory), so the defaults are empty: with no rules every reel gets closing B.
  * A trailing * in a keyword means "any word starting with this"; otherwise whole words and phrases only.
  */
-export const DEFAULT_RULES: ClosingRules = {
-  product: [
-    "qr", "digital menu", "paper menu", "printed menu", "reprint*", "print*", "menu price*", "price*", "translate", "translation",
-    "kitchen screen*", "kitchen display*", "display system", "order mistakes", "order errors", "wrong order*",
-    "set up", "setup", "app", "paper", "going digital", "go digital", "2010",
-  ],
-  general: [
-    "allerg*", "rules", "law", "laws", "regulation*", "review*", "google", "marketing", "staff*", "rota",
-    "lunch rush", "tourist*", "languages", "number of",
-  ],
-};
+export const DEFAULT_RULES: ClosingRules = { product: [], general: [] };
 
 const escape = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 

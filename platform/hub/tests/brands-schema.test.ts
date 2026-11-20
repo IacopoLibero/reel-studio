@@ -13,7 +13,7 @@ describe("slug rules", () => {
   });
   it("slugify makes a readable slug from a name", () => {
     expect(slugify("Café Roma!")).toBe("cafe-roma");
-    expect(slugify("  Easy   Restaurant ")).toBe("easy-restaurant");
+    expect(slugify("  Acme   Bakery ")).toBe("acme-bakery");
     expect(slugify("日本語")).toBe("brand");
     expect(slugify("New")).toBe("new-brand");
     expect(isValidSlug(slugify("x".repeat(100)))).toBe(true);
