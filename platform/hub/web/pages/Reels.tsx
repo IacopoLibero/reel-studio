@@ -35,7 +35,8 @@ export function ReelsPage({ jobs }: { jobs: Job[] }) {
                 <span className="badge">{r.hasCover ? "cover" : "no cover"}</span>
               </div>
             </div>
-            {r.schedule ? <span className="badge done">Scheduled {r.schedule.at}</span>
+            {r.schedule?.status === "posted" ? <span className="badge done">Posted {r.schedule.at}</span>
+              : r.schedule ? <span className="badge scheduled">Scheduled {r.schedule.at}</span>
               : r.scheduling ? <span className="badge running">In queue</span>
               : <button className="btn primary" disabled={!ready} title={ready ? "" : "Needs MP4, caption and cover"} onClick={() => setPicking(r)}>Schedule</button>}
           </div>
