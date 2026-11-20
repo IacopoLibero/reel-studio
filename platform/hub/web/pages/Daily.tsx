@@ -83,7 +83,7 @@ export function DailyPage({ jobs }: { jobs: { status: string; progress: number; 
   return (
     <>
       <div className="row wrap"><div className="grow"><h1>Daily</h1><p className="sub">Each day: collect, analyse, three ideas, then you decide. Nothing is made before "Create selected" and nothing is scheduled before "Confirm".</p></div>
-        {data.dates.length > 1 && <select style={{ width: 150 }} value={data.date} onChange={(e) => setDate(e.target.value)} aria-label="Day">{data.dates.map((d) => <option key={d} value={d}>{d}{d === data.today ? " (today)" : ""}</option>)}</select>}
+        {data.dates.length > 1 && <select style={{ width: 200 }} value={data.date} onChange={(e) => setDate(e.target.value)} aria-label="Day">{data.dates.map((d) => <option key={d} value={d}>{d}{d === data.today ? " (today)" : ""}</option>)}</select>}
       </div>
       <p className="muted">Daily loop: {data.settings.enabled ? `on, from ${data.settings.earliest} (Rome time)` : "off (switch it on in Settings)"}.</p>
       {!plan && (

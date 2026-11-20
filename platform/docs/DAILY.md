@@ -69,8 +69,7 @@ One `daily.run` per brand per calendar day (Europe/Rome by default), started by 
    per idea (generated, never posted).
 5. **Alert.** The plan `platform/data/brands/<slug>/daily/<date>.json` gets the status `awaiting_approval` and the hub adds a notification
    (`GET /api/notifications`). Optional, on the host: `scripts/reel-hub-notify.sh` polls the hub every 60 seconds (token read from `.env`) and shows a desktop
-   notification with `notify-send` that opens the Daily page. Run it as a systemd user service (`~/.config/systemd/user/reel-hub-notify.service`,
-   `ExecStart=<project>/scripts/reel-hub-notify.sh`). The container does not get the host's D-Bus socket. The unit file is not in the repository (see TODO.md).
+   notification with `notify-send` that opens the Daily page. Install it as a systemd user service with `scripts/install-notifier.sh` (`--uninstall` removes it, `--print` shows the unit). The container does not get the host's D-Bus socket.
 6. **Approval 1 (manual).** The Daily page shows readout, proposals and ideas with checkboxes and an editable closing each. **Create selected** or **Skip today**.
    Nothing is created before the click.
 7. **Creation.** One `reel.make` job per selected idea (the factory, with folder allocation and the question tick); progress on the Daily page.
