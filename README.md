@@ -161,7 +161,7 @@ The daily loop:
 ## Quick start
 
 ```bash
-git clone <repository-url> reel-studio && cd reel-studio
+git clone https://github.com/IacopoLibero/reel-studio.git reel-studio && cd reel-studio
 claude                # once, on the host: log in to Claude Code, then quit (the container shares this login)
 ./install.sh          # checks, builds, starts, installs the voice engine: 30 to 90 minutes the first time
 # open http://127.0.0.1:4000 and paste the token the installer printed

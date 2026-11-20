@@ -4,7 +4,7 @@ What is still open, on purpose. Move an item out of this file when it is done. L
 
 ## Before publishing
 
-- **Repository name and home.** Pick the name and where it lives, then replace `<repository-url>` in the README quick start.
+
 - **A real CI badge.** The README has a static "tests: 498 passing" badge. Once the repository exists, replace it with the GitHub Actions badge for `.github/workflows/ci.yml`.
 - **Origin of the sound effects.** `public/a1/` holds four short sounds (`ding.wav`, `pop.wav`, `slash.wav`, `tick.wav`) with no recorded source or license.
   Find where they came from, or replace them with sounds whose license is known, and say so in `THIRD_PARTY_NOTICES.md`.
