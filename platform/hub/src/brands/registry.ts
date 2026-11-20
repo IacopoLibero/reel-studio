@@ -1,7 +1,7 @@
 import { cpSync, existsSync, mkdirSync, readdirSync, readFileSync, renameSync, statSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { defaultDataDir, defaultRoot } from "../paths.js";
-import { brandPaths, chromeProfileRoot, type BrandPathOptions, type BrandPaths } from "./paths.js";
+import { brandPaths, explicitChromeRoot, type BrandPathOptions, type BrandPaths } from "./paths.js";
 import { brandSchema, isValidSlug, validateBrand, type Brand } from "./schema.js";
 import { fillTemplate } from "./template.js";
 
@@ -51,13 +51,13 @@ export function writeBrand(root: string, brand: Brand): void {
 export class BrandRegistry {
   readonly root: string;
   readonly dataDir: string;
-  readonly chromeRoot: string;
+  readonly chromeRoot: string | null;
 
   constructor(o: RegistryOptions = {}) {
     const env = o.env ?? process.env;
     this.root = o.root ?? defaultRoot(env);
     this.dataDir = o.dataDir ?? defaultDataDir(env);
-    this.chromeRoot = o.chromeRoot ?? chromeProfileRoot(env);
+    this.chromeRoot = o.chromeRoot ?? explicitChromeRoot(env);
   }
 
   slugs(): string[] { return listBrandSlugs(this.root); }

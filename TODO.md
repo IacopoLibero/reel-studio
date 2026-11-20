@@ -19,30 +19,46 @@ What is still open, on purpose. Move an item out of this file when it is done. L
 - **Daily loop, repeated runs.** Check on real runs that `reel.make` calls `reel-hooks` (the job log shows `SKILL CALLED`) and review the improvement proposals in
   `platform/data/brands/<slug>/daily/<date>.json` (none is ever applied by the hub).
 
-## Later
+## Roadmap
 
-### Direction: a standalone app
+**Fixed point: Reel Studio becomes a standalone app** (a Flatpak and a pacman package) instead of a cloned repository plus Docker. The goal is stable data: brands, reels, settings,
+the Instagram login, voices and analytics live in one folder outside the app, so updating or reinstalling the app never touches them. The order is: small things first (in the current Docker setup),
+then the app, then the big features, which are born with the final structure and are not moved twice. The data restructure comes first of all.
 
-- **Idea: ship Reel Studio as a standalone app** (a Flatpak and a pacman package) instead of a cloned repository plus Docker. The point is stable data: brands, reels, settings,
-  the Instagram login, voices and analytics live in one folder outside the app, so updating or reinstalling the app never touches them. Everything below is written with that in mind.
-- **One data folder.** Today the data is spread over `platform/data`, `reels/`, `brand/`, `mascot/`, the `chrome-profile` volume and the voice volumes, and `HUB_DATA_DIR=/data` in
-  `platform/docker-compose.yml` and `supervisord.conf` is read by nothing (the hub uses `HUB_DATA`), so the volume `hub-data` is unused. Decide the one data location, remove the dead setting
-  and the unused volume, and hang every path (brands, reels, login profile, voices) from that folder.
-- **The job type `voice.generate`** is declared (type, queue lane, daily gate) but no handler creates it: voices are made inside `reel.make` by `scripts/voice.mjs`. Remove it, or make it a real job for the app.
-- **Desktop notifications.** `scripts/install-notifier.sh` installs the host unit for the Docker setup; the app should send its own notifications and drop that script.
-- **Delete brand** leaves the Instagram login in place when it cannot be moved cheaply (another volume, or a custom `instagram.profileDir`): remove that profile folder by hand.
-  In the app each brand's login should live inside the brand's own folder, so deleting the brand removes it.
-- **Backups** stay a README recipe for now; with one data folder they become copying that folder.
+### 1. Before the app (in the current setup)
 
-### Features and checks
-
+- **First of all: restructure the data into one data folder** (in progress). Layout: `~/ReelStudio/workspace` (brand/, reels/, mascot/, public/, the reels' own code in src/, the Remotion project) and
+  `~/ReelStudio/data` (hub settings, jobs, each brand's data and its Instagram login in `brands/<slug>/profile`); caches and models stay in Docker volumes until the packaging step.
+  Done and tested (`platform/hub/src/layout/`, `npm run migrate:layout`): the list of program files and their sync into the workspace, the copy-only migration with verification, the new default place of a brand's login.
+  Left: (1) wire the container: mount workspace and data, `REEL_ROOT` and `HUB_DATA` pointing at them, a volume for the workspace's `node_modules`, `whisper.cpp` under the workspace; try it on a copy first;
+  (2) stop the hub, run the migration on the real data (`--apply`), start the hub on the new folders and check a reel, a schedule and an Instagram login; (3) delete the originals only after that;
+  (4) point `scripts/new-brand.sh`, `install.sh`, `update.sh`, the Remotion and Ootto skill installers and the docs at the workspace; (5) the Remotion kit is overwritten by a sync (saved aside if you edited it): say so in the README.
 - **Closing keywords in the brand creator (required).** The interview must propose the closing keywords (`factory.closingRules`, product and general lists) from the brand's products, and the user confirms or edits them before the brand is created. Today it does not: they are added by hand in Settings after the brand exists. Defaults are empty, so a brand without keywords gets closing B on every reel.
 - **Voice step in the brand and character creator (required).** Today the creator makes no voice: the user must already have a sample (`voice.wav` plus its words), reuse one from another
-  brand, or skip it. The step should offer two ways: (1) the hub asks VoiceStudio (`POST /generate` with `instruct`, no `ref_audio`) for a few example voices from the brand's
-  tone and character, the user listens and picks one directly, and the picked audio and its words are saved as the brand's voice sample (`voice/voice.wav`, `voice/voice.txt`);
-  (2) the user uploads a sample as today. Needs VoiceStudio running (`scripts/ensure-voice.sh`), a way to play and re-roll the candidates, and a test with a stand-in voice server. This is how Forky's voice was made by hand.
+  brand, or skip it. The step should offer two ways: (1) **Claude proposes a few example voices** from the brand's tone and character (a short description for each, the `instruct` text), and a `voice.generate` job
+  makes each one with VoiceStudio (`POST /generate` with `instruct`, no `ref_audio`); the user listens and picks one directly, and the picked audio and its words are saved as the brand's voice sample
+  (`voice/voice.wav`, `voice/voice.txt`); (2) the user uploads a sample as today. Needs VoiceStudio running (`scripts/ensure-voice.sh`), a way to play and re-roll the candidates, and a test with a stand-in Claude
+  and a stand-in voice server. This is how Forky's voice was made by hand.
+- **The job type `voice.generate` stays**: it is declared (type, queue lane, daily gate) but no handler creates it yet. It becomes the job of the voice step above: Claude proposes the example voices and the job makes them with VoiceStudio. Voices for reels are still made inside `reel.make` by `scripts/voice.mjs`.
 - **Brand creator polish:** edit a brand's colours, fonts and closing lines in the hub after creation (today: edit `brand.json`); a "first reel" shortcut that proposes ten
   starting questions right after creation (today: "Find new ideas" in the Factory).
+- **Dead setting.** `HUB_DATA_DIR=/data` in `platform/docker-compose.yml` and `supervisord.conf` is read by nothing (the hub uses `HUB_DATA`), so the volume `hub-data` is unused: remove both.
+- **Retake the screenshots** in `docs/images/` when a page changes visibly (see CONTRIBUTING.md). The Reels page changed (Posted and yellow Scheduled badges).
+
+### 2. The app
+
+- **Packages.** A pacman package (declares its dependencies) and a Flatpak. Models and other heavy files never go inside the package: they are downloaded on first run into the data folder.
+- **Blender and VoiceStudio are managed by the app, not packed in it** (leaning, to confirm): the app installs or finds them, starts them and checks they answer. Blender can come from its own Flatpak; VoiceStudio
+  (Python, GPU, about 27 GB of models today) is the hard part inside a Flatpak sandbox, so test the GPU path early. Claude Code and Chrome (Instagram scheduling) also need to work from the sandbox.
+- **Delete brand** leaves the Instagram login in place when it cannot be moved cheaply (another volume, or a custom `instagram.profileDir`): remove that profile folder by hand.
+  In the app each brand's login lives inside the brand's own folder, so deleting the brand removes it.
+- **Desktop notifications.** `scripts/install-notifier.sh` installs the host unit for the Docker setup; the app sends its own notifications and that script goes away.
+- **Backups** stay a README recipe until then; with one data folder they become copying that folder.
+- **Updates and first run.** The Remotion agent skills are fetched at first run and on update; the data folder is never touched by an update.
+- **Docs and tests.** Rewrite the install and operations parts of the README and `platform/README.md` for the app; keep the Docker setup only if it is still wanted.
+
+### 3. After the app (big, born with the final structure)
+
 - **Character from a picture** (`character.build`): built as an experiment (plan, Blender script, flat previews with approval and notes) and only run with a
   stand-in Claude so far. Not done: running it for real with Claude and Blender on a real sheet, and turning an approved preview into the moves reels use
   (talk, wave, expressions, `public/mascot/<move>/` frames, the Remotion component). A fully automatic character from any picture is future work.
@@ -52,7 +68,6 @@ What is still open, on purpose. Move an item out of this file when it is done. L
   `reel` skill composing full-width scenes from them.
 - **Stories** (`ootto-story-sequencer`), **carousels** (`ootto-carousel-builder`, `ootto-viral-carousel`) and **paid campaigns** (`ootto-paid-social-brief`,
   `ootto-utm-campaign-plan`): the skills are installed but the factory only makes reels. Each needs its own page, job and scheduler flow. They are visible in Settings and off.
-- **Retake the screenshots** in `docs/images/` when a page changes visibly (see CONTRIBUTING.md). The Reels page changed (Posted and yellow Scheduled badges).
 
 ## Known limits
 
