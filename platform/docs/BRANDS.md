@@ -12,21 +12,21 @@ provides the prompt. For a brand without a character you fill in the needed fiel
 The public repository holds the platform, a generic Remotion kit, our skills and `brand/_template`. It holds NO brand content: nothing of
 Acme Cafe (style guide, question list, logo, voice sample, reel scripts and captions, branded compositions), nothing of Pip (the mascot model,
 its Blender builder and renders). A real brand and its character keep working on the owner's machine, outside git, and are "just another brand" created by the same mechanism.
-- Private (in your studio folder's `workspace/`, outside this repository; the paths below are relative to that workspace): `brand/<slug>/` for every slug (identity, character, reels: see section 2) and the branded Remotion compositions (every folder of `src/` except `src/kit` and `src/cover`, and the characters' components). The common sounds (`sfx/`) are shipped by the program. The brand template stays in the repository (`brand/_template`) and is read from there. One rule block in `.gitignore` covers all of it; the README explains it ("Your brands are not in git").
+- Private (in your studio folder, outside this repository): `data/brands/<slug>/` for every brand (identity, character, reels and the hub's data: see section 2) and, in `workspace/src/`, the branded Remotion compositions (every folder of `src/` except `src/kit` and `src/cover`, and the characters' components). The common sounds (`sfx/`) are shipped by the program. The brand template stays in the repository (`brand/_template`) and is read from there. One rule block in `.gitignore` covers all of it; the README explains it ("Your brands are not in git").
 - The public tree must typecheck, test, build and start with all of that absent. `src/Root.tsx` registers only generic compositions (`Cover`, shell);
   every reel is rendered from its own entry (`npx remotion render src/r<n>/index.ts ...`) as today, so branded code can simply be absent.
   Moving a branded folder must not break the user's working tree: do it by ignoring, not by moving, unless a move is cleaner and all imports are fixed.
 - Git history: the repository starts from a clean history that holds no brand content.
 
 ## 2. Brand model
-One folder per brand, `workspace/brand/<slug>/`:
+One folder per brand, `~/ReelStudio/data/brands/<slug>/` (called `<brand>` below). It also holds the hub's own data of the brand, so a brand is one folder to back up, move or delete:
 ```text
 identity/   brand.json, style.md, logo.png (a PNG, only when the brand has one), and voice.wav / voice.txt / voice.json when the brand has no character
 mascot/     only with a character: <id>.py (Blender script), <id>.blend, <id>-expressions.png, <id>-head.json, <id>-voice.wav / .txt / .json,
             movements/<move>/ (the rendered PNG sequences) and studio/ (the reference sheet, plan and previews of a character being built)
 reels/      one folder per reel, <n>-<name>/: script, plan, MP4, caption, cover, audio/
 ```
-The question list is hub data, so it is in the data folder: `<data>/brands/<slug>/reel-questions.md`. With a character the voice is the character's (`mascot/<id>-voice.*`); without one it is the brand's own (`identity/voice.*`).
+The question list (`reel-questions.md`), the settings, the schedule, the daily plans, the analytics and the Instagram login (`profile/`) are in the same folder. With a character the voice is the character's (`mascot/<id>-voice.*`); without one it is the brand's own (`identity/voice.*`).
 `identity/brand.json` (zod-validated, versioned):
 ```json
 { "version": 1, "slug": "acme", "name": "Acme Cafe", "language": "en", "readoutLanguage": "en", "website": "acme.org",
@@ -40,7 +40,7 @@ The question list is hub data, so it is in the data folder: `<data>/brands/<slug
   "character": { "enabled": true, "id": "pip", "name": "Pip" },
   "voice": { "engine": "voxcpm2", "sample": "mascot/pip-voice.wav", "sampleText": "mascot/pip-voice.txt" } }
 ```
-`voice.sample` is relative to `brand/<slug>/`. `style.md` is the human-readable guide the reel skill reads. `brand.json` is the machine source for colours,
+`voice.sample` is relative to the brand folder; the paths a style guide names are too. `style.md` is the human-readable guide the reel skill reads. `brand.json` is the machine source for colours,
 fonts, closing, offer and Instagram (`language` is the language of the reels, `readoutLanguage` the one the hub writes to the person who runs the brand); `style.md` keeps the prose. The Cover and the Remotion kit read colours and fonts from `brand.json`
 (no hard-coded Acme Cafe colours in generic code). `brand/_template/` (in the repository) has a `brand.json` skeleton, the style.md and question list placeholders; the voice guide is `.claude/skills/reel/voice-sample.md`.
 
@@ -55,17 +55,17 @@ Everything in the hub is scoped to the current brand: Jobs, Daily, Calendar, Fac
 - API: every brand-scoped route is `/api/brands/:slug/...`; the old `/api/...` paths still answer for the first brand. The daily loop runs per brand (own switch, own earliest time); the connectivity gate and heavy-job gate are shared.
 - Notifications name the brand ("Reel Hub, acme: 3 new reel ideas").
 - Factory/ideas/make prompts take brand paths from the registry (no `BRAND` env assumption); `reel-questions.md`, `style.md`, closing rules and the
-  offer rule come from the brand. The reel skill reads `brand/<slug>/identity/style.md`; a brand without a character uses full-width drawings (see 5).
+  offer rule come from the brand. The reel skill reads `<brand>/identity/style.md`; a brand without a character uses full-width drawings (see 5).
 
 ## 4. Where a render finds a brand's files (built)
 Remotion reads the logo, the sounds, the character's frames and each reel's audio with `staticFile()` from one `public` folder. Because each brand keeps
-them in its own folder, `remotion.config.ts` builds that folder for the brand of the run (`REEL_BRAND`, set by the hub for every job, else the first brand)
+them in its own folder, `remotion.config.ts` builds that folder for the brand of the run (`REEL_BRAND`, set by the hub for every job, else the first brand; the brand folders are found through `REEL_BRANDS_DIR`, which the hub sets to `<data>/brands`)
 out of hard links, in `workspace/.reel-studio/public-<uid>/<brand>-<pid>/`, and removes it at the end (`scripts/brand-public.ts`):
-`logo.png` from `identity/`, `mascot/<move>/` from `mascot/movements/`, `sfx/` from the workspace, `<n>-<name>/<voice>.wav` from each reel's `audio/`.
+`logo.png` from `identity/`, `mascot/<move>/` from `mascot/movements/`, `sfx/` from the program, `<n>-<name>/<voice>.wav` from each reel's `audio/`.
 A brand with no logo has no `logo.png`, so another brand's logo is never drawn, and the cover leaves out the logo frame (`"logo": false` in `cover.json`).
 
-A workspace made before this layout (brands with `brand.json` at the top of `brand/<slug>/`, and `reels/`, `mascot/`, `characters/`, `public/` next to `brand/`) is
-moved with `scripts/migrate-brand-folders.sh` (`src/layout/brand-folders.ts`): it copies and checks every file by content hash, rewrites the paths inside
+A workspace made before this layout (brands with `brand.json` at the top of `workspace/brand/<slug>/`, and `reels/`, `mascot/`, `characters/`, `public/` next to `brand/`) is
+moved with `scripts/migrate-brand-folders.sh`; brand folders already one-folder-per-brand inside the workspace (`workspace/brand/<slug>/identity`, `mascot`, `reels`) are moved into the data folder with `--into-data`, a rename that copies nothing. The migration (`src/layout/brand-folders.ts`): it copies and checks every file by content hash, rewrites the paths inside
 `brand.json` and `style.md`, and only removes the old copies when asked (`--remove-old --yes`), and only those with an identical new copy.
 
 ## 5. Brand without a character, with a character (built)
@@ -73,7 +73,7 @@ moved with `scripts/migrate-brand-folders.sh` (`src/layout/brand-folders.ts`): i
   column). A new brand starts this way and works completely: the Factory, Reels, Calendar, Daily, Analytics, Series, Instagram and Jobs
   pages all render for a brand with zero reels, each with a first-step message. The generic Stage variant of the kit for full-width
   scenes is still to be built (see TODO.md); the reel skill builds full-width scenes from `src/kit` today.
-- With a character: `brand.json` `character.enabled` with an `id` that names `brand/<slug>/mascot/<id>.py` (Blender script, which writes its frames next to itself, in `movements/<move>/`)
+- With a character: `brand.json` `character.enabled` with an `id` that names `<brand>/mascot/<id>.py` (Blender script, which writes its frames next to itself, in `movements/<move>/`)
   and the brand's own component. The creator can attach one that already exists on the machine ("Use one already on this machine").
 
 ## 6. Brand creator (built: page "New brand")
@@ -109,13 +109,13 @@ After it, the page lands on the brand's hub with a short "next steps" checklist.
 
 Character step (optional: none / create / import): **create** shows the prompt for an AI image tool (`src/shared/character-prompt.ts`: flat
 2D vector, brand colours inserted, front, three-quarter and side views and eight expressions on a plain background, editable fields,
-Copy button), takes the reference sheet (PNG or JPG up to 10 MB, stored in `brand/<slug>/mascot/studio/`) and later runs `character.build`.
+Copy button), takes the reference sheet (PNG or JPG up to 10 MB, stored in `<brand>/mascot/studio/`) and later runs `character.build`.
 **import** copies a character that another brand on the machine has (its `mascot/<id>.py` and files, and its moves). The same studio is on the Character page of any brand.
 
-`character.build` (experimental, `src/creator/character-job.ts`): headless Claude (writes only inside `brand/<slug>/mascot/studio/`, runs Blender
+`character.build` (experimental, `src/creator/character-job.ts`): headless Claude (writes only inside `<brand>/mascot/studio/`, runs Blender
 only through `bash scripts/slot.sh blender 1 --`, no network, no credentials) reads the sheet, writes `plan.json` (parts, shapes,
 colours, expressions, and a plain "limits" field) and `build.py` (Blender Python, flat colours, Workbench engine, flat lighting,
-transparent background), runs it through the `blender-run` wrapper or the flatpak, and previews land in `brand/<slug>/mascot/studio/previews/`.
+transparent background), runs it through the `blender-run` wrapper or the flatpak, and previews land in `<brand>/mascot/studio/previews/`.
 The Character page shows them with the plan and an Approve button, and a notes box that reruns the job with all notes so far. The
 public tree holds no builder of its own (the Pip builder is private): the job asks Claude to write one from the sheet, and may read a
 `brand/*/mascot/*.py` of the machine as a method example only. Approval only marks the state; it does not turn the preview into moves.

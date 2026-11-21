@@ -74,13 +74,13 @@ Everything of yours lives in **one folder**, `STUDIO_HOME` (default `~/ReelStudi
 
 | What | Where | In git? |
 |---|---|---|
-| A brand's identity: `brand.json`, style guide, logo (and the voice when there is no character) | `$STUDIO_HOME/workspace/brand/<slug>/identity/` | no |
-| A brand's character: Blender script, model, voice, rendered moves | `$STUDIO_HOME/workspace/brand/<slug>/mascot/` (`movements/<move>/` holds the frames) | no |
-| Reels: script, MP4, caption, cover, audio | `$STUDIO_HOME/workspace/brand/<slug>/reels/<n>-<name>/` | no |
-| The reels' own code, the common sounds | `$STUDIO_HOME/workspace/` (`src/r<n>/`, `src/Root.private.tsx`, `sfx/`) | no (`sfx/` is shipped by the program) |
+| **A brand: one folder** | `$STUDIO_HOME/data/brands/<slug>/` | no |
+|  its identity: `brand.json`, style guide, logo (and the voice when there is no character) | `.../<slug>/identity/` | |
+|  its character: Blender script, model, voice, rendered moves, reference sheet | `.../<slug>/mascot/` (`movements/<move>/` holds the frames, `studio/` the reference sheet) | |
+|  its reels: script, MP4, caption, cover, audio | `.../<slug>/reels/<n>-<name>/` | |
+|  the hub's data of the brand: question list, settings, schedule, daily plans, analytics, ideas, Instagram login | `.../<slug>/` (`reel-questions.md`, `settings.json`, `scheduled.json`, `profile/`, ...) | |
+| The reels' own code (the Remotion project) | `$STUDIO_HOME/workspace/` (`src/r<n>/`, `src/Root.private.tsx`) | no (until the app: see TODO.md) |
 | Hub state: jobs, settings | `$STUDIO_HOME/data/` (`jobs.json`, `settings.json`) | no |
-| Per brand: question list, schedule state, daily plans, analytics, ideas, series | `$STUDIO_HOME/data/brands/<slug>/` (`reel-questions.md` and the rest) | no |
-| Instagram login of a brand (browser profile) | `$STUDIO_HOME/data/brands/<slug>/profile/` | no |
 | Deleted brands | `$STUDIO_HOME/data/trash/<slug>-<time>/` | no |
 | Settings of the stack (token, ports) | `.env` in the repository | no |
 | The program: hub, scripts, Remotion kit, base skills | this repository | yes |
@@ -90,9 +90,9 @@ Everything of yours lives in **one folder**, `STUDIO_HOME` (default `~/ReelStudi
 
 Volume names are prefixed with `COMPOSE_PROJECT_NAME` (default `reel-studio`). The volumes hold only caches and models that can be downloaded again.
 
-**The workspace is a Remotion project.** Brands, reels and your own reel code sit in it, and the program fills in its own files next to them: the Remotion kit (`src/kit`, `src/cover`), `scripts/`, the base skills and `sfx/`. The Ootto skills library (`platform/skills`) is not copied: a skill you switch on is a link, `.claude/skills/ootto-<name>`, to the program's own folder, and the hub points the links at the program again at every start (so an update of the program is an update of the skills). The brand template (`brand/_template`) is read from the program and is not copied. The hub copies those at every start (`workspace/.reel-studio/program.json` lists them), so an update replaces them. If you edited one, your version is first saved in `workspace/.reel-studio/overwritten/<time>/`. Put your own changes in your own folders (`src/<brand>/`).
+**The workspace is a Remotion project.** Your own reel code sits in it (brands, reels and sounds do not: see above), and the program fills in its own files next to it: the Remotion kit (`src/kit`, `src/cover`), `scripts/` and the base skills. The common sounds (`sfx/`) are read from the program too. The Ootto skills library (`platform/skills`) is not copied: a skill you switch on is a link, `.claude/skills/ootto-<name>`, to the program's own folder, and the hub points the links at the program again at every start (so an update of the program is an update of the skills). The brand template (`brand/_template`) is read from the program and is not copied. The hub copies those at every start (`workspace/.reel-studio/program.json` lists them), so an update replaces them. If you edited one, your version is first saved in `workspace/.reel-studio/overwritten/<time>/`. Put your own changes in your own folders (`src/<brand>/`).
 
-**Where a render finds its files.** Remotion reads the logo, sounds, character frames and the reels' audio with `staticFile()` from one `public` folder, but each brand keeps them in its own folder. `remotion.config.ts` builds that `public` folder for the brand of the run (the hub sets `REEL_BRAND` for every job) out of hard links, in `workspace/.reel-studio/public-<uid>/<brand>-<pid>/`, and removes it when the run ends: `logo.png` from `identity/`, `mascot/<move>/` from `mascot/movements/`, `sfx/` and `<n>-<name>/<voice>.wav` from each reel's `audio/`. Nothing is copied into a shared `public/` folder, so one brand's logo is never drawn on another's cover.
+**Where a render finds its files.** Remotion reads the logo, sounds, character frames and the reels' audio with `staticFile()` from one `public` folder, but each brand keeps them in its own folder. `remotion.config.ts` builds that `public` folder for the brand of the run (the hub sets `REEL_BRAND` for every job) out of hard links, in `workspace/.reel-studio/public-<uid>/<brand>-<pid>/`, and removes it when the run ends: `logo.png` from `identity/`, `mascot/<move>/` from `mascot/movements/`, `sfx/` (from the program) and `<n>-<name>/<voice>.wav` from each reel's `audio/`. Nothing is copied into a shared `public/` folder, so one brand's logo is never drawn on another's cover.
 
 **Moving to one folder per brand** (a workspace made before `identity/`, `mascot/` and `reels/` were inside each brand): stop the hub, run `scripts/migrate-brand-folders.sh` (it only shows the plan), then `scripts/migrate-brand-folders.sh --apply`. It copies and checks, and the originals stay; once the hub works from the new folders, `scripts/migrate-brand-folders.sh --remove-old` lists the old copies that have an identical new copy and `--remove-old --yes` removes them.
 
