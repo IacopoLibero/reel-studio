@@ -29,7 +29,7 @@ CI runs the same checks (`.github/workflows/ci.yml`).
 
 ## Using the project for your own brand
 
-The repository holds no brand. Your brands live in your studio folder (`~/ReelStudio/workspace`: `brand/<slug>/`, `reels/`, `mascot/` and the branded compositions in `src/`),
+The repository holds no brand. Your brands live in your studio folder (`~/ReelStudio/workspace`: `brand/<slug>/` with `identity/`, `mascot/` and `reels/`, and the branded compositions in `src/`),
 outside this repository. Create one with `./scripts/new-brand.sh my-brand` or the hub's "New brand".
 The generic platform (`platform/`, `scripts/`, `install.sh`, `src/kit`) works with no brand present.
 

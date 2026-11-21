@@ -95,7 +95,7 @@ The daily loop ends its automatic part here and waits for you. Nothing is made b
 
 ![Factory: the question list with hook and closing A or B, and the finished reels](docs/images/factory-questions.png)
 
-- The list comes from `brand/<slug>/reel-questions.md`. Tick questions and press **Send to factory**.
+- The list comes from the brand's `reel-questions.md` (hub data: `data/brands/<slug>/`). Tick questions and press **Send to factory**.
 - The closing (A: offer and website, B: follow for tips) is chosen by keyword rules you can edit in Settings; override it per row.
 - **Find new ideas** asks Claude for new questions, checked against your list for duplicates.
 
@@ -117,7 +117,7 @@ The daily loop ends its automatic part here and waits for you. Nothing is made b
 
 ![Reels page: every reel folder with its files and Instagram state](docs/images/reels-list.png)
 
-- Every folder in the brand's `reels/<slug>/` (in your studio folder) with its cover, files (MP4, caption, cover) and state: not scheduled, in queue, scheduled.
+- Every folder in the brand's `brand/<slug>/reels/` (in your studio folder) with its cover, files (MP4, caption, cover) and state: not scheduled, in queue, scheduled.
 - **Schedule** picks a free slot of your pattern and queues the Instagram job.
 
 ### New brand
@@ -190,7 +190,7 @@ In the hub open the menu at the top and choose **New brand**. All three ways end
 folder and file, and registers the brand without a restart.
 
 1. **Fill in a form.** Name, slug, language, website, what it sells, audience, tone; four colours with a contrast check; two Google
-   font names; a logo (PNG or SVG, up to 1 MB); the two closing lines A and B with a live preview of the last card, and the words that decide which closing a reel gets (words about what
+   font names; a logo (a PNG up to 1 MB; without one, covers have no logo frame; change it later in Settings); the two closing lines A and B with a live preview of the last card, and the words that decide which closing a reel gets (words about what
    the brand offers give closing A, advice and daily work give B); an optional offer, Instagram account name, folder of source texts; and the
    voice (let the assistant suggest three voices and pick the one you like, reuse another brand's sample, upload a WAV with its text, or decide later).
 2. **Discuss it with an AI.** A chat that asks one question at a time and shows a running summary. It proposes the closing lines and the closing words from what the brand sells. You review the generated
@@ -210,8 +210,7 @@ image tool (flat 2D vector, your colours, a sheet with views and eight expressio
 **This is experimental: it needs iteration and may not give a finished character**, and turning an approved preview into the moves
 the reels use is still manual work. A brand with no character uses full-width scenes and works completely.
 
-**Your brands are not in this repository.** They live in your studio folder (default `~/ReelStudio`): `workspace/` has your brands, reels, characters,
-the branded Remotion folders in `src/` and the frames and sounds in `public/`; `data/` has the hub state and each brand's Instagram login. Back that folder up yourself (a private repository, a drive).
+**Your brands are not in this repository.** They live in your studio folder (default `~/ReelStudio`): `workspace/brand/<name>/` holds one brand: `identity/` (brand.json, style guide, logo), `mascot/` (the character, its voice and its rendered moves) and `reels/` (one folder per reel, audio included); `workspace/src/` has the branded Remotion code and `workspace/sfx/` the sounds every reel can use. `data/` has the hub state, each brand's question list and Instagram login. Back that folder up yourself (a private repository, a drive).
 
 ## The daily loop and its approvals
 
@@ -309,7 +308,7 @@ An installation made before brands existed may still carry `BRAND`, `IG_USER_ID`
 
 **Can I use another AI than Claude?** The jobs run headless Claude Code. Only the brand interview can use `codex` or a custom command, and those are untested.
 
-**Where is my data?** In your studio folder, `~/ReelStudio` by default: `workspace/` (brands, reels, characters) and `data/` (hub state and Instagram logins). Docker volumes hold only the voice engine, its models and caches. [platform/README.md](platform/README.md) shows how to back it up.
+**Where is my data?** In your studio folder, `~/ReelStudio` by default: `workspace/` (one folder per brand: identity, character, reels) and `data/` (hub state, question lists and Instagram logins). Docker volumes hold only the voice engine, its models and caches. [platform/README.md](platform/README.md) shows how to back it up.
 
 ## Project layout
 
@@ -318,9 +317,10 @@ install.sh update.sh uninstall.sh   install, update, remove
 .env.example                        every setting, documented
 platform/                           compose files, Dockerfile, the hub (platform/hub), docs, vendored Ootto skills
 platform/docs/                      DESIGN (the hub), DAILY (skills, analytics, daily loop), BRANDS (multi-brand)
-scripts/                            voice, slot queue, new-brand, migrate-layout, smoke test, helpers
+scripts/                            voice, slot queue, new-brand, migrate-layout, migrate-brand-folders, the public folder of a render, smoke test, helpers
 src/                                generic Remotion kit (src/kit) and cover (src/cover); your reel code is in your workspace, outside this repository
-brand/_template/                    the template new brands are made from
+brand/_template/                    the template new brands are made from (read from here, not copied into the workspace)
+sfx/                                the sounds every reel can use (copied into the workspace)
 .claude/skills/                     the reel skill and its helpers (reel, reel-hooks, reel-research, reel-insights, reel-threads)
 docs/images/                        screenshots and diagrams of this README
 TODO.md                             open items and decisions

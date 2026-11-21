@@ -60,7 +60,7 @@ Every page is for the brand chosen in the switcher; the address is `#/<brand>/<p
 | **Series** | Recurring formats, plan a series, assign questions. |
 | **Reels** | Every reel folder with its files and Instagram state; Schedule opens a slot picker and creates an `instagram.schedule` job. |
 | **Instagram** | Session state, the noVNC login window, the queue. |
-| **Character** | The moves of the brand's character (PNG sequences in `public/mascot/<move>/`), add a move with Claude and Blender, re-render one. For a brand without one: the experimental character-from-a-picture steps. |
+| **Character** | The moves of the brand's character (PNG sequences in `brand/<slug>/mascot/movements/<move>/`), add a move with Claude and Blender, re-render one. For a brand without one: the experimental character-from-a-picture steps. |
 | **Settings** | Per brand: posting schedule, daily loop, factory rules, delete brand. Global: Blender device, Claude model, brand assistant, which content skills are on. |
 | **New brand** | The brand creator (see BRANDS.md). |
 
@@ -105,7 +105,7 @@ Tuesday, Thursday 08:00, 16:30 and 19:00; other days 07:30 and 17:30; time zone 
 
 ## Factory (`reel.make`)
 
-The hub reads `brand/<slug>/reel-questions.md` on every request (`GET /api/brands/:slug/factory/questions`) and joins it with the reel
+The hub reads the brand's `reel-questions.md` (in its data folder, `<data>/brands/<slug>/`) on every request (`GET /api/brands/:slug/factory/questions`) and joins it with the reel
 folders and `scheduled.json`. The Factory page selects to-do questions and creates one `reel.make` job each.
 
 - **The job** is a headless `claude -p` (through `HUB_CLAUDE_BIN`) in the project folder with a prompt built from `.claude/skills/reel/SKILL.md`
@@ -113,7 +113,7 @@ folders and `scheduled.json`. The Factory page selects to-do questions and creat
   environment tools (`curl`, `wget`, `nc`, `ssh`, `scp`, `rsync`, `env`, `printenv`, `python3 -c`, `node -e`; see `claude-safety.ts`). Voice, Blender and renders must go through `scripts/slot.sh`. It never schedules on Instagram.
   Steps: Script, Voice, Plan, Build, Render, Checks, Caption, Cover, Done. It fails with the last error if the MP4, `caption.md` and `cover.png`
   are not all present.
-- **The folder** `<next free n>-<short-name>` is allocated under a lock and created at once, so parallel jobs never collide.
+- **The folder** `brand/<slug>/reels/<next free n>-<short-name>` is allocated under a lock and created at once, so parallel jobs never collide.
 - **Ticking:** on success the hub (not Claude) ticks the question under a lock and adds the folder and `closing A|B`.
 - **Automatic closing** (`src/factory/classifier.ts`; the keyword lists are in the brand's settings under `factory.closingRules`, editable in Settings,
   overridable per row): the question text decides first. A "product" keyword gives **A** (the brand's offer and website closing), otherwise a
@@ -124,12 +124,11 @@ folders and `scheduled.json`. The Factory page selects to-do questions and creat
 
 ## Brands
 
-Everything brand-specific is scoped to one brand: `brand/<slug>/brand.json` (zod-validated), `<data>/brands/<slug>/` (settings, daily plans,
+Everything brand-specific is scoped to one brand: `brand/<slug>/` (`identity/` with the zod-validated `brand.json`, `style.md` and the logo; `mascot/`; `reels/`), `<data>/brands/<slug>/` (the question list, settings, daily plans,
 analytics, ideas, series, `scheduled.json`, locks, notifications) and the Instagram browser profile
 (`<data>/brands/<slug>/profile/`, or the folder named by `instagram.profileDir`). Global settings (Blender device, Claude model, brand assistant)
 stay in `<data>/settings.json`. The job queue is shared (one browser flow at a time); each job carries `brand`.
-First start after the multi-brand release: `platform/hub/src/brands/migrate.ts` makes a backup (`platform/data/backup-pre-brands-<time>/`) and
-moves single-brand data into the brand folder (idempotent, logged). More in [BRANDS.md](BRANDS.md).
+A workspace from before the one-folder-per-brand layout is moved with `scripts/migrate-brand-folders.sh` (copies and checks, removes nothing unless asked). More in [BRANDS.md](BRANDS.md).
 
 ## Code layout
 

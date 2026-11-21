@@ -74,11 +74,12 @@ Everything of yours lives in **one folder**, `STUDIO_HOME` (default `~/ReelStudi
 
 | What | Where | In git? |
 |---|---|---|
-| A brand: `brand.json`, style guide, questions, logo, voice sample | `$STUDIO_HOME/workspace/brand/<slug>/` | no (only `brand/_template`) |
-| Reels: script, MP4, caption, cover | `$STUDIO_HOME/workspace/reels/<slug>/<n>-<name>/` | no |
-| Characters, sounds and frames, the reels' own code | `$STUDIO_HOME/workspace/` (`mascot/`, `public/`, `src/r<n>/`, `src/Root.private.tsx`) | no (except `public/a1`) |
+| A brand's identity: `brand.json`, style guide, logo (and the voice when there is no character) | `$STUDIO_HOME/workspace/brand/<slug>/identity/` | no |
+| A brand's character: Blender script, model, voice, rendered moves | `$STUDIO_HOME/workspace/brand/<slug>/mascot/` (`movements/<move>/` holds the frames) | no |
+| Reels: script, MP4, caption, cover, audio | `$STUDIO_HOME/workspace/brand/<slug>/reels/<n>-<name>/` | no |
+| The reels' own code, the common sounds | `$STUDIO_HOME/workspace/` (`src/r<n>/`, `src/Root.private.tsx`, `sfx/`) | no (`sfx/` is shipped by the program) |
 | Hub state: jobs, settings | `$STUDIO_HOME/data/` (`jobs.json`, `settings.json`) | no |
-| Per brand: schedule state, daily plans, analytics, ideas, series, failed-step screenshots | `$STUDIO_HOME/data/brands/<slug>/` | no |
+| Per brand: question list, schedule state, daily plans, analytics, ideas, series | `$STUDIO_HOME/data/brands/<slug>/` (`reel-questions.md` and the rest) | no |
 | Instagram login of a brand (browser profile) | `$STUDIO_HOME/data/brands/<slug>/profile/` | no |
 | Deleted brands | `$STUDIO_HOME/data/trash/<slug>-<time>/` | no |
 | Settings of the stack (token, ports) | `.env` in the repository | no |
@@ -89,7 +90,11 @@ Everything of yours lives in **one folder**, `STUDIO_HOME` (default `~/ReelStudi
 
 Volume names are prefixed with `COMPOSE_PROJECT_NAME` (default `reel-studio`). The volumes hold only caches and models that can be downloaded again.
 
-**The workspace is a Remotion project.** Brands, reels and your own reel code sit in it, and the program fills in its own files next to them: the Remotion kit (`src/kit`, `src/cover`), `scripts/`, the base skills, `brand/_template`, `platform/skills`. The hub copies those at every start (`workspace/.reel-studio/program.json` lists them), so an update replaces them. If you edited one, your version is first saved in `workspace/.reel-studio/overwritten/<time>/`. Put your own changes in your own folders (`src/<brand>/`).
+**The workspace is a Remotion project.** Brands, reels and your own reel code sit in it, and the program fills in its own files next to them: the Remotion kit (`src/kit`, `src/cover`), `scripts/`, the base skills, `sfx/`, `platform/skills`. The brand template (`brand/_template`) is read from the program and is not copied. The hub copies those at every start (`workspace/.reel-studio/program.json` lists them), so an update replaces them. If you edited one, your version is first saved in `workspace/.reel-studio/overwritten/<time>/`. Put your own changes in your own folders (`src/<brand>/`).
+
+**Where a render finds its files.** Remotion reads the logo, sounds, character frames and the reels' audio with `staticFile()` from one `public` folder, but each brand keeps them in its own folder. `remotion.config.ts` builds that `public` folder for the brand of the run (the hub sets `REEL_BRAND` for every job) out of hard links, in `workspace/.reel-studio/public/<brand>-<pid>/`, and removes it when the run ends: `logo.png` from `identity/`, `mascot/<move>/` from `mascot/movements/`, `sfx/` and `<n>-<name>/<voice>.wav` from each reel's `audio/`. Nothing is copied into a shared `public/` folder, so one brand's logo is never drawn on another's cover.
+
+**Moving to one folder per brand** (a workspace made before `identity/`, `mascot/` and `reels/` were inside each brand): stop the hub, run `scripts/migrate-brand-folders.sh` (it only shows the plan), then `scripts/migrate-brand-folders.sh --apply`. It copies and checks, and the originals stay; once the hub works from the new folders, `scripts/migrate-brand-folders.sh --remove-old` lists the old copies that have an identical new copy and `--remove-old --yes` removes them.
 
 **Moving from the old layout** (everything in the repository folder): stop the hub, run `scripts/migrate-layout.sh` (it only shows the plan), then `scripts/migrate-layout.sh --apply`. It copies, never moves: your originals stay until you delete them. Then add `STUDIO_HOME=<folder>` to `.env` and run `./update.sh`.
 
@@ -190,7 +195,7 @@ container. Log in yourself (the hub never types your password). The profile of e
 
 `BLENDER_DEVICE=cpu|gpu|auto` in `.env` (or on the Settings page), then `dc up -d` to apply. `/usr/local/bin/blender-run` (also installed
 as `blender`) reads it: `cpu` is Mesa software GL on Xvfb, `gpu` is NVIDIA GL, `auto` is `gpu` if `nvidia-smi` works.
-Test with a character: `docker exec <name> blender -b -P <workspace>/mascot/<character>.py -- still idle` (writes `mascot/work/still-idle-0-0.png`).
+Test with a character: `docker exec <name> blender -b -P <workspace>/brand/<brand>/mascot/<character>.py -- still idle` (writes `<tmp>/mascot-stills/still-idle-0-0.png`).
 
 ## Running the hub without Docker
 
