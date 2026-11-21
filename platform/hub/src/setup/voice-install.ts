@@ -3,6 +3,7 @@ import { existsSync, mkdirSync, renameSync, rmSync } from "node:fs";
 import { join } from "node:path";
 import { toolsDir } from "./checks.js";
 import { runCommand } from "./run.js";
+import type { SupervisorDeps } from "./voice-supervisor.js";
 import type { VoiceMode } from "./voice-modes.js";
 
 /** VoiceStudio is cloned from its official source at a pinned tag (the same one the Docker image used). */
@@ -14,7 +15,8 @@ export const voiceHome = (dataDir: string): string => toolsDir(dataDir, "voicest
 export const voiceProject = (dataDir: string): string => join(voiceHome(dataDir), "project");
 
 export interface VoiceContext { dataDir: string; port?: number }
-export interface ServerHandle { stop: () => void }
+/** `stop` resolves once the server has exited, so the port is free again. */
+export interface ServerHandle { stop: () => void | Promise<void> }
 
 /** The outside world of the install, replaceable in tests. */
 export interface VoiceInstallDeps {
@@ -93,9 +95,18 @@ export async function installVoiceStudio(ctx: VoiceContext, mode: VoiceMode, log
     await deps.http("POST", "/engines/select", { family: "tts", backend_id: mode.engine });
     log("VoiceStudio is ready");
   } finally {
-    server.stop();
+    await server.stop();
   }
 }
+
+/** Asks a child to stop and waits until it has exited (or ten seconds), so its port is free. */
+export const stopChild = (child: ChildProcess): Promise<void> =>
+  new Promise((resolve) => {
+    if (child.exitCode !== null || child.signalCode !== null) return resolve();
+    const t = setTimeout(() => { child.kill("SIGKILL"); resolve(); }, 10_000);
+    child.once("exit", () => { clearTimeout(t); resolve(); });
+    child.kill("SIGTERM");
+  });
 
 /** Starts the VoiceStudio server and waits until it answers /health. */
 export async function startVoiceServer(ctx: VoiceContext, mode: Pick<VoiceMode, "device">, log: (l: string) => void): Promise<ServerHandle & { child: ChildProcess }> {
@@ -109,7 +120,7 @@ export async function startVoiceServer(ctx: VoiceContext, mode: Pick<VoiceMode, 
   let exited = false;
   child.on("exit", () => { exited = true; });
   for (let n = 0; n < 120 && !exited; n++) {
-    try { if ((await fetch(`http://127.0.0.1:${port}/health`, { signal: AbortSignal.timeout(3000) })).ok) return { child, stop: () => child.kill("SIGTERM") }; } catch { /* not up yet */ }
+    try { if ((await fetch(`http://127.0.0.1:${port}/health`, { signal: AbortSignal.timeout(3000) })).ok) return { child, stop: () => stopChild(child) }; } catch { /* not up yet */ }
     await new Promise((r) => setTimeout(r, 3000));
   }
   child.kill("SIGTERM");
@@ -136,6 +147,24 @@ function realDeps(ctx: VoiceContext): VoiceInstallDeps {
       ].join("\n");
       await runCommand(py, ["-I", "-c", script], { cwd: voiceProject(c.dataDir), env: { ...voiceEnv(c, { device: "gpu" }), HF_HUB_DISABLE_PROGRESS_BARS: "1" } }, log)
         .catch(() => log("model download failed: it will be fetched on first use"));
+    },
+    sleep: (ms) => new Promise((r) => setTimeout(r, ms)),
+  };
+}
+
+/** The supervisor's real parts: a uvicorn child of the hub, and a health check on the VoiceStudio port. */
+export function realSupervisorDeps(ctx: VoiceContext, mode: Pick<VoiceMode, "device">, log: (l: string) => void): SupervisorDeps {
+  const port = ctx.port ?? DEFAULT_VOICE_PORT;
+  return {
+    isUp: async () => { try { return (await fetch(`http://127.0.0.1:${port}/health`, { signal: AbortSignal.timeout(2000) })).ok; } catch { return false; } },
+    spawn: () => {
+      const project = voiceProject(ctx.dataDir);
+      const child = spawn(join(project, ".venv", "bin", "python"), ["-m", "uvicorn", "main:app", "--app-dir", "backend", "--host", "127.0.0.1", "--port", String(port)], {
+        cwd: project, env: { ...process.env, ...voiceEnv(ctx, mode) }, stdio: ["ignore", "pipe", "pipe"],
+      });
+      const pipe = (d: Buffer): void => d.toString().split("\n").filter(Boolean).forEach((l) => log(`[voice] ${l}`));
+      child.stdout?.on("data", pipe); child.stderr?.on("data", pipe);
+      return { stop: () => child.kill("SIGTERM"), onExit: (cb) => { child.on("exit", cb); child.on("error", cb); } };
     },
     sleep: (ms) => new Promise((r) => setTimeout(r, ms)),
   };

@@ -24,6 +24,7 @@ import { studioRoutes } from "./routes/studio.js";
 import { setupRoutes } from "./routes/setup.js";
 import { SetupInstaller } from "./setup/installer.js";
 import { blender, workspacePackages } from "./setup/steps.js";
+import { ensureToolBin } from "./setup/bin.js";
 import { installVoiceStudio } from "./setup/voice-install.js";
 import { readSetup } from "./setup/state.js";
 import { voiceMode } from "./setup/voice-modes.js";
@@ -38,7 +39,7 @@ import { Terminal } from "./terminal.js";
 export interface AppDeps {
   config: Config; store: JobStore; settings: SettingsStore; runner: JobRunner; brands: BrandRegistry;
   /** Set by index.ts once the daily loops exist: starts the loop of a brand created while the hub runs. */
-  hooks: { ensureDaily: (slug: string) => boolean };
+  hooks: { ensureDaily: (slug: string) => boolean; /** Set by index.ts: starts VoiceStudio after the setup installed it. */ voiceInstalled: () => void };
   creator: CreatorServices;
 }
 
@@ -50,7 +51,7 @@ export async function buildApp(config: Config): Promise<{ app: FastifyInstance; 
     defaultSlug: () => brands.defaultSlug(),
     accountOf: (slug) => brands.get(slug)?.instagram.account ?? "",
   });
-  const hooks = { ensureDaily: (_slug: string): boolean => false };
+  const hooks = { ensureDaily: (_slug: string): boolean => false, voiceInstalled: (): void => undefined };
   const creator: CreatorServices = { root: config.root, dataDir: config.dataDir, brands, uploads: new UploadStore(join(config.dataDir, "tmp-uploads")), settings, voiceUrl: `http://127.0.0.1:${process.env.VOICE_PORT || 3900}`, ensureDaily: (slug) => hooks.ensureDaily(slug) };
   const runner = new JobRunner(store, settings, { root: config.root, claudeBin: config.claudeBin, dataDir: config.dataDir, blogDir: config.blogDir, brands, creator: () => creator });
   const deps: AppDeps = { config, store, settings, runner, brands, hooks, creator };
@@ -100,11 +101,12 @@ export async function buildApp(config: Config): Promise<{ app: FastifyInstance; 
     }
     skillRoutes(api, config.root);
     const stepContext = { workspace: config.root, dataDir: config.dataDir, programRoot: defaultProgramRoot() };
-    const installer = new SetupInstaller(config.dataDir, { "workspace-packages": workspacePackages(stepContext), blender: blender(stepContext),
+    const installer = new SetupInstaller(config.dataDir, { "workspace-packages": workspacePackages(stepContext), blender: async (log) => { await blender(stepContext)(log); ensureToolBin(config.dataDir); },
       voicestudio: async (log) => {
         const mode = voiceMode(readSetup(config.dataDir).voiceMode);
         if (!mode) throw new Error("Choose a voice mode first.");
         await installVoiceStudio({ dataDir: config.dataDir, port: Number(process.env.VOICE_PORT ?? 3900) }, mode, log);
+        hooks.voiceInstalled();
       },
     });
     const checkContext = (): CheckContext => ({
