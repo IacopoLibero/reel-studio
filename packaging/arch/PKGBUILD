@@ -7,14 +7,14 @@ pkgdesc='Make and schedule short videos for your brands (Remotion, Blender chara
 arch=('x86_64')
 url='https://github.com/'
 license=('MIT')
-depends=('nodejs>=22.13' 'npm' 'git' 'ffmpeg' 'chromium' 'uv' 'curl')
+depends=('nodejs>=22.13' 'npm' 'git' 'ffmpeg' 'chromium' 'uv' 'electron')
 makedepends=('python' 'make' 'gcc')
 optdepends=('blender: use the system Blender instead of the one the app downloads'
             'nvidia-utils: GPU voices (VoxCPM2 on the graphics card)')
 options=('!strip')
 _srcdir="$(cd "$startdir/../.." && pwd)"
-source=('reel-studio' 'reel-studio.service' 'reel-studio.desktop' 'reel-studio.svg')
-sha256sums=('SKIP' 'SKIP' 'SKIP' 'SKIP')
+source=('reel-studio' 'reel-studio.desktop' 'reel-studio.svg')
+sha256sums=('SKIP' 'SKIP' 'SKIP')
 
 prepare() {
   rm -rf "$srcdir/app" && mkdir -p "$srcdir/app"
@@ -39,13 +39,13 @@ package() {
   rm -rf "$lib/platform/hub/node_modules/@fastify/send/test"
   find "$lib/platform/hub/node_modules/node-pty/build" -mindepth 1 -maxdepth 1 ! -name Release -exec rm -rf {} +
   cp -a platform/skills "$lib/platform/skills"
+  cp -a platform/desktop "$lib/platform/desktop"
   cp -a sfx scripts src brand .claude package.json package-lock.json tsconfig.json remotion.config.ts "$lib/"
   install -Dm644 LICENSE "$pkgdir/usr/share/licenses/$pkgname/LICENSE"
   install -Dm644 THIRD_PARTY_NOTICES.md "$pkgdir/usr/share/licenses/$pkgname/THIRD_PARTY_NOTICES.md"
 
   cd "$srcdir"
   install -Dm755 reel-studio "$pkgdir/usr/bin/reel-studio"
-  install -Dm644 reel-studio.service "$pkgdir/usr/lib/systemd/user/reel-studio.service"
   install -Dm644 reel-studio.desktop "$pkgdir/usr/share/applications/reel-studio.desktop"
   install -Dm644 reel-studio.svg "$pkgdir/usr/share/icons/hicolor/scalable/apps/reel-studio.svg"
 }
