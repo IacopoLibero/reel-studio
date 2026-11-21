@@ -16,7 +16,7 @@ const updates: any[] = [];
 const ctx = () => ({ update: (u: any) => updates.push(u), signal: new AbortController().signal });
 
 async function makeReel(name: string) {
-  const d = join(work, 'reels', 'brand', name);
+  const d = join(work, 'brand', 'acme', 'reels', name);
   await mkdir(d, { recursive: true });
   await writeFile(join(d, 'r.mp4'), 'fakevideo');
   await writeFile(join(d, 'cover.png'), 'fakepng');
@@ -43,8 +43,8 @@ describe('flow against the local mock', () => {
     const res = await runScheduleJob({ id: 'j1', params: { reelDir, slot: '2026-12-03T16:30' } }, ctx(), { now, url: mockUrl });
     expect(res.verified).toBe(true);
     const st = JSON.parse(await readFile(join(work, 'data', 'scheduled.json'), 'utf8'));
-    expect(st['brand/9-qr'].slot).toBe('2026-12-03T16:30');
-    expect(st['brand/9-qr'].verified).toBe(true);
+    expect(st['acme/9-qr'].slot).toBe('2026-12-03T16:30');
+    expect(st['acme/9-qr'].verified).toBe(true);
     expect(updates.map((u) => u.step).filter(Boolean)).toEqual([
       'Open dialog', 'Upload video', 'Crop 9:16', 'Upload cover', 'Caption', 'Date and time', 'Schedule', 'Verify',
     ]);

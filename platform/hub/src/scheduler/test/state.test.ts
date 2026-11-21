@@ -12,7 +12,8 @@ describe('state', () => {
   afterEach(() => { if (old === undefined) delete process.env.HUB_DATA; else process.env.HUB_DATA = old; });
 
   it('derives keys', () => {
-    expect(reelKey('/x/reels/acme/9-foo/')).toBe('acme/9-foo');
+    expect(reelKey('/x/brand/acme/reels/9-foo/')).toBe('acme/9-foo');
+    expect(reelKey('/x/reels/acme/9-foo')).toBe('9-foo'); // the first layout is no longer a brand folder
     expect(reelKey('/x/other/9-foo')).toBe('9-foo');
   });
 
