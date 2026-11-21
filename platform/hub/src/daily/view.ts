@@ -1,5 +1,5 @@
 import { readFileSync } from "node:fs";
-import { resolveReelFile } from "../reels/scanner.js";
+import { folderOfKey, resolveReelFile } from "../reels/scanner.js";
 import type { Job } from "../shared/types.js";
 import type { DailyDeps } from "./deps.js";
 import { listPlanDates, readPlan, reconcile, updatePlan } from "./plan.js";
@@ -22,9 +22,10 @@ const read = (f: string | null) => { try { return f ? readFileSync(f, "utf8") : 
 function reelView(d: DailyDeps, r: PlanReel, jobs: readonly Job[]): ReelView {
   const byId = (id: string | null) => jobs.find((j) => j.id === id);
   const key = r.key;
-  const mp4 = key ? resolveReelFile(d.config.root, key, "mp4") : null;
-  const cover = key ? resolveReelFile(d.config.root, key, "cover") : null;
-  const caption = read(key ? resolveReelFile(d.config.root, key, "caption") : null);
+  const reels = d.brand.paths.reelsDir;
+  const mp4 = key ? resolveReelFile(reels, folderOfKey(key), "mp4") : null;
+  const cover = key ? resolveReelFile(reels, folderOfKey(key), "cover") : null;
+  const caption = read(key ? resolveReelFile(reels, folderOfKey(key), "caption") : null);
   const job = byId(r.jobId);
   const checks: Check[] = key ? [
     { label: "MP4 present", ok: !!mp4 }, { label: "Cover present", ok: !!cover },

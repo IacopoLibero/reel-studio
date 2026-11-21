@@ -15,8 +15,8 @@ export function readBrandQuestions(dataDir: string, brand: string): Question[] {
 export const activeMakeJobs = (jobs: Job[]) => jobs.filter((j) => j.type === "reel.make" && (j.status === "queued" || j.status === "running"));
 
 /** Every question of the brand, joined with its reel folder on disk, its schedule state and the automatic closing. */
-export function listFactoryQuestions(root: string, brand: string, dataDir: string, settings: Settings, jobs: Job[]): FactoryQuestion[] {
-  const reels = new Map(scanReels(root, readScheduled(join(dataDir, "scheduled.json")), new Set(), brand).map((r) => [r.key, r]));
+export function listFactoryQuestions(brand: string, dataDir: string, settings: Settings, jobs: Job[]): FactoryQuestion[] {
+  const reels = new Map(scanReels(join(dataDir, "reels"), brand, readScheduled(join(dataDir, "scheduled.json"))).map((r) => [r.key, r]));
   const making = new Set(activeMakeJobs(jobs).map((j) => String(j.params.questionId)));
   return readBrandQuestions(dataDir, brand).map((q) => {
     const r = q.folder ? reels.get(`${q.brand}/${q.folder}`) : undefined;

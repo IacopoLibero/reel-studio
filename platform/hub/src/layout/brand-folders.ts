@@ -1,4 +1,4 @@
-import { constants as fsConstants, cpSync, existsSync, lstatSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { constants as fsConstants, cpSync, existsSync, lstatSync, mkdirSync, readdirSync, readFileSync, renameSync, rmdirSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, join, relative, resolve, sep } from "node:path";
 import { brandPaths, characterFiles, voiceTarget, type BrandPaths } from "../brands/paths.js";
 import { isValidSlug, validateBrand, type Brand } from "../brands/schema.js";
@@ -10,7 +10,7 @@ import { compareTrees, findSymlinks, listFiles, sha256 } from "./fs-tools.js";
  *   brand/<slug>/brand.json, style.md, logo.png, <voice>.wav .txt .json, reel-questions.md  ->  brand/<slug>/identity/ (the voice, the logo and
  *                                                                                                  the style guide), the questions go to the data folder
  *   reels/<slug>/<n>-<name>/                    ->  brand/<slug>/reels/<n>-<name>/   (with the final audio from public/<n>-<name>/ in its audio/)
- *   mascot/<id>.py .blend -expressions.png, mascot/work/head.json  ->  brand/<slug>/mascot/<id>.py ... <id>-head.json
+ *   mascot/<id>.py .blend, mascot/work/head.json  ->  <brand>/mascot/<id>.py ... <id>-head.json; mascot/<id>-expressions.png -> <brand>/mascot/studio/reference-sheet.png
  *   public/mascot/<move>/                        ->  brand/<slug>/mascot/movements/<move>/
  *   characters/<slug>/                           ->  brand/<slug>/mascot/studio/
  *
@@ -37,9 +37,10 @@ const dirs = (p: string): string[] => { try { return readdirSync(p, { withFileTy
 const read = (p: string): string => readFileSync(p, "utf8");
 const escapeRe = (s: string): string => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
-/** Brand folders in the first layout: a brand.json at the top of brand/<slug>/ and no identity/ yet. */
-export function findOldBrands(workspace: string): string[] {
-  return dirs(join(workspace, "brand")).filter((n) => isValidSlug(n) && existsSync(join(workspace, "brand", n, "brand.json")) && !existsSync(join(workspace, "brand", n, "identity", "brand.json"))).sort();
+/** Brand folders in the first layout: a brand.json at the top of workspace/brand/<slug>/, and no identity/ yet in the workspace or in the data folder. */
+export function findOldBrands(workspace: string, data: string): string[] {
+  return dirs(join(workspace, "brand")).filter((n) => isValidSlug(n) && existsSync(join(workspace, "brand", n, "brand.json"))
+    && !existsSync(join(workspace, "brand", n, "identity", "brand.json")) && !existsSync(pathsOf(workspace, data, n).brandJson)).sort();
 }
 
 /**
@@ -49,28 +50,30 @@ export function findOldBrands(workspace: string): string[] {
 export function updateStyleGuide(md: string, slug: string, brand: Pick<Brand, "character">, voice: { oldWav: string | null; oldTxt: string | null; newWav: string | null; newTxt: string | null }): string {
   let out = md;
   const b = `brand/${slug}`;
-  out = out.split(`${b}/logo.png`).join(`${b}/identity/logo.png`);
-  if (voice.oldWav && voice.newWav) out = out.split(`${b}/${voice.oldWav}`).join(`${b}/${voice.newWav}`);
-  if (voice.oldTxt && voice.newTxt) out = out.split(`${b}/${voice.oldTxt}`).join(`${b}/${voice.newTxt}`);
+  // Paths in a brand's style guide are relative to the brand's own folder.
+  out = out.split(`${b}/logo.png`).join("identity/logo.png");
+  if (voice.oldWav && voice.newWav) out = out.split(`${b}/${voice.oldWav}`).join(voice.newWav);
+  if (voice.oldTxt && voice.newTxt) out = out.split(`${b}/${voice.oldTxt}`).join(voice.newTxt);
   out = out.replace(/ See `voice-sample\.md` in this folder for how to record it\./g, " See `.claude/skills/reel/voice-sample.md` for how to record it.");
-  out = out.replace(/(?<![\w/])reels\/([a-z0-9-]+)\//g, (m, s: string) => (s === slug ? `${b}/reels/` : m));
-  if (brand.character.enabled) {
-    const id = escapeRe(brand.character.id);
-    out = out.replace(new RegExp(`(?<![\\w/])mascot/(${id}\\.(?:py|blend))`, "g"), `${b}/mascot/$1`);
-    out = out.replace(/(?<![\w/])public\/mascot\//g, `${b}/mascot/movements/`);
-  }
+  out = out.replace(/(?<![\w/])reels\/([a-z0-9-]+)\//g, (m, s: string) => (s === slug ? "reels/" : m));
+  if (brand.character.enabled) out = out.replace(/(?<![\w/])public\/mascot\//g, "mascot/movements/");
   return out;
 }
+
+/** The style guide of a brand that was already in the one-folder layout inside the workspace: `brand/<slug>/identity/logo.png` becomes `identity/logo.png`. */
+export const relativeStyleGuide = (md: string, slug: string): string => md.split(`brand/${slug}/`).join("");
 
 const regularFile = (p: string): boolean => { try { return lstatSync(p).isFile(); } catch { return false; } };
 const sameContent = (a: string, b: string): boolean => regularFile(a) && regularFile(b) && sha256(a) === sha256(b);
 /** A path inside a brand folder as brand.json writes it: relative, never leaving the folder. */
 const safeRel = (p: string | null): p is string => !!p && !p.startsWith("/") && !p.split("/").includes("..") && !/[\u0000-\u001f\\]/.test(p);
 
-const pathsOf = (workspace: string, data: string, slug: string): BrandPaths => brandPaths(slug, { root: workspace, dataDir: data, chromeRoot: null });
+const pathsOf = (workspace: string, data: string, slug: string): BrandPaths => brandPaths(slug, { dataDir: data, chromeRoot: null });
 
 /** What is missing or different in the copy. Extra files in the destination are not a problem (the final audio of public/ is added to the reels). */
 const lacking = (from: string, to: string): string[] => compareTrees(from, to).filter((x) => !x.startsWith("unexpected:"));
+/** Files that exist on both sides with different content: the only thing that stops a copy (a destination that merely lacks files is filled in). */
+const conflicts = (from: string, to: string): string[] => lacking(from, to).filter((x) => /differs/.test(x));
 
 interface VoiceMove { copies: Copy[]; voice: { oldWav: string | null; oldTxt: string | null; newWav: string | null; newTxt: string | null }; newVoice: { sample: string | null; sampleText: string | null }; notes: string[]; problems: string[] }
 
@@ -153,7 +156,8 @@ function planBrand(workspace: string, data: string, slug: string): BrandPlan {
     else plan.problems.push(`mascot/${id}.py (the character of ${slug}) is not there`);
     const blend = join(workspace, "mascot", `${id}.blend`), sheet = join(workspace, "mascot", `${id}-expressions.png`), head = join(workspace, "mascot", "work", "head.json");
     if (existsSync(blend)) copy(blend, cf.blend, "character model");
-    if (existsSync(sheet)) copy(sheet, cf.sheet, "expression sheet");
+    // The sheet the character was drawn from is the reference sheet of its studio (nothing reads it while reels are made).
+    if (existsSync(sheet) && !existsSync(join(workspace, "characters", slug, "reference-sheet.png"))) copy(sheet, join(p.mascotDir, "studio", "reference-sheet.png"), "reference sheet");
     if (existsSync(head)) copy(head, cf.head, "head shape");
     const moves = join(workspace, "public", "mascot");
     if (existsSync(moves)) copy(moves, p.movementsDir, "rendered moves");
@@ -186,7 +190,7 @@ const readMarker = (workspace: string): { brands: string[] } | null => {
  */
 export function migrateBrandFolders(o: BrandFoldersOptions): BrandFoldersResult {
   const log = o.log ?? (() => undefined);
-  const old = findOldBrands(o.workspace);
+  const old = findOldBrands(o.workspace, o.data);
   if (old.length === 0) {
     const already = existsSync(join(o.workspace, MARKER));
     return { status: already ? "already" : "nothing", brands: [], problems: [], verified: already, leftovers: [] };
@@ -203,7 +207,7 @@ export function migrateBrandFolders(o: BrandFoldersOptions): BrandFoldersResult 
     log(`${b.slug}: ${b.copies.length} copies, ${b.writes.length} files rewritten`);
     const own: string[] = [];
     for (const c of b.copies) {
-      if (existsSync(c.to) && listFiles(c.to).length && lacking(c.from, c.to).length) {
+      if (existsSync(c.to) && listFiles(c.to).length && conflicts(c.from, c.to).length) {
         own.push(`${c.what}: ${c.to} already exists and differs from ${c.from}. If it is a leftover of an interrupted copy, delete it and run this again`);
         continue;
       }
@@ -324,7 +328,7 @@ export function removeOldFiles(o: RemoveOptions): RemoveResult {
       const id = brand.character.id, cf = characterFiles(p, id);
       take(join(o.workspace, "mascot", `${id}.py`), cf.script);
       take(join(o.workspace, "mascot", `${id}.blend`), cf.blend);
-      take(join(o.workspace, "mascot", `${id}-expressions.png`), cf.sheet);
+      take(join(o.workspace, "mascot", `${id}-expressions.png`), join(p.mascotDir, "studio", "reference-sheet.png"));
       take(join(o.workspace, "mascot", "work", "head.json"), cf.head);
     }
     takeRewritten(join(old, "brand.json"), p.brandJson, expected.brand);
@@ -384,4 +388,71 @@ function readNew(p: BrandPaths): Brand | null {
 /** Removes a folder that holds nothing but empty folders (a folder with a file or a link in it stays). */
 function pruneIfEmpty(dir: string): void {
   if (existsSync(dir) && onlyEmptyDirs(dir)) rmSync(dir, { recursive: true, force: true });
+}
+
+// ---------------------------------------------------------------------------------------------------------------------------------------------
+// From <workspace>/brand/<slug>/{identity,mascot,reels} to <data>/brands/<slug>/ (one folder per brand, with the hub's data of the brand).
+
+export const INTO_DATA_MARKER = ".reel-studio/brand-into-data.json";
+const PARTS = ["mascot", "reels", "identity"] as const; // identity last: its brand.json is what makes the folder a brand
+
+export interface IntoDataBrand { slug: string; parts: string[]; files: number; leftovers: string[] }
+export interface IntoDataResult { status: "nothing" | "planned" | "applied" | "blocked"; brands: IntoDataBrand[]; problems: string[]; verified: boolean }
+
+/** Brand folders still in the workspace: workspace/brand/<slug>/ with an identity, mascot or reels folder. */
+export function findWorkspaceBrands(workspace: string): string[] {
+  return dirs(join(workspace, "brand")).filter((n) => isValidSlug(n) && PARTS.some((p) => existsSync(join(workspace, "brand", n, p)))).sort();
+}
+
+/**
+ * Moves each brand folder of the workspace into the data folder with a rename (same disk: instant, nothing is copied or duplicated), then makes the paths
+ * in the brand's style guide relative to its folder. Refuses a part whose destination already has files. Other files in the old brand folder are left
+ * and listed; the folder goes only when it is empty.
+ */
+export function moveBrandsIntoData(o: BrandFoldersOptions): IntoDataResult {
+  const slugs = findWorkspaceBrands(o.workspace);
+  if (slugs.length === 0) return { status: "nothing", brands: [], problems: [], verified: true };
+  const problems: string[] = [];
+  const brands: IntoDataBrand[] = slugs.map((slug) => {
+    const from = join(o.workspace, "brand", slug), to = pathsOf(o.workspace, o.data, slug).brandDir;
+    const parts = PARTS.filter((p) => existsSync(join(from, p)));
+    for (const p of parts) if (existsSync(join(to, p)) && !onlyEmptyDirs(join(to, p))) problems.push(`${slug}: ${join(to, p)} already has files: nothing was moved for this brand`);
+    const files = parts.reduce((n, p) => n + listFiles(join(from, p)).length, 0);
+    const links = parts.flatMap((p) => findSymlinks(join(from, p)));
+    if (links.length) problems.push(`${slug}: ${links[0]} is a symbolic link: move it by hand`);
+    const leftovers = readdirSync(from).filter((n) => !(PARTS as readonly string[]).includes(n));
+    return { slug, parts, files, leftovers };
+  });
+  if (!o.apply) return { status: "planned", brands, problems, verified: false };
+  if (problems.length) return { status: "blocked", brands, problems, verified: false };
+
+  const log = o.log ?? (() => undefined);
+  const mistakes: string[] = [];
+  const moved: string[] = [];
+  for (const b of brands) {
+    const from = join(o.workspace, "brand", b.slug), to = pathsOf(o.workspace, o.data, b.slug).brandDir;
+    log(`${b.slug}: moving ${b.parts.join(", ")} (${b.files} files)`);
+    let ok = true;
+    for (const p of b.parts) {
+      try {
+        if (existsSync(join(to, p))) rmSync(join(to, p), { recursive: true, force: true }); // an empty folder (checked above)
+        mkdirSync(to, { recursive: true });
+        renameSync(join(from, p), join(to, p));
+      } catch (e) {
+        ok = false;
+        mistakes.push(`${b.slug}: could not move ${p}: ${(e as NodeJS.ErrnoException).code === "EXDEV" ? "the workspace and the data folder are on different disks, so a rename is not possible" : (e as Error).message}`);
+        break;
+      }
+    }
+    const after = b.parts.reduce((n, p) => n + listFiles(join(to, p)).length, 0);
+    if (ok && after !== b.files) mistakes.push(`${b.slug}: ${b.files} files before, ${after} after the move`);
+    const style = join(to, "identity", "style.md");
+    if (ok && existsSync(style)) { const md = read(style), next = relativeStyleGuide(md, b.slug); if (next !== md) writeFileSync(style, next); }
+    if (ok && after === b.files) { moved.push(b.slug); try { rmdirSync(from); } catch { /* other files stay */ } }
+  }
+  try { rmdirSync(join(o.workspace, "brand")); } catch { /* not empty */ }
+  const verified = mistakes.length === 0;
+  mkdirSync(join(o.workspace, ".reel-studio"), { recursive: true });
+  writeFileSync(join(o.workspace, INTO_DATA_MARKER), `${JSON.stringify({ at: new Date().toISOString(), verified, brands: moved, problems: mistakes }, null, 2)}\n`);
+  return { status: "applied", brands, problems: mistakes, verified };
 }

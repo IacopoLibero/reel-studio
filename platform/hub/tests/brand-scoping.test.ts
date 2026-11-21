@@ -24,7 +24,7 @@ beforeEach(() => { tmp = mkdtempSync(join(tmpdir(), "scoping-")); root = join(tm
 afterEach(() => rmSync(tmp, { recursive: true, force: true }));
 
 function reel(brand: string, folder: string, caption = "Caption") {
-  const dir = join(root, "brand", brand, "reels", folder);
+  const dir = join(data, "brands", brand, "reels", folder);
   mkdirSync(dir, { recursive: true });
   writeFileSync(join(dir, "a.mp4"), "v"); writeFileSync(join(dir, "caption.md"), caption); writeFileSync(join(dir, "cover.png"), "p");
 }
@@ -33,21 +33,22 @@ const Q = (q: string) => `## To do\n\n- [ ] ${q} · hook: myth · source: needs 
 describe("data scoped by brand", () => {
   it("scans only the reels of one brand", () => {
     reel("acme", "1-a"); reel("beta", "1-b");
-    expect(scanReels(root, {}).map((r) => r.key)).toEqual(["acme/1-a", "beta/1-b"]);
-    expect(scanReels(root, {}, new Set(), "beta").map((r) => r.key)).toEqual(["beta/1-b"]);
-    expect(scanReels(root, {}, new Set(), "ghost")).toEqual([]);
+    const reels = (b: string) => join(data, "brands", b, "reels");
+    expect(scanReels(reels("acme"), "acme", {}).map((r) => r.key)).toEqual(["acme/1-a"]);
+    expect(scanReels(reels("beta"), "beta", {}).map((r) => r.key)).toEqual(["beta/1-b"]);
+    expect(scanReels(reels("ghost"), "ghost", {})).toEqual([]);
   });
   it("reads the questions of one brand and no other", () => {
     writeTestBrand(root, "acme", {}, Q("Is paper cheaper?"), data); writeTestBrand(root, "beta", {}, Q("Is plastic cheaper?"), data);
     expect(readBrandQuestions(join(data, "brands/acme"), "acme").map((q) => q.question)).toEqual(["Is paper cheaper?"]);
     expect(readBrandQuestions(join(data, "brands/ghost"), "ghost")).toEqual([]);
-    expect(listFactoryQuestions(root, "beta", join(data, "brands/beta"), DEFAULT_SETTINGS, []).map((q) => [q.brand, q.question])).toEqual([["beta", "Is plastic cheaper?"]]);
+    expect(listFactoryQuestions("beta", join(data, "brands/beta"), DEFAULT_SETTINGS, []).map((q) => [q.brand, q.question])).toEqual([["beta", "Is plastic cheaper?"]]);
   });
   it("matches calendar posts against the reels of the brand only", () => {
     reel("acme", "1-a", "Same first line"); reel("beta", "1-b", "Same first line");
     writeTestBrand(root, "acme", {}, Q("x"), data); writeTestBrand(root, "beta", {}, Q("y"), data);
-    expect(loadReelRefs(root, join(data, "brands/acme"), "acme").map((r) => r.key)).toEqual(["acme/1-a"]);
-    expect(loadReelRefs(root, join(data, "brands/beta"), "beta").map((r) => r.key)).toEqual(["beta/1-b"]);
+    expect(loadReelRefs(join(data, "brands/acme"), "acme").map((r) => r.key)).toEqual(["acme/1-a"]);
+    expect(loadReelRefs(join(data, "brands/beta"), "beta").map((r) => r.key)).toEqual(["beta/1-b"]);
   });
   it("keeps one calendar reading per brand", () => {
     invalidateCalendar();
@@ -74,7 +75,7 @@ describe("jobs of a brand", () => {
     expect(make).toMatchObject({ type: "reel.make", brand: "acme", params: { brand: "acme", questionId: q.id } });
     expect(() => buildSpec({ type: "reel.make", params: { questionId: "0".repeat(12) } }, d)).toThrow(JobRequestError);
     const sched = buildSpec({ type: "instagram.schedule", params: { reel: "acme/1-a", date: "2026-11-24", time: "17:30" } }, d);
-    expect(sched).toMatchObject({ brand: "acme", params: { reelDir: join(root, "brand/acme/reels/1-a") } });
+    expect(sched).toMatchObject({ brand: "acme", params: { reelDir: join(data, "brands/acme/reels/1-a") } });
     // another brand's reel is not found through this brand
     expect(() => buildSpec({ type: "instagram.schedule", params: { reel: "beta/1-b", date: "2026-11-24", time: "17:30" } }, d)).toThrow(/not found/);
   });
@@ -109,12 +110,12 @@ describe("jobs of a brand", () => {
 
 describe("prompts take everything from the brand", () => {
   const b = testBrand("acme", { name: "Acme Cafe", about: "We roast coffee.", audience: "cafe owners", closing: { A: { label: "Try Acme", line: "Try Acme at acme.example." }, B: { label: "Follow for tips", line: "Follow me." } }, readoutLanguage: "it" });
-  const input = { root: "/r", brand: "acme", folder: "1-a", question: "Q?", source: null, sourceKind: "needs-source" as const, blogDir: "/b" };
+  const input = { root: "/r", brand: "acme", brandDir: "/d/brands/acme", folder: "1-a", question: "Q?", source: null, sourceKind: "needs-source" as const, blogDir: "/b" };
   it("the reel prompt quotes the brand's closing lines and has no mascot or product assumption", () => {
     const p = buildReelPrompt({ ...input, closing: "A", brandInfo: b });
     expect(p).toContain("Try Acme at acme.example.");
     expect(p).toContain("Brand: Acme Cafe (folder acme)");
-    expect(p).toContain("brand/acme/identity/style.md");
+    expect(p).toContain("/d/brands/acme/identity/style.md");
     expect(p).not.toMatch(/restaurant|mascot voice/i);
     expect(buildReelPrompt({ ...input, closing: "B" })).toContain("option B (Follow for tips)");
   });

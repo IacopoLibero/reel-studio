@@ -25,8 +25,8 @@ export function blogSlugs(blogDir: string): string[] {
 }
 
 /** Which optional data the brand folder holds, so the prompt only names the skills that have something to read. */
-export function brandData(root: string, brand: string): { hasCsv: boolean; hasComments: boolean; hasResults: boolean } {
-  const dir = join(root, "brand", brand);
+export function brandData(brandDir: string): { hasCsv: boolean; hasComments: boolean; hasResults: boolean } {
+  const dir = brandDir;
   let files: string[] = [];
   try { files = readdirSync(dir); } catch { /* no folder */ }
   return { hasCsv: files.some((f) => f.toLowerCase().endsWith(".csv")), hasComments: files.some((f) => /^comments\./i.test(f)), hasResults: files.includes("instagram-results.md") };

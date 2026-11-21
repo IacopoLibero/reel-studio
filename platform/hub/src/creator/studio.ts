@@ -15,15 +15,15 @@ const stateSchema = z.object({
 });
 export type StudioState = z.infer<typeof stateSchema>;
 
-/** brand/<slug>/mascot/studio/: the reference sheet, the plan, the builder script and the previews of a character made from a picture. */
-export const studioDir = (root: string, slug: string): string => join(root, "brand", slug, "mascot", "studio");
+/** <brand>/mascot/studio/: the reference sheet, the plan, the builder script and the previews of a character made from a picture. */
+export const studioDir = (brandDir: string): string => join(brandDir, "mascot", "studio");
 
-export function readState(root: string, slug: string): StudioState {
-  try { return stateSchema.parse(JSON.parse(readFileSync(join(studioDir(root, slug), "state.json"), "utf8"))); } catch { return stateSchema.parse({}); }
+export function readState(brandDir: string): StudioState {
+  try { return stateSchema.parse(JSON.parse(readFileSync(join(studioDir(brandDir), "state.json"), "utf8"))); } catch { return stateSchema.parse({}); }
 }
 
-export function writeState(root: string, slug: string, state: StudioState): StudioState {
-  const dir = studioDir(root, slug);
+export function writeState(brandDir: string, state: StudioState): StudioState {
+  const dir = studioDir(brandDir);
   mkdirSync(dir, { recursive: true });
   const next = stateSchema.parse({ ...state, updatedAt: new Date().toISOString() });
   writeFileSync(join(dir, "state.json.tmp"), `${JSON.stringify(next, null, 2)}\n`);
@@ -31,18 +31,18 @@ export function writeState(root: string, slug: string, state: StudioState): Stud
   return next;
 }
 
-export const patchState = (root: string, slug: string, patch: Partial<StudioState>): StudioState => writeState(root, slug, { ...readState(root, slug), ...patch });
+export const patchState = (brandDir: string, patch: Partial<StudioState>): StudioState => writeState(brandDir, { ...readState(brandDir), ...patch });
 
 /** The reference sheet file name (png or jpg), or null. */
-export function sheetFile(root: string, slug: string): string | null {
-  const dir = studioDir(root, slug);
+export function sheetFile(brandDir: string): string | null {
+  const dir = studioDir(brandDir);
   return existsSync(dir) ? readdirSync(dir).find((f) => /^reference-sheet\.(png|jpg)$/.test(f)) ?? null : null;
 }
 
 /** Stores a reference sheet (replacing an older one of the other type). Validates the content. */
-export function saveSheet(root: string, slug: string, data: Buffer): string {
+export function saveSheet(brandDir: string, data: Buffer): string {
   const c = checkFile("sheet", data);
-  const dir = studioDir(root, slug);
+  const dir = studioDir(brandDir);
   mkdirSync(dir, { recursive: true });
   for (const e of ["png", "jpg"]) rmSync(join(dir, `reference-sheet.${e}`), { force: true });
   const name = `reference-sheet.${c.ext}`;
@@ -50,11 +50,11 @@ export function saveSheet(root: string, slug: string, data: Buffer): string {
   return name;
 }
 
-export function listPreviews(root: string, slug: string): string[] {
-  const dir = join(studioDir(root, slug), "previews");
+export function listPreviews(brandDir: string): string[] {
+  const dir = join(studioDir(brandDir), "previews");
   return existsSync(dir) ? readdirSync(dir).filter((f) => PREVIEW_FILE.test(f)).sort() : [];
 }
 
-export function readPlan(root: string, slug: string): unknown {
-  try { return JSON.parse(readFileSync(join(studioDir(root, slug), "plan.json"), "utf8")); } catch { return null; }
+export function readPlan(brandDir: string): unknown {
+  try { return JSON.parse(readFileSync(join(studioDir(brandDir), "plan.json"), "utf8")); } catch { return null; }
 }

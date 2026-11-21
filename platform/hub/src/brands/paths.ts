@@ -1,6 +1,6 @@
 import { existsSync } from "node:fs";
 import { join, resolve } from "node:path";
-import { defaultDataDir, defaultRoot } from "../paths.js";
+import { defaultDataDir } from "../paths.js";
 import { isValidSlug } from "./schema.js";
 
 /** The old shared browser-profile root from the environment (CHROME_PROFILE_ROOT, else the legacy CHROME_PROFILE), or null: with none, each brand's login lives in its own data folder. */
@@ -12,7 +12,6 @@ export const chromeProfileRoot = (env: NodeJS.ProcessEnv = process.env): string 
   env.CHROME_PROFILE_ROOT?.trim() || env.CHROME_PROFILE?.trim() || "/data/chrome-profile";
 
 export interface BrandPathOptions {
-  root?: string;
   dataDir?: string;
   chromeRoot?: string | null;
   /** The brand's own profile folder (brand.json: instagram.profileDir). Without it: <chromeRoot>/<slug> when an old shared root is given, else <data>/brands/<slug>/profile. */
@@ -22,20 +21,23 @@ export interface BrandPathOptions {
 
 export interface BrandPaths {
   slug: string;
-  /** brand/<slug>/ in the workspace: everything of one brand that is not hub data (identity, character, reels). */
+  /**
+   * The one folder of a brand: <data>/brands/<slug>/. Identity, character and reels are in it with everything the hub keeps for the brand
+   * (settings, schedule, analytics, the question list, the Instagram login), so a brand is one folder to back up, move or delete.
+   */
   brandDir: string;
-  /** brand/<slug>/identity/: brand.json, style.md, the logo, and the voice when the brand has no character. */
+  /** <brand>/identity/: brand.json, style.md, the logo, and the voice when the brand has no character. */
   identityDir: string;
   brandJson: string;
   styleMd: string;
   logo: string;
-  /** brand/<slug>/mascot/: the character's script, sheet, voice and its rendered moves. Absent for a brand without a character. */
+  /** <brand>/mascot/: the character's script, sheet, voice and its rendered moves. Absent for a brand without a character. */
   mascotDir: string;
-  /** brand/<slug>/mascot/movements/<move>/: the rendered PNG sequences (what Remotion reads as mascot/<move>/). */
+  /** <brand>/mascot/movements/<move>/: the rendered PNG sequences (what Remotion reads as mascot/<move>/). */
   movementsDir: string;
-  /** brand/<slug>/reels/<n>-<name>/: one folder per reel, with its audio in audio/. */
+  /** <brand>/reels/<n>-<name>/: one folder per reel, with its audio in audio/. */
   reelsDir: string;
-  /** The data folder of this brand: everything the hub stores for it. */
+  /** The same folder as brandDir (kept as its own field: it is what a job gets as its data folder). */
   dataDir: string;
   /** The question list (data/brands/<slug>/reel-questions.md): hub data, not part of the brand's identity. */
   questionsMd: string;
@@ -51,15 +53,17 @@ export interface BrandPaths {
   profileDir: string;
 }
 
+/** The folder that holds every brand folder: <data>/brands. */
+export const brandsDirOf = (dataDir: string): string => join(dataDir, "brands");
+
 /** The question list of a brand lives in its data folder: data/brands/<slug>/reel-questions.md. */
 export const questionsFile = (dataDir: string): string => join(dataDir, "reel-questions.md");
 
-/** The files of a character inside brand/<slug>/mascot/. */
-export interface CharacterFiles { script: string; blend: string; sheet: string; head: string }
+/** The files of a character inside <brand>/mascot/. (The reference sheet it was drawn from is in mascot/studio/, see studio.ts: nothing reads it at run time.) */
+export interface CharacterFiles { script: string; blend: string; head: string }
 export const characterFiles = (p: Pick<BrandPaths, "mascotDir">, id: string): CharacterFiles => ({
   script: join(p.mascotDir, `${id}.py`),
   blend: join(p.mascotDir, `${id}.blend`),
-  sheet: join(p.mascotDir, `${id}-expressions.png`),
   head: join(p.mascotDir, `${id}-head.json`),
 });
 
@@ -89,9 +93,8 @@ function defaultProfile(fresh: string, slug: string, env: NodeJS.ProcessEnv): st
 export function brandPaths(slug: string, o: BrandPathOptions = {}): BrandPaths {
   if (!isValidSlug(slug) && slug !== "_template") throw new Error(`Invalid brand slug "${slug}"`);
   const env = o.env ?? process.env;
-  const root = o.root ?? defaultRoot(env);
   const data = join(o.dataDir ?? defaultDataDir(env), "brands", slug);
-  const brandDir = join(root, "brand", slug);
+  const brandDir = data;
   const identityDir = join(brandDir, "identity");
   return {
     slug, brandDir, identityDir,

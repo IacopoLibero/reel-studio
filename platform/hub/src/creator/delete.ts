@@ -23,7 +23,7 @@ export interface TrashInput { root: string; dataDir: string; brands: BrandRegist
 export interface TrashResult { trash: string; moved: string[]; kept: string[] }
 
 /**
- * "Delete brand": nothing is erased. The brand folder (identity, character, reels) and the data folder go to <data>/trash/<slug>-<time>/.
+ * "Delete brand": nothing is erased. The brand's folder (identity, character, reels, hub data, login) goes to <data>/trash/<slug>-<time>/.
  * Refused when the typed slug is wrong, when it is the last brand, or while a job of the brand is queued or running.
  * The Instagram browser profile is moved too when it can be done cheaply, otherwise it stays where it is and is listed in `kept`.
  */
@@ -37,8 +37,8 @@ export function trashBrand(i: TrashInput): TrashResult {
 
   const p = i.brands.paths(i.slug, brand);
   const trash = join(i.dataDir, "trash", `${i.slug}-${stamp(i.now ?? new Date())}`);
-  // brand/<slug>/ holds the identity, the character (mascot/) and the reels, so one move takes all of it.
-  const parts: [string, string][] = [[p.brandDir, "brand"], [p.dataDir, "data"]];
+  // The brand's one folder holds its identity, character, reels and hub data (and its Instagram login), so one move takes all of it.
+  const parts: [string, string][] = [[p.brandDir, "brand"]];
   const moved: [string, string][] = [];
   try {
     for (const [from, name] of parts) {

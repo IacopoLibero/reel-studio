@@ -3,7 +3,7 @@ import type { FastifyInstance } from "fastify";
 import { z } from "zod";
 import { join } from "node:path";
 import { countPngs, listMoves, moveDir } from "../character/gallery.js";
-import { readScheduled, resolveReelFile, scanReels } from "../reels/scanner.js";
+import { folderOfKey, readScheduled, resolveReelFile, scanReels } from "../reels/scanner.js";
 import { nextSlots } from "../slots.js";
 import { settingsSchema } from "../settings.js";
 import { validMoveName } from "../character/moves-parser.js";
@@ -16,13 +16,13 @@ import { HttpError, type Scope } from "./scope.js";
 export function contentRoutes(app: FastifyInstance, d: AppDeps, scope: Scope): void {
   const activeReels = (slug: string) => new Set(d.store.list().filter((j) => j.type === "instagram.schedule" && j.brand === slug && (j.status === "queued" || j.status === "running")).map((j) => String(j.params.reel)));
 
-  app.get("/reels", async (req) => { const b = scope(req); return scanReels(d.config.root, readScheduled(b.paths.scheduledFile), activeReels(b.slug), b.slug); });
+  app.get("/reels", async (req) => { const b = scope(req); return scanReels(b.paths.reelsDir, b.slug, readScheduled(b.paths.scheduledFile), activeReels(b.slug)); });
 
   app.get<{ Querystring: { key?: string; kind?: string } }>("/reels/file", async (req, reply) => {
     const b = scope(req);
     const q = z.object({ key: z.string(), kind: z.enum(["cover", "mp4"]) }).safeParse(req.query);
     // The key is <brand>/<folder>: another brand's files are never served through this brand's route.
-    const file = q.success && q.data.key.startsWith(`${b.slug}/`) ? resolveReelFile(d.config.root, q.data.key, q.data.kind) : null;
+    const file = q.success && q.data.key.startsWith(`${b.slug}/`) ? resolveReelFile(b.paths.reelsDir, folderOfKey(q.data.key), q.data.kind) : null;
     if (!q.success || !file) return reply.code(404).send({ error: "File not found." });
     return reply.type(q.data.kind === "cover" ? "image/png" : "video/mp4").send(createReadStream(file));
   });
@@ -79,7 +79,7 @@ export function contentRoutes(app: FastifyInstance, d: AppDeps, scope: Scope): v
     return { images: countPngs(moveDir(c.mascotDir, req.params.move)) };
   });
 
-  app.get("/factory/questions", async (req) => { const b = scope(req); return listFactoryQuestions(d.config.root, b.slug, b.paths.dataDir, d.settings.get(b.slug), d.store.list()); });
+  app.get("/factory/questions", async (req) => { const b = scope(req); return listFactoryQuestions(b.slug, b.paths.dataDir, d.settings.get(b.slug), d.store.list()); });
 
   app.get("/settings", async (req) => d.settings.get(scope(req).slug));
   app.put("/settings", async (req, reply) => {
@@ -87,8 +87,8 @@ export function contentRoutes(app: FastifyInstance, d: AppDeps, scope: Scope): v
     const p = settingsSchema.safeParse(req.body);
     if (!p.success) return reply.code(400).send({ error: p.error.issues[0]?.message ?? "Invalid settings." });
     // The Instagram account name lives in brand.json, the rest in the settings files.
-    const fresh = readBrand(d.config.root, b.slug);
-    if (fresh && fresh.instagram.account !== p.data.accountName) writeBrand(d.config.root, { ...fresh, instagram: { ...fresh.instagram, account: p.data.accountName } });
+    const fresh = readBrand(d.config.dataDir, b.slug);
+    if (fresh && fresh.instagram.account !== p.data.accountName) writeBrand(d.config.dataDir, { ...fresh, instagram: { ...fresh.instagram, account: p.data.accountName } });
     return d.settings.set(p.data, b.slug);
   });
 }

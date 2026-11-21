@@ -1,15 +1,15 @@
-import { copyFileSync, existsSync, linkSync, mkdirSync, readdirSync, rmSync, statSync, writeFileSync } from "node:fs";
+import { copyFileSync, existsSync, linkSync, mkdirSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
 /**
  * Where a render finds its files. Remotion reads sounds, images and audio with staticFile() from one "public" folder.
- * A brand keeps its own files in its own folder (brand/<slug>/identity, mascot, reels), so for every run of Remotion this module
+ * A brand keeps its own files in its own folder (<data>/brands/<slug>/identity, mascot, reels), so for every run of Remotion this module
  * builds a small public folder for the brand it is for, out of hard links (no copy of the 500 MB of character frames):
  *
- *   logo.png            brand/<slug>/identity/logo.png            (missing when the brand has no logo)
- *   mascot/<move>/...   brand/<slug>/mascot/movements/<move>/...  (the character's rendered moves)
- *   sfx/<sound>.wav     <workspace>/sfx/                          (the sounds every brand can use)
- *   <n>-<name>/<x>.wav  brand/<slug>/reels/<n>-<name>/audio/<x>.wav   (the final audio of each reel, e.g. narrator.wav)
+ *   logo.png            <brand>/identity/logo.png            (missing when the brand has no logo)
+ *   mascot/<move>/...   <brand>/mascot/movements/<move>/...  (the character's rendered moves)
+ *   sfx/<sound>.wav     <program>/sfx/                            (the sounds every brand can use; read from the program, not copied into the workspace)
+ *   <n>-<name>/<x>.wav  <brand>/reels/<n>-<name>/audio/<x>.wav   (the final audio of each reel, e.g. narrator.wav)
  *
  * Used by remotion.config.ts, so `npx remotion render|still|studio` needs no extra step. Plain Node: no dependency.
  */
@@ -33,24 +33,38 @@ const dirs = (p: string): string[] => {
   try { return readdirSync(p, { withFileTypes: true }).filter((e) => e.isDirectory()).map((e) => e.name); } catch { return []; }
 };
 
-export const identityJson = (workspace: string, slug: string): string => join(workspace, "brand", slug, "identity", "brand.json");
+/** Where the brand folders are: REEL_BRANDS_DIR (the hub sets it to <data>/brands), else the `data/brands` folder next to the workspace. */
+export const brandsDirFor = (workspace: string, env: NodeJS.ProcessEnv = process.env): string => env.REEL_BRANDS_DIR?.trim() || join(workspace, "..", "data", "brands");
+
+/** The program folder: REEL_PROGRAM (the hub sets it), else the one the program recorded in .reel-studio/program.json, else the workspace itself. */
+export function programRootOf(workspace: string, env: NodeJS.ProcessEnv = process.env): string {
+  const named = env.REEL_PROGRAM?.trim();
+  if (named) return named;
+  try {
+    const recorded = (JSON.parse(readFileSync(join(workspace, ".reel-studio", "program.json"), "utf8")) as { programRoot?: unknown }).programRoot;
+    if (typeof recorded === "string" && recorded) return recorded;
+  } catch { /* no record yet */ }
+  return workspace;
+}
+
+export const identityJson = (brandsDir: string, slug: string): string => join(brandsDir, slug, "identity", "brand.json");
 
 /**
  * The brand a render is for: REEL_BRAND (the hub sets it for every job), else the first brand folder that has an identity/brand.json. Null when there is none.
  * A REEL_BRAND that names no brand is an error, never a reason to render with another brand's logo, colours and character.
  */
-export function pickBrand(workspace: string, env: NodeJS.ProcessEnv = process.env): string | null {
+export function pickBrand(brandsDir: string, env: NodeJS.ProcessEnv = process.env): string | null {
   const named = env.REEL_BRAND?.trim();
   if (named) {
-    if (!SLUG.test(named) || !existsSync(identityJson(workspace, named))) throw new Error(`REEL_BRAND is "${named}", but there is no brand/${named}/identity/brand.json in ${workspace}.`);
+    if (!SLUG.test(named) || !existsSync(identityJson(brandsDir, named))) throw new Error(`REEL_BRAND is "${named}", but there is no ${named}/identity/brand.json in ${brandsDir}.`);
     return named;
   }
-  return dirs(join(workspace, "brand")).filter((n) => SLUG.test(n) && existsSync(identityJson(workspace, n))).sort()[0] ?? null;
+  return dirs(brandsDir).filter((n) => SLUG.test(n) && existsSync(identityJson(brandsDir, n))).sort()[0] ?? null;
 }
 
 /** The brand.json the kit imports as "brand-theme": the brand's own, or the built-in default written to .reel-studio/. */
-export function themeFile(workspace: string, slug: string | null): string {
-  if (slug) return identityJson(workspace, slug);
+export function themeFile(workspace: string, brandsDir: string, slug: string | null): string {
+  if (slug) return identityJson(brandsDir, slug);
   const file = join(workspace, ".reel-studio", "default-brand.json");
   mkdirSync(join(workspace, ".reel-studio"), { recursive: true });
   writeFileSync(file, `${JSON.stringify(DEFAULT_BRAND, null, 2)}\n`);
@@ -82,14 +96,13 @@ export const stageRoot = (workspace: string): string => join(workspace, ".reel-s
  * Builds the public folder of one brand and returns its path. Each run gets its own folder (named with the process id),
  * so renders that run at the same time never share one. The caller removes it when the run ends (see removeStage).
  */
-export function stagePublic(workspace: string, slug: string | null, id: string | number = process.pid): string {
+export function stagePublic(workspace: string, brandsDir: string, slug: string | null, id: string | number = process.pid, sfxDir: string = join(workspace, "sfx")): string {
   const dir = join(stageRoot(workspace), `${slug ?? "default"}-${id}`);
   rmSync(dir, { recursive: true, force: true });
   mkdirSync(dir, { recursive: true });
-  const sounds = join(workspace, "sfx");
-  if (existsSync(sounds)) linkTree(sounds, join(dir, "sfx"));
+  if (existsSync(sfxDir)) linkTree(sfxDir, join(dir, "sfx"));
   if (!slug) return dir;
-  const brand = join(workspace, "brand", slug);
+  const brand = join(brandsDir, slug);
   const logo = join(brand, "identity", "logo.png");
   if (existsSync(logo)) linkFile(logo, join(dir, "logo.png"));
   const moves = join(brand, "mascot", "movements");

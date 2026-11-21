@@ -54,7 +54,7 @@ export const makeDailyRun = (collectFn: Collect = collectViaAdapter): Handler =>
     step(2);
     const settings = ctx.settings.daily;
     const slugs = blogSlugs(ctx.blogDir);
-    const prompt = buildDailyIdeasPrompt({ root: ctx.root, brand, ...(ctx.brand ? { brandInfo: ctx.brand.brand } : {}), dataDir: ctx.dataDir, count: settings.ideas, blogDir: ctx.blogDir, slugs, hooksRows: rows, hasResults: brandData(ctx.root, brand).hasResults, readout, threads: settings.threads });
+    const prompt = buildDailyIdeasPrompt({ root: ctx.root, brand, ...(ctx.brand ? { brandInfo: ctx.brand.brand } : {}), dataDir: ctx.dataDir, count: settings.ideas, blogDir: ctx.blogDir, slugs, hooksRows: rows, hasResults: brandData(ctx.dataDir).hasResults, readout, threads: settings.threads });
     const run = await runClaude(ctx, prompt, [ctx.blogDir, productDir(ctx.blogDir)]);
     run.called.forEach((s) => used.add(s));
     if (!skillGateOk(run.called)) throw new Error("Claude did not call reel-hooks or reel-research, so the ideas are not skill-based.");

@@ -1,12 +1,12 @@
 #!/usr/bin/env node
-// Stand-in for the headless Claude of character.build: writes plan.json and a preview PNG into brand/<slug>/mascot/studio/. FAKE_MODE: good | noplan | nopreview | error.
+// Stand-in for the headless Claude of character.build: writes plan.json and a preview PNG into <brand>/mascot/studio/ (the absolute path is in the prompt). FAKE_MODE: good | noplan | nopreview | error.
 import { mkdirSync, writeFileSync } from "node:fs";
 let prompt = "";
 process.stdin.on("data", (d) => { prompt += d; });
 process.stdin.on("end", () => {
   const out = (o) => console.log(JSON.stringify(o));
   const mode = process.env.FAKE_MODE ?? "good";
-  const dir = /(brand\/[a-z0-9-]+\/mascot\/studio)\//.exec(prompt)?.[1] ?? "brand/x/mascot/studio";
+  const dir = /(\/[^\s]*\/mascot\/studio)\//.exec(prompt)?.[1] ?? "/tmp/x/mascot/studio";
   const tool = (name, input) => out({ type: "assistant", message: { content: [{ type: "tool_use", name, input }] } });
   out({ type: "system", subtype: "init", model: "fake" });
   tool("Read", { file_path: `${dir}/reference-sheet.png` });

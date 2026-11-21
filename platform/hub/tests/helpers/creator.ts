@@ -17,7 +17,7 @@ export interface Env { tmp: string; root: string; data: string; reg: BrandRegist
 export function makeEnv(extra: { claudeBin?: string } = {}): Env {
   const tmp = mkdtempSync(join(tmpdir(), "creator-"));
   const root = join(tmp, "root"), data = join(tmp, "data");
-  mkdirSync(join(root, "brand"), { recursive: true }); mkdirSync(data, { recursive: true });
+  mkdirSync(root, { recursive: true }); mkdirSync(data, { recursive: true });
   const reg = new BrandRegistry({ root, dataDir: data, chromeRoot: join(data, "chrome"), programRoot: join(TEMPLATE, "..", "..") });
   const settings = new SettingsStore(join(data, "settings.json"), { brandFile: (s) => reg.paths(s).settingsFile, defaultSlug: () => reg.defaultSlug(), accountOf: (s) => reg.get(s)?.instagram.account ?? "" });
   const daily: string[] = [];

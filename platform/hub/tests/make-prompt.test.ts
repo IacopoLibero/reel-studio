@@ -1,15 +1,15 @@
 import { describe, it, expect } from "vitest";
 import { buildReelPrompt, MAKE_ALLOWED_TOOLS, MAKE_DENIED_TOOLS } from "../src/factory/make-prompt.js";
 
-const base = { root: "/r", brand: "acme", question: "Is a paper menu really cheaper?", closing: "A" as const, source: "digital-menu-guide", sourceKind: "blog" as const, folder: "22-paper-menu", blogDir: "/blog/posts" };
+const base = { root: "/r", brandDir: "/d/brands/acme", brand: "acme", question: "Is a paper menu really cheaper?", closing: "A" as const, source: "digital-menu-guide", sourceKind: "blog" as const, folder: "22-paper-menu", blogDir: "/blog/posts" };
 
 describe("buildReelPrompt", () => {
   const p = buildReelPrompt(base);
   it("names the folder, brand, question and skill", () => {
-    expect(p).toContain("brand/acme/reels/22-paper-menu");
+    expect(p).toContain("/d/brands/acme/reels/22-paper-menu");
     expect(p).toContain("Is a paper menu really cheaper?");
     expect(p).toContain(".claude/skills/reel/SKILL.md");
-    expect(p).toContain("brand/acme/identity/style.md");
+    expect(p).toContain("/d/brands/acme/identity/style.md");
   });
   it("requires a real reel-hooks call before the script, and reel-research when there is no source", () => {
     expect(p).toContain("Skill tool call to \`reel-hooks\`");

@@ -30,7 +30,7 @@ export const productDir = (blogDir: string): string => {
 
 /** Prompt for a headless run that proposes new reel questions and answers with JSON only. */
 export function buildIdeasPrompt(i: IdeasInput): string {
-  const b = `brand/${i.brand}`;
+  const b = i.dataDir; // the brand's own folder (identity/, mascot/, reels/ and the hub data are all in it)
   const product = productDir(i.blogDir);
   const extra = [
     ...(i.hasCsv ? [`ootto-hook-mining (a CSV of hooks is in ${b}/: mine it for patterns)`] : []),

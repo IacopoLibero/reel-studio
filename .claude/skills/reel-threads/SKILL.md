@@ -12,7 +12,7 @@ Make 1 to 3 short Threads posts from a finished reel or an idea. Audience: resta
 - Each post: plain text, **500 characters at most** (count them), one idea, readable alone.
 - Post 1 is the hook: the reel's opening question or a sharper version. Posts 2-3 (optional) give one useful point each from the reel; never repeat the hook.
 - Say only what the reel or its source supports. No invented numbers, results or quotes. Legal topics: add "General information, not legal advice."
-- Voice of the brand (`brand/<brand>/identity/style.md`): friendly, practical, no hype, no emoji spam (one at most), no hashtags or at most one.
+- Voice of the brand (`<brand folder>/identity/style.md`): friendly, practical, no hype, no emoji spam (one at most), no hashtags or at most one.
 - End with a link to the Instagram reel when its URL is given, otherwise no link. At most one soft call: reply, save, or follow.
 - Same language as the reel.
 - Posting happens only through Composio `THREADS_CREATE_POST`, after the user has connected Threads and confirms each post. Until then, only output the text.

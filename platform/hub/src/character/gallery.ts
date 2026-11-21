@@ -39,13 +39,13 @@ export function listMoves(root: string, mascotDir: string, id: string): MoveInfo
 
 export interface FoundCharacter { brand: string; id: string; dir: string }
 
-/** Every character on this machine: a brand's mascot/<id>.py, in the order of the brand folders. */
-export function listCharacters(root: string): FoundCharacter[] {
+/** Every character on this machine: a brand's mascot/<id>.py, in the order of the brand folders. `brandsDir` is <data>/brands. */
+export function listCharacters(brandsDir: string): FoundCharacter[] {
   const out: FoundCharacter[] = [];
   try {
-    for (const b of readdirSync(join(root, "brand"), { withFileTypes: true })) {
+    for (const b of readdirSync(brandsDir, { withFileTypes: true })) {
       if (!b.isDirectory() || b.name.startsWith(".")) continue;
-      const dir = join(root, "brand", b.name, "mascot");
+      const dir = join(brandsDir, b.name, "mascot");
       let files: string[] = [];
       try { files = readdirSync(dir); } catch { continue; }
       for (const f of files.sort()) if (/^[a-z][a-z0-9_-]{0,39}\.py$/.test(f)) out.push({ brand: b.name, id: f.slice(0, -3), dir });
@@ -55,4 +55,4 @@ export function listCharacters(root: string): FoundCharacter[] {
 }
 
 /** The first brand that has the character `id`, or null. */
-export const findCharacter = (root: string, id: string): FoundCharacter | null => listCharacters(root).find((c) => c.id === id) ?? null;
+export const findCharacter = (brandsDir: string, id: string): FoundCharacter | null => listCharacters(brandsDir).find((c) => c.id === id) ?? null;

@@ -1,6 +1,6 @@
 import { copyFileSync, constants as fsConstants, cpSync, existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { isAbsolute, join, relative, resolve } from "node:path";
-import { characterFiles, voiceRelPaths, voiceTarget, type BrandPaths, type VoiceTarget } from "../brands/paths.js";
+import { brandsDirOf, characterFiles, voiceRelPaths, voiceTarget, type BrandPaths, type VoiceTarget } from "../brands/paths.js";
 import { BrandError } from "../brands/registry.js";
 import { fillTemplate } from "../brands/template.js";
 import { findCharacter, type FoundCharacter } from "../character/gallery.js";
@@ -88,11 +88,11 @@ function copyVoice(req: CreateRequest, svc: CreatorServices, staged: string | nu
   return null;
 }
 
-/** Copies the files of a character that another brand has (script, model, sheet, head shape, and the rendered movements) into this brand's mascot folder. Movements are cloned on a file system that can, so the 500 MB are not paid twice. */
+/** Copies the files of a character that another brand has (script, model, head shape, and the rendered movements) into this brand's mascot folder. Movements are cloned on a file system that can, so the 500 MB are not paid twice. */
 function copyCharacter(from: FoundCharacter, to: BrandPaths): void {
   const src = characterFiles({ mascotDir: from.dir }, from.id), dst = characterFiles(to, from.id);
   mkdirSync(to.mascotDir, { recursive: true });
-  for (const k of ["script", "blend", "sheet", "head"] as const) if (existsSync(src[k])) copyFileSync(src[k], dst[k]);
+  for (const k of ["script", "blend", "head"] as const) if (existsSync(src[k])) copyFileSync(src[k], dst[k]);
   const moves = join(from.dir, "movements");
   if (existsSync(moves)) cpSync(moves, to.movementsDir, { recursive: true, mode: fsConstants.COPYFILE_FICLONE });
 }
@@ -115,11 +115,11 @@ export const brandCreate: Handler = async (job, ctx) => {
   if (req.importId && !stagedDir) throw new BrandError("The imported folder is gone. Import it again.");
   const voice = copyVoice(req, svc, stagedDir);
   const brand = assembleBrand(req, svc, voice !== null);
-  const character = brand.character.enabled && req.character.mode === "import" ? findCharacter(svc.root, brand.character.id) : null;
-  if (brand.character.enabled && req.character.mode === "import" && !character) throw new BrandError(`There is no character "${brand.character.id}" on this machine (brand/<name>/mascot/${brand.character.id}.py).`);
+  const character = brand.character.enabled && req.character.mode === "import" ? findCharacter(brandsDirOf(svc.dataDir), brand.character.id) : null;
+  if (brand.character.enabled && req.character.mode === "import" && !character) throw new BrandError(`There is no character "${brand.character.id}" on this machine (<brand>/mascot/${brand.character.id}.py).`);
 
   const p = svc.brands.paths(brand.slug, brand);
-  const folders = [p.brandDir, p.dataDir];
+  const folders = [p.brandDir]; // identity, character, reels and the hub data of the brand are all in this one folder
   if (svc.brands.has(brand.slug)) {
     const m = readMarker(p.dataDir);
     if (m?.requestId === requestId && m.summary) { step(4, "This request already created the brand."); return m.summary; }
@@ -157,10 +157,10 @@ export const brandCreate: Handler = async (job, ctx) => {
     writeFileSync(p.questionsMd, importedQuestions ?? emptyQuestions(questionsHead, brand.name));
 
     if (req.character.mode === "create") {
-      writeState(svc.root, brand.slug, { ...readState(svc.root, brand.slug), name: req.character.name, ...(req.character.fields ? { fields: req.character.fields } : {}) });
+      writeState(p.brandDir, { ...readState(p.brandDir), name: req.character.name, ...(req.character.fields ? { fields: req.character.fields } : {}) });
     }
     const sheet = req.character.sheetUpload && req.character.mode !== "none" ? svc.uploads.read(req.character.sheetUpload, "sheet") : null;
-    if (sheet) saveSheet(svc.root, brand.slug, sheet.data);
+    if (sheet) saveSheet(p.brandDir, sheet.data);
 
     step(3, "Registering the brand");
     if (!svc.brands.has(brand.slug)) throw new Error("The brand was written but cannot be read back. See brand.json.");

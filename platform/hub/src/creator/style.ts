@@ -13,11 +13,11 @@ export interface StyleOptions {
 
 const NO_LOGO_TEXT = " No logo yet: the cover is drawn without a logo frame. When there is one, save it in the identity folder as logo.png.";
 const NO_LOGO_RE = / No logo yet: the cover is drawn without a logo frame\.[^\n]*/;
-const LOGO_RE = / Logo: `brand\/[^`\n]*\/logo\.png`\./;
+const LOGO_RE = / Logo: `[^`\n]*logo\.png`\./;
 
 /** Keeps the logo sentence of a brand's style.md true after a logo is set or removed. A style.md without that sentence is returned unchanged. */
-export function withLogoLine(md: string, slug: string, hasLogo: boolean): string {
-  const logoText = ` Logo: \`brand/${slug}/identity/logo.png\`.`;
+export function withLogoLine(md: string, hasLogo: boolean): string {
+  const logoText = " Logo: `identity/logo.png`.";
   return hasLogo ? md.replace(NO_LOGO_RE, () => logoText).replace(LOGO_RE, () => logoText) : md.replace(LOGO_RE, () => NO_LOGO_TEXT);
 }
 

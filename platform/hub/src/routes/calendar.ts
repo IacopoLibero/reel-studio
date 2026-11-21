@@ -35,7 +35,7 @@ export function calendarRoutes(app: FastifyInstance, d: AppDeps, scope: Scope): 
 
   const known = async (b: BrandCtx): Promise<KnownPost[]> => {
     const tz = d.settings.get(b.slug).slotPattern.timezone;
-    const reels = loadReelRefs(d.config.root, b.paths.dataDir, b.slug);
+    const reels = loadReelRefs(b.paths.dataDir, b.slug);
     return lastPosts(b.slug).map((p) => {
       const r = matchReel(p.captionStart, reels);
       return { ...p, ...toLocal(p.scheduledAt, tz), reelKey: r?.key ?? null, reelN: r?.n ?? null };
@@ -53,7 +53,7 @@ export function calendarRoutes(app: FastifyInstance, d: AppDeps, scope: Scope): 
     const to = addDays(from, q.data.weeks * 7 - 1);
     const got = await posts(b, q.data.weeks, q.data.fresh);
     const jobs = d.store.list().filter((j) => j.brand === b.slug || j.brand === undefined);
-    const merged = buildCalendar({ posts: got.posts, reels: loadReelRefs(d.config.root, b.paths.dataDir, b.slug), jobs, local: readScheduled(b.paths.scheduledFile), pattern, from, to, now });
+    const merged = buildCalendar({ posts: got.posts, reels: loadReelRefs(b.paths.dataDir, b.slug), jobs, local: readScheduled(b.paths.scheduledFile), pattern, from, to, now });
     const busy = running(jobs);
     const out: CalendarData = {
       checkedAt: checked.get(b.slug) ?? null, stale: got.stale, error: got.error, stub: got.stub, from, to, today, timezone: pattern.timezone, ...merged,

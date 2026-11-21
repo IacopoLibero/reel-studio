@@ -19,7 +19,7 @@ let tmp: string, root: string, data: string, bctx: BrandCtx;
 beforeEach(() => {
   tmp = mkdtempSync(join(tmpdir(), "anj-"));
   root = join(tmp, "root"); data = join(tmp, "data");
-  mkdirSync(data);
+  mkdirSync(data); mkdirSync(root); // jobs run with the workspace as their working folder
   bctx = testRegistry(root, data, "acme").ctx;
   data = bctx.paths.dataDir;
   writeFileSync(join(data, "reel-questions.md"), "## To do\n\n- [ ] Is a paper menu really cheaper? · hook: myth · source: needs source\n- [ ] How long does a QR menu take? · hook: effort · source: needs source\n");

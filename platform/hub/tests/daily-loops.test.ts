@@ -81,7 +81,7 @@ describe("the daily loop runs per brand", () => {
   });
   it("drops the loop of a brand that was removed", () => {
     const loops = startDailyLoops(reg, make, start, 5);
-    rmSync(join(tmp, "root/brand/beta"), { recursive: true });
+    rmSync(join(tmp, "data/brands/beta"), { recursive: true });
     return new Promise<void>((resolve) => setTimeout(() => { expect(loops.slugs()).toEqual(["acme"]); loops.stop(); resolve(); }, 40));
   });
   it("the defaults leave the loop off", () => { expect(DEFAULT_SETTINGS.daily.enabled).toBe(false); });

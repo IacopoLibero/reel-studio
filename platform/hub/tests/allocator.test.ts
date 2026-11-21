@@ -4,12 +4,13 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { allocateReelFolder, shortName, withFileLock } from "../src/factory/allocator.js";
 
-let root: string, locks: string;
+let root: string, locks: string, reels: string;
 beforeEach(() => {
   root = mkdtempSync(join(tmpdir(), "hub-alloc-"));
   locks = join(root, "locks");
-  mkdirSync(join(root, "brand/acme/reels/3-old"), { recursive: true });
-  mkdirSync(join(root, "brand/acme/reels/21-newer"), { recursive: true });
+  reels = join(root, "acme-reels");
+  mkdirSync(join(reels, "3-old"), { recursive: true });
+  mkdirSync(join(reels, "21-newer"), { recursive: true });
 });
 afterEach(() => rmSync(root, { recursive: true, force: true }));
 
@@ -23,22 +24,22 @@ describe("shortName", () => {
 
 describe("allocateReelFolder", () => {
   it("takes the next free number and creates the folder", async () => {
-    const a = await allocateReelFolder(root, "acme", "How do you stop paying?", locks);
+    const a = await allocateReelFolder(reels, "How do you stop paying?", locks, "acme");
     expect(a.folder).toBe("22-stop-paying");
     expect(existsSync(a.path)).toBe(true);
   });
   it("never collides under parallel calls", async () => {
-    const all = await Promise.all(Array.from({ length: 8 }, (_, i) => allocateReelFolder(root, "acme", `Question number ${i}?`, locks)));
+    const all = await Promise.all(Array.from({ length: 8 }, (_, i) => allocateReelFolder(reels, `Question number ${i}?`, locks, "acme")));
     const ns = all.map((x) => x.n);
     expect(new Set(ns).size).toBe(8);
     expect(Math.min(...ns)).toBe(22);
     expect(Math.max(...ns)).toBe(29);
   });
   it("starts at 0 for a new brand", async () => {
-    expect((await allocateReelFolder(root, "fresh", "Hello there world?", locks)).n).toBe(0);
+    expect((await allocateReelFolder(join(root, "fresh-reels"), "Hello there world?", locks, "fresh")).n).toBe(0);
   });
   it("rejects unsafe brand names", async () => {
-    await expect(allocateReelFolder(root, "../x", "q?", locks)).rejects.toThrow(/brand/);
+    await expect(allocateReelFolder(join(root, "../x-reels"), "q?", locks, "../x")).rejects.toThrow(/brand/);
   });
 });
 

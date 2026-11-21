@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Moves your brands to one folder per brand (identity/, mascot/, reels/, questions in the data folder), using a throwaway container so
 # the result is written on your disk. It only copies and checks: nothing is deleted until you ask with --remove-old.
-#   scripts/migrate-brand-folders.sh [--apply] [--remove-old [--yes]] [--home <folder>]
+#   scripts/migrate-brand-folders.sh [--apply] [--into-data] [--remove-old [--yes]] [--home <folder>]
 # Stop the hub first (./uninstall.sh keeps your data; or `docker stop reel-hub`).
 set -euo pipefail
 source "$(dirname "${BASH_SOURCE[0]}")/stack-lib.sh"
@@ -10,8 +10,8 @@ home="${HOME}/ReelStudio"; pass=()
 while [ $# -gt 0 ]; do
   case "$1" in
     --home) home="$(realpath -m "${2:?--home needs a folder}")"; shift 2 ;;
-    --apply|--remove-old|--yes) pass+=("$1"); shift ;;
-    *) die "unknown option $1 (usage: $0 [--apply] [--remove-old [--yes]] [--home <folder>])" ;;
+    --apply|--into-data|--remove-old|--yes) pass+=("$1"); shift ;;
+    *) die "unknown option $1 (usage: $0 [--apply] [--into-data] [--remove-old [--yes]] [--home <folder>])" ;;
   esac
 done
 

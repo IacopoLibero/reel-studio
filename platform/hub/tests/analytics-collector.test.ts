@@ -11,9 +11,8 @@ let tmp: string, root: string, data: string;
 beforeEach(() => {
   tmp = mkdtempSync(join(tmpdir(), "an-"));
   root = join(tmp, "root"); data = join(tmp, "data");
-  mkdirSync(join(root, "brand/acme/reels/4-google-reviews"), { recursive: true });
-  mkdirSync(data);
-  writeFileSync(join(root, "brand/acme/reels/4-google-reviews/caption.md"), "Want more Google reviews for your restaurant? Here's what actually works 👇\n\nrest");
+  mkdirSync(join(data, "reels/4-google-reviews"), { recursive: true });
+  writeFileSync(join(data, "reels/4-google-reviews/caption.md"), "Want more Google reviews for your restaurant? Here's what actually works 👇\n\nrest");
   writeFileSync(join(data, "reel-questions.md"), "## Done\n\n- [x] Want more Google reviews for your restaurant? · hook: proof · `4-google-reviews` · closing A · source: x\n");
 });
 afterEach(() => rmSync(tmp, { recursive: true, force: true }));

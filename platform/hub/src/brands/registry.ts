@@ -9,25 +9,25 @@ export interface RegistryOptions { root?: string; dataDir?: string; chromeRoot?:
 
 const SKELETON = "## To do\n\n## Done\n";
 
-/** Brand folders that hold a brand.json (brand/<slug>/identity/brand.json), found in <root>/brand (hidden folders are skipped). */
-export function listBrandSlugs(root: string): string[] {
+/** Brand folders that hold an identity/brand.json, found in <data>/brands (hidden folders are skipped). */
+export function listBrandSlugs(dataDir: string): string[] {
   try {
-    return readdirSync(join(root, "brand"), { withFileTypes: true })
-      .filter((d) => d.isDirectory() && isValidSlug(d.name) && existsSync(join(root, "brand", d.name, "identity", "brand.json")))
+    return readdirSync(join(dataDir, "brands"), { withFileTypes: true })
+      .filter((d) => d.isDirectory() && isValidSlug(d.name) && existsSync(join(dataDir, "brands", d.name, "identity", "brand.json")))
       .map((d) => d.name).sort();
   } catch { return []; }
 }
 
-/** Reads and validates brand/<slug>/identity/brand.json. Null when it is missing or invalid (the reason is in `readBrandFile`). */
-export function readBrand(root: string, slug: string): Brand | null {
-  const r = readBrandFile(root, slug);
+/** Reads and validates <data>/brands/<slug>/identity/brand.json. Null when it is missing or invalid (the reason is in `readBrandFile`). */
+export function readBrand(dataDir: string, slug: string): Brand | null {
+  const r = readBrandFile(dataDir, slug);
   return r.ok ? r.brand : null;
 }
 
-export function readBrandFile(root: string, slug: string): ReturnType<typeof validateBrand> {
+export function readBrandFile(dataDir: string, slug: string): ReturnType<typeof validateBrand> {
   if (!isValidSlug(slug)) return { ok: false, errors: [`slug: "${slug}" is not a valid brand slug`] };
   let raw: unknown;
-  try { raw = JSON.parse(readFileSync(join(root, "brand", slug, "identity", "brand.json"), "utf8")); } catch (e) {
+  try { raw = JSON.parse(readFileSync(join(dataDir, "brands", slug, "identity", "brand.json"), "utf8")); } catch (e) {
     return { ok: false, errors: [`brand.json: ${(e as NodeJS.ErrnoException).code === "ENOENT" ? "not found" : "is not valid JSON"}`] };
   }
   const v = validateBrand(raw);
@@ -36,9 +36,9 @@ export function readBrandFile(root: string, slug: string): ReturnType<typeof val
 }
 
 /** Writes brand.json atomically (validated first). */
-export function writeBrand(root: string, brand: Brand): void {
+export function writeBrand(dataDir: string, brand: Brand): void {
   const parsed = brandSchema.parse(brand);
-  const file = join(root, "brand", parsed.slug, "identity", "brand.json");
+  const file = join(dataDir, "brands", parsed.slug, "identity", "brand.json");
   mkdirSync(dirname(file), { recursive: true });
   writeFileSync(`${file}.tmp`, `${JSON.stringify(parsed, null, 2)}\n`);
   renameSync(`${file}.tmp`, file);
@@ -63,16 +63,16 @@ export class BrandRegistry {
     this.templateDir = join(o.programRoot ?? defaultProgramRoot(), "brand", "_template");
   }
 
-  slugs(): string[] { return listBrandSlugs(this.root); }
-  list(): Brand[] { return this.slugs().map((s) => readBrand(this.root, s)).filter((b): b is Brand => b !== null); }
-  get(slug: string): Brand | null { return readBrand(this.root, slug); }
+  slugs(): string[] { return listBrandSlugs(this.dataDir); }
+  list(): Brand[] { return this.slugs().map((s) => readBrand(this.dataDir, s)).filter((b): b is Brand => b !== null); }
+  get(slug: string): Brand | null { return readBrand(this.dataDir, slug); }
   has(slug: string): boolean { return this.get(slug) !== null; }
 
   /** The brand used when a request names none: the first one by slug. Null when the machine has no brand yet. */
   defaultSlug(): string | null { return this.list()[0]?.slug ?? null; }
 
   paths(slug: string, brand: Brand | null = this.get(slug)): BrandPaths {
-    const opts: BrandPathOptions = { root: this.root, dataDir: this.dataDir, chromeRoot: this.chromeRoot, profileDir: brand?.instagram.profileDir ?? null };
+    const opts: BrandPathOptions = { dataDir: this.dataDir, chromeRoot: this.chromeRoot, profileDir: brand?.instagram.profileDir ?? null };
     return brandPaths(slug, opts);
   }
 
@@ -97,7 +97,7 @@ export class BrandRegistry {
     }
     if (!existsSync(p.questionsMd)) { writeFileSync(p.questionsMd, `# Reel questions: ${brand.name}\n\n${SKELETON}`); created.push(p.questionsMd); }
     try { ensureDir(p.profileDir); } catch { /* the profile root (/data/...) exists only inside the container; the scheduler creates it on first use */ }
-    writeBrand(this.root, brand);
+    writeBrand(this.dataDir, brand);
     created.push(p.brandJson);
     return { brand, paths: p, created };
   }

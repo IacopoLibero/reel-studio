@@ -17,7 +17,7 @@ const qfile = () => join(data, "reel-questions.md");
 beforeEach(() => {
   tmp = mkdtempSync(join(tmpdir(), "ideas-"));
   root = join(tmp, "root"); data = join(tmp, "data"); blog = join(tmp, "er/app/blog/posts");
-  mkdirSync(join(root, "brand/acme/identity"), { recursive: true }); mkdirSync(data); mkdirSync(blog, { recursive: true });
+  mkdirSync(data, { recursive: true }); mkdirSync(root, { recursive: true }); mkdirSync(blog, { recursive: true });
   copyFileSync(join(import.meta.dirname, "fixtures/reel-questions.md"), qfile());
   for (const f of ["improve-restaurant-efficiency.ts", "index.ts", "translations.ts"]) writeFileSync(join(blog, f), "");
 });
@@ -112,8 +112,8 @@ describe("accepting ideas", () => {
 describe("service helpers", () => {
   it("lists blog slugs without index and translations", () => { expect(blogSlugs(blog)).toEqual(["improve-restaurant-efficiency"]); expect(blogSlugs(join(tmp, "none"))).toEqual([]); });
   it("sees optional brand data", () => {
-    expect(brandData(root, "acme")).toEqual({ hasCsv: false, hasComments: false, hasResults: false });
-    writeFileSync(join(root, "brand/acme/hooks.csv"), ""); writeFileSync(join(root, "brand/acme/comments.txt"), ""); writeFileSync(join(root, "brand/acme/instagram-results.md"), "");
-    expect(brandData(root, "acme")).toEqual({ hasCsv: true, hasComments: true, hasResults: true });
+    expect(brandData(data)).toEqual({ hasCsv: false, hasComments: false, hasResults: false });
+    writeFileSync(join(data, "hooks.csv"), ""); writeFileSync(join(data, "comments.txt"), ""); writeFileSync(join(data, "instagram-results.md"), "");
+    expect(brandData(data)).toEqual({ hasCsv: true, hasComments: true, hasResults: true });
   });
 });

@@ -10,7 +10,7 @@ import { validMoveName } from "../character/moves-parser.js";
 import { CHARACTER_STEPS } from "../creator/character-job.js";
 import { sheetFile } from "../creator/studio.js";
 import { minutesAhead, MIN_LEAD_MINUTES } from "../slots.js";
-import { readScheduled, reelDirOf, resolveReelFile, scanReels } from "../reels/scanner.js";
+import { folderOfKey, readScheduled, reelDirOf, resolveReelFile, scanReels } from "../reels/scanner.js";
 import type { Job, Settings } from "../shared/types.js";
 import type { JobSpec } from "./store.js";
 import { basename, join } from "node:path";
@@ -67,7 +67,7 @@ export function buildSpec(body: CreateBody, d: Deps): JobSpec {
     try { return analyticsSpec(body, { root: d.root, dataDir: d.brand.paths.dataDir, jobs: d.jobs, brand: d.brand.slug }); } catch (e) { throw e instanceof AnalyticsJobError ? new JobRequestError(e.message) : e; }
   }
   if (body.type === "character.build") {
-    if (!sheetFile(d.root, d.brand.slug)) throw new JobRequestError("Upload the reference sheet first.");
+    if (!sheetFile(d.brand.paths.brandDir)) throw new JobRequestError("Upload the reference sheet first.");
     if (d.jobs.some((j) => j.type === "character.build" && j.brand === d.brand.slug && (j.status === "queued" || j.status === "running"))) throw new JobRequestError("A character build is already running for this brand.");
     return { type: body.type, brand: d.brand.slug, title: `Build the character (experimental)${body.params.notes ? ": with your notes" : ""}`, steps: CHARACTER_STEPS, params: body.params };
   }
@@ -82,7 +82,7 @@ export function buildSpec(body: CreateBody, d: Deps): JobSpec {
 
 function scheduleSpec(p: { reel: string; date: string; time: string }, d: Deps): JobSpec {
   const scheduled = readScheduled(d.brand.paths.scheduledFile);
-  const reel = scanReels(d.root, scheduled, new Set(), d.brand.slug).find((r) => r.key === p.reel);
+  const reel = scanReels(d.brand.paths.reelsDir, d.brand.slug, scheduled).find((r) => r.key === p.reel);
   if (!reel) throw new JobRequestError("That reel was not found.");
   if (!reel.mp4 || !reel.hasCaption || !reel.hasCover) throw new JobRequestError("The reel needs an MP4, a caption and a cover before it can be scheduled.");
   if (reel.schedule) throw new JobRequestError(`This reel is already scheduled for ${reel.schedule.at}.`);
@@ -93,10 +93,11 @@ function scheduleSpec(p: { reel: string; date: string; time: string }, d: Deps):
   }
   const tz = d.settings.slotPattern.timezone;
   if (minutesAhead(p.date, p.time, tz, d.now ?? new Date()) < MIN_LEAD_MINUTES) throw new JobRequestError(`Instagram needs the time to be at least ${MIN_LEAD_MINUTES} minutes ahead.`);
-  const file = (k: "mp4") => resolveReelFile(d.root, p.reel, k) as string;
+  const folder = folderOfKey(p.reel);
+  const file = (k: "mp4") => resolveReelFile(d.brand.paths.reelsDir, folder, k) as string;
   const day = new Date(`${p.date}T12:00:00Z`).toLocaleDateString("en-GB", { weekday: "short", day: "numeric", timeZone: "UTC" });
   return {
     type: "instagram.schedule", brand: d.brand.slug, title: `Reel ${reel.n} · ${day} ${p.time}`, steps: SCHEDULE_STEPS,
-    params: { reel: p.reel, date: p.date, time: p.time, slot: `${p.date}T${p.time}`, reelDir: reelDirOf(d.root, ...(p.reel.split("/") as [string, string])), video: basename(file("mp4")), timezone: tz },
+    params: { reel: p.reel, date: p.date, time: p.time, slot: `${p.date}T${p.time}`, reelDir: reelDirOf(d.brand.paths.reelsDir, folder), video: basename(file("mp4")), timezone: tz },
   };
 }

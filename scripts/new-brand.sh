@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Create a new brand from brand/_template (in the program folder): brand/<slug>/identity/ (brand.json, style.md), brand/<slug>/reels/,
-# and the hub's data folder of the brand with its question list. Nothing that exists is overwritten. The hub lists the brand without a restart.
+# Create a new brand from brand/_template (in the program folder): <data>/brands/<slug>/ with identity/ (brand.json, style.md), reels/ and
+# the question list. The brand's folder is also where the hub keeps its own data of the brand. Nothing that exists is overwritten. The hub lists the brand without a restart.
 # usage: ./scripts/new-brand.sh <slug> [--name "Display Name"] [--website example.com] [--yes]   (run it from the repository)
 # <slug> is the folder name: lowercase letters, digits and "-", up to 40 characters.
 set -euo pipefail
@@ -18,9 +18,8 @@ if [ -z "$id" ]; then echo "usage: $0 <slug> [--name N] [--website W] [--yes]" >
 shift
 [[ "$id" =~ ^[a-z0-9][a-z0-9-]{0,39}$ ]] || { echo "slug must be lowercase letters, digits and - (up to 40 characters)" >&2; exit 2; }
 case "$id" in new|api|brands|template|default|settings|admin|global) echo "'$id' is a reserved name" >&2; exit 2 ;; esac
-dest="$ROOT/brand/$id"
-[ ! -e "$dest" ] || { echo "brand/$id already exists" >&2; exit 1; }
-[ ! -e "$DATA/brands/$id" ] || { echo "$DATA/brands/$id already exists" >&2; exit 1; }
+dest="$DATA/brands/$id"
+[ ! -e "$dest" ] || { echo "$dest already exists" >&2; exit 1; }
 
 name="$id"; website="example.com"; yes=0
 while [ $# -gt 0 ]; do
@@ -39,17 +38,17 @@ fi
 # Escape a value for the replacement side of sed (| is the delimiter).
 esc() { printf '%s' "$1" | sed -e 's/[\\&|]/\\&/g'; }
 
-mkdir -p "$dest/identity" "$dest/reels" "$DATA/brands/$id"/{daily,analytics,ideas,locks}
+mkdir -p "$dest/identity" "$dest/reels" "$dest"/{daily,analytics,ideas,locks}
 cp "$TEMPLATE/style.md" "$dest/identity/style.md"
-cp "$TEMPLATE/reel-questions.md" "$DATA/brands/$id/reel-questions.md"
+cp "$TEMPLATE/reel-questions.md" "$dest/reel-questions.md"
 n="$(esc "$name")"; w="$(esc "$website")"; b="$(esc "$id")"
 sed -i \
   -e "s|{{BRAND_NAME}}|$n|g" -e "s|{{WEBSITE}}|$w|g" -e "s|{{BRAND}}|$b|g" \
   -e "s|{{BACKGROUND_HEX}}|#f5f5f0|g" -e "s|{{TEXT_HEX}}|#1a1a1a|g" -e "s|{{ACCENT_HEX}}|#2f6fed|g" -e "s|{{SECOND_ACCENT_HEX}}|#7a4dff|g" \
   -e "s|{{HEADLINE_FONT}}|Oswald|g" -e "s|{{BODY_FONT}}|Inter|g" \
   -e "s|{{OFFER_NAME}}|Try $n|g" -e "s|{{CLOSING_A_LINE}}|Try $n today at $w.|g" -e "s|{{CLOSING_B_LINE}}|Follow me for more tips.|g" -e "s|{{VOICE_NAME}}|the narrator|g" \
-  -e "s|{{LOGO_PATH}}|brand/$b/identity/logo.png|g" -e "s|{{VOICE_BASE}}|brand/$b/identity/voice|g" \
-  "$dest/identity/style.md" "$DATA/brands/$id/reel-questions.md"
+  -e "s|{{LOGO_PATH}}|identity/logo.png|g" -e "s|{{VOICE_BASE}}|identity/voice|g" \
+  "$dest/identity/style.md" "$dest/reel-questions.md"
 
 # brand.json from the template, with this brand's identity (JSON-escaped by node).
 BRAND_SLUG="$id" BRAND_NAME="$name" BRAND_SITE="$website" TEMPLATE_JSON="$TEMPLATE/brand.json" node -e '
@@ -62,11 +61,11 @@ BRAND_SLUG="$id" BRAND_NAME="$name" BRAND_SITE="$website" TEMPLATE_JSON="$TEMPLA
 ' > "$dest/identity/brand.json"
 
 cat <<MSG
-Created $ROOT/brand/$id (identity/brand.json, identity/style.md, reels/) and $DATA/brands/$id (reel-questions.md and the hub's data).
+Created $dest (identity/brand.json, identity/style.md, reels/, reel-questions.md; the hub keeps its data of the brand in the same folder).
 Next:
-  1. Open brand/$id/identity/brand.json: colours, fonts, closing lines, Instagram account and user id, offer rule, source texts folder.
-  2. Put your logo in brand/$id/identity/logo.png (a PNG; without one, covers have no logo frame) and record the voice sample
+  1. Open $dest/identity/brand.json: colours, fonts, closing lines, Instagram account and user id, offer rule, source texts folder.
+  2. Put your logo in $dest/identity/logo.png (a PNG; without one, covers have no logo frame) and record the voice sample
      as .claude/skills/reel/voice-sample.md describes (identity/voice.wav and identity/voice.txt).
-  3. Add real questions to $DATA/brands/$id/reel-questions.md.
+  3. Add real questions to $dest/reel-questions.md.
   4. In the hub pick the brand in the menu, open its Instagram page and log in with that brand's account.
 MSG

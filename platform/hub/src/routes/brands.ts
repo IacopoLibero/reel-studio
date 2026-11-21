@@ -33,9 +33,9 @@ export function brandRoutes(app: FastifyInstance, d: AppDeps): void {
     if (!p.success) return reply.code(400).send({ error: p.error.issues[0]?.message ?? "Invalid style." });
     const fonts = await loadFontList(undefined, [d.config.root]);
     for (const [k, name] of Object.entries(p.data.fonts)) if (!checkFont(fonts, name).ok) return reply.code(400).send({ error: `fonts.${k}: "${name}" is not a Google font that Remotion can load.` });
-    const fresh = readBrand(d.config.root, b.slug);
+    const fresh = readBrand(d.config.dataDir, b.slug);
     if (!fresh) return reply.code(404).send({ error: "That brand does not exist." });
-    writeBrand(d.config.root, { ...fresh, ...p.data });
+    writeBrand(d.config.dataDir, { ...fresh, ...p.data });
     return p.data;
   });
 

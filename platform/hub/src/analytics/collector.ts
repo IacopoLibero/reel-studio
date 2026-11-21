@@ -97,7 +97,7 @@ export async function collectInto(run: ToolRunner, o: CollectOpts): Promise<Coll
   const reelsRaw = raw.filter((m) => m.productType === "REELS");
   log(`${raw.length} posts found, ${reelsRaw.length} reels`);
 
-  const refs = loadReelRefs(o.root, o.dataDir, o.brand);
+  const refs = loadReelRefs(o.dataDir, o.brand);
   const questions = new Map(readBrandQuestions(o.dataDir, o.brand).filter((q) => q.folder).map((q) => [`${q.brand}/${q.folder}`, q.question]));
   const warnings: string[] = [];
   const insights = new Map<string, Insights>();

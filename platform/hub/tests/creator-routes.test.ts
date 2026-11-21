@@ -27,7 +27,7 @@ async function boot(claudeBin = "/nonexistent", dir?: string): Promise<void> {
   tmp = dir ?? mkdtempSync(join(tmpdir(), "creator-routes-"));
   root = join(tmp, "root"); data = join(tmp, "data");
   mkdirSync(data); mkdirSync(join(tmp, "web")); writeFileSync(join(tmp, "web/index.html"), "<html></html>");
-  mkdirSync(join(root, "brand"), { recursive: true });
+  mkdirSync(root, { recursive: true });
   writeTestBrand(root, "acme", { name: "Acme" }, "## To do\n");
   const config: Config = { port: 0, host: "127.0.0.1", dataDir: data, root, token: TOKEN, webDir: join(tmp, "web"), novncTarget: "http://127.0.0.1:1", claudeBin, blogDir: join(tmp, "blog"), terminalCmd: null };
   const built = await buildApp(config);
@@ -48,7 +48,7 @@ describe("creator options and validation", () => {
     expect((await app.inject({ method: "POST", url: "/api/brands", payload: {} })).statusCode).toBe(401);
   });
   it("lists the assistant, brands, voices and characters", async () => {
-    mkdirSync(join(root, "brand/acme/mascot"), { recursive: true }); writeFileSync(join(root, "brand/acme/mascot/bun.py"), "");
+    mkdirSync(join(data, "brands/acme/mascot"), { recursive: true }); writeFileSync(join(data, "brands/acme/mascot/bun.py"), "");
     writeTestBrand(root, "voiced", { voice: { engine: "voxcpm2", sample: "identity/voice.wav", sampleText: "identity/voice.txt" } });
     const r = (await get("/api/brand-creator/options")).json();
     expect(r).toMatchObject({ assistant: { kind: "claude", tested: true }, slugs: ["acme", "voiced"], voices: [{ slug: "voiced" }], characters: ["bun"] });
@@ -150,7 +150,7 @@ describe("creating a brand", () => {
     expect((await get("/api/brands")).json().brands.map((b: { slug: string }) => b.slug)).toEqual(["acme", "acme-bakery"]);
     expect((await get("/api/brands/acme-bakery/factory/questions")).json()).toEqual([]);
     expect((await get("/api/brands/acme-bakery/reels")).json()).toEqual([]);
-    expect(existsSync(join(root, "brand/acme-bakery/reels"))).toBe(true);
+    expect(existsSync(join(data, "brands/acme-bakery/reels"))).toBe(true);
   });
   it("picks a free slug when none is given and refuses clashes and bad input at once", async () => {
     const { slug: _s, ...noSlug } = formBrand("Acme", "x");
@@ -171,7 +171,7 @@ describe("creating a brand", () => {
     const imp = (await raw("POST", "/api/brand-creator/import/zip", z)).json();
     const r = await post("/api/brands", { source: "import", brand: imp.preview.brand, importId: imp.importId });
     expect((await waitJob(r.json().job.id)).status).toBe("done");
-    expect(readFileSync(join(root, "brand/zed-shop/identity/style.md"), "utf8")).toContain("# Zed style");
+    expect(readFileSync(join(data, "brands/zed-shop/identity/style.md"), "utf8")).toContain("# Zed style");
   });
 });
 
@@ -209,17 +209,18 @@ describe("the interview route", () => {
 });
 
 describe("deleting a brand", () => {
-  beforeEach(() => { writeTestBrand(root, "beta", { name: "Beta" }, "## To do\n"); mkdirSync(join(root, "brand/beta/reels/1-x"), { recursive: true }); writeFileSync(join(root, "brand/beta/reels/1-x/a.txt"), "keep me"); mkdirSync(join(data, "brands/beta"), { recursive: true }); writeFileSync(join(data, "brands/beta/settings.json"), "{}"); });
+  beforeEach(() => { writeTestBrand(root, "beta", { name: "Beta" }, "## To do\n"); mkdirSync(join(data, "brands/beta/reels/1-x"), { recursive: true }); writeFileSync(join(data, "brands/beta/reels/1-x/a.txt"), "keep me"); mkdirSync(join(data, "brands/beta"), { recursive: true }); writeFileSync(join(data, "brands/beta/settings.json"), "{}"); });
   it("asks for the slug and moves the folders to the trash instead of erasing them", async () => {
     expect((await post("/api/brands/beta/delete", { confirm: "nope" })).json().error).toContain("Type the slug");
-    expect(existsSync(join(root, "brand/beta"))).toBe(true);
+    expect(existsSync(join(data, "brands/beta"))).toBe(true);
     const r = (await post("/api/brands/beta/delete", { confirm: "beta" })).json();
     expect(r.trash).toContain(join(data, "trash", "beta-"));
-    expect(existsSync(join(root, "brand/beta"))).toBe(false);
-    expect(existsSync(join(root, "brand/beta"))).toBe(false); // identity, character and reels all sit in the brand folder
+    expect(existsSync(join(data, "brands/beta"))).toBe(false);
+    expect(existsSync(join(data, "brands/beta"))).toBe(false); // identity, character and reels all sit in the brand folder
     expect(readFileSync(join(r.trash, "brand/reels/1-x/a.txt"), "utf8")).toBe("keep me");
     expect(existsSync(join(r.trash, "brand/identity/brand.json"))).toBe(true);
-    expect(existsSync(join(r.trash, "data/settings.json"))).toBe(true);
+    expect(existsSync(join(r.trash, "brand/settings.json"))).toBe(true); // the hub data of the brand is in the same folder: one move takes everything
+    
     expect((await get("/api/brands")).json().brands.map((b: { slug: string }) => b.slug)).toEqual(["acme"]);
   });
   it("never deletes the last brand and refuses while a job of the brand runs", async () => {
@@ -233,7 +234,7 @@ describe("deleting a brand", () => {
     const last = await post("/api/brands/acme/delete", { confirm: "acme" });
     expect(last.statusCode).toBe(409);
     expect(last.json().error).toContain("last brand");
-    expect(existsSync(join(root, "brand/acme"))).toBe(true);
+    expect(existsSync(join(data, "brands/acme"))).toBe(true);
     expect((await post("/api/brands/ghost/delete", { confirm: "ghost" })).statusCode).toBe(404);
     expect((await post("/api/brands/acme/delete", {})).statusCode).toBe(400);
   });
@@ -250,7 +251,7 @@ describe("the character studio routes", () => {
     const f = (await app.inject({ method: "PUT", url: "/api/brands/acme/character/studio/fields", headers: auth, payload: { name: "Bun", fields: { what: "a bun", personality: "kind", extra: "" } } })).json();
     expect(f.state).toMatchObject({ name: "Bun", fields: { what: "a bun" } });
     expect((await post("/api/brands/acme/character/studio/approve", {})).statusCode).toBe(409);
-    mkdirSync(join(root, "brand/acme/mascot/studio/previews"), { recursive: true }); writeFileSync(join(root, "brand/acme/mascot/studio/previews/front.png"), PNG);
+    mkdirSync(join(data, "brands/acme/mascot/studio/previews"), { recursive: true }); writeFileSync(join(data, "brands/acme/mascot/studio/previews/front.png"), PNG);
     expect((await get("/api/brands/acme/character/studio/previews/front.png")).statusCode).toBe(200);
     expect((await get("/api/brands/acme/character/studio/previews/..%2Fplan.json")).statusCode).toBe(404);
     expect((await get("/api/brands/acme/character/studio/previews/missing.png")).statusCode).toBe(404);

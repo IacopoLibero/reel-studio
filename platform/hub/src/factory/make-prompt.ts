@@ -8,6 +8,10 @@ export const MAKE_DENIED_TOOLS = joinTools(DESTRUCTIVE_BASH_DENIES, NETWORK_AND_
 export interface MakeInput {
   root: string;
   brand: string;
+  /** The brand's own folder (absolute): identity/, mascot/, reels/. */
+  brandDir: string;
+  /** The moves of the brand's character that are rendered (the folders of mascot/movements with an info.json): the only ones a reel may use. Empty or missing without a character. */
+  moves?: readonly string[];
   question: string;
   closing: "A" | "B";
   source: string | null;
@@ -27,6 +31,11 @@ const closingText = (c: "A" | "B", b?: MakeInput["brandInfo"]) => {
     : `option B (${o?.label ?? "Follow for tips"}): the last spoken sentence is the follow line, without the website spoken; the website still shows on screen in the closing scene.${own}`;
 };
 
+/** The character's available moves, as the hub reads them from the brand's movements folder: the only list a reel may pick from. */
+const movesText = (i: MakeInput): string => i.moves?.length
+  ? `- The character's moves: ${i.moves.join(", ")}. This list is what is rendered in ${i.brandDir}/mascot/movements/, so use only these names (and "idle" when nothing fits). Decide each scene's moves from this list before you write the plan. Do not invent a move and do not add one.`
+  : "";
+
 const sourceText = (i: MakeInput) => {
   if (i.sourceKind === "blog" && i.source) {
     return `The source is the blog post "${i.source}". Its text is in ${i.blogDir} (search for the slug there) and read it fully before writing the script. The script and caption say only what the post supports; leave out figures it gives without a reliable origin.`;
@@ -39,8 +48,8 @@ const sourceText = (i: MakeInput) => {
 
 /** Prompt for a headless run that makes one finished reel, like the batch of reels made by hand. */
 export function buildReelPrompt(i: MakeInput): string {
-  const dir = `brand/${i.brand}/reels/${i.folder}`;
-  return `You are making one finished reel in the reel-studio project at ${i.root}. Follow ${i.root}/.claude/skills/reel/SKILL.md exactly and read brand/${i.brand}/identity/style.md first.
+  const dir = `${i.brandDir}/reels/${i.folder}`;
+  return `You are making one finished reel in the reel-studio project at ${i.root}. Follow ${i.root}/.claude/skills/reel/SKILL.md exactly and read ${i.brandDir}/identity/style.md first (the paths it names are relative to ${i.brandDir}).
 
 Question (the reel opens with it): ${i.question}
 Brand: ${i.brandInfo?.name ?? i.brand} (folder ${i.brand}). Work in the folder ${dir}, which already exists: use it, do not create another reel folder and do not renumber.
@@ -53,7 +62,8 @@ Factory rules:
 - Many reels are made at the same time. Run the voice only through \`bash scripts/slot.sh voice 1 -- <command>\`, any Blender run through \`bash scripts/slot.sh blender 1 -- <command>\`, and every Remotion render (video and still) through \`bash scripts/slot.sh render 3 -- <command>\`. Never run those directly.
 - Use the voice that style.md names (the brand's voice sample). Make one version only.
 - Do not edit the brand's question list (reel-questions.md) and do not tick the question: the hub does it when you finish.
-- Remotion finds the logo, the character's moves, the sounds and the reels' voice files by itself, from this brand's own folders (the hub sets REEL_BRAND). Never copy files into a public/ folder.
+- Remotion finds the logo, the character's moves, the sounds and the reels' voice files by itself, from this brand's own folder (the hub sets REEL_BRAND). Never copy files into a public/ folder.
+${movesText(i)}
 - Never schedule on Instagram and never post. Skip step 14.
 - Do not run git, docker, systemctl, kill or rm -rf. Do not touch other reels' folders.
 ${i.note ? `- This is a redo. The reviewer rejected the previous version with this note: "${i.note}". Make the reel again in the same folder, fix what the note says, and overwrite the old MP4, caption.md and cover.png.\n` : ""}- The reel is finished only when ${dir} holds the MP4, caption.md and cover.png. Finish with a short summary: the closing used, the source used, what you measured in the checks and what you would improve.`;

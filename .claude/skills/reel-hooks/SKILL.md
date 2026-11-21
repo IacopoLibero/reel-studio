@@ -6,7 +6,7 @@ description: Write and rank the opening question of a reel for the brand's audie
 
 # Reel hooks
 
-The hook is the opening question of the reel. It is on screen at frame 0 and spoken first. Audience: the people the brand's reels are for (`audience` in `brand/<brand>/identity/brand.json`; read it and `style.md` first).
+The hook is the opening question of the reel. It is on screen at frame 0 and spoken first. Audience: the people the brand's reels are for (`audience` in `<brand folder>/identity/brand.json`; read it and `style.md` first).
 
 ## Rules
 1. **First 3 seconds checklist.** Something specific happens on screen at once: a drawing moves, a number counts, a thing breaks or fills. The question is fully readable on frame 0.
@@ -20,7 +20,7 @@ The hook is the opening question of the reel. It is on screen at frame 0 and spo
 7. If `data/analytics/hooks.csv` exists, prefer patterns of the hooks that won there.
 
 ## Output format
-Same as the question list in `../data/brands/<brand>/reel-questions.md`, one line each:
+Same as the question list in `<brand folder>/reel-questions.md`, one line each:
 `- [ ] <opening question> · hook: <emotion> · source: <blog-slug or needs source>`
 Then: `Test first: 1, 4, 7. Why: ...` and, for an A/B, `Winner: A. Why: ...`.
 Hooks and reel text stay in English.

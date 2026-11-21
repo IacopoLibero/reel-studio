@@ -2,6 +2,7 @@ import { existsSync, readdirSync, readFileSync, writeFileSync, renameSync, rmSyn
 import { join } from "node:path";
 import { questionsFile } from "../brands/paths.js";
 import { reelDirOf } from "../reels/scanner.js";
+import { listMoves } from "../character/gallery.js";
 import { jobEnv } from "../env.js";
 import { parseStreamLine } from "../character/claude-stream.js";
 import type { Handler } from "../jobs/handlers.js";
@@ -29,14 +30,18 @@ export const reelMake: Handler = async (job, ctx) => {
   const p = job.params as { brand: string; question: string; closing: "A" | "B"; source: string | null; sourceKind: SourceKind };
   const lockDir = join(ctx.dataDir, "locks");
   const redo = typeof job.params.rerunFolder === "string" && /^\d+-[a-z0-9-]+$/.test(job.params.rerunFolder) ? job.params.rerunFolder : null;
-  const alloc = redo ? { folder: redo, path: reelDirOf(ctx.root, p.brand, redo) } : await allocateReelFolder(ctx.root, p.brand, p.question, lockDir);
+  const reelsDir = join(ctx.dataDir, "reels"); // ctx.dataDir is the brand's own folder
+  const alloc = redo ? { folder: redo, path: reelDirOf(reelsDir, redo) } : await allocateReelFolder(reelsDir, p.question, lockDir, p.brand);
   if (redo) {
     if (!existsSync(alloc.path)) throw new Error(`Folder ${redo} to redo does not exist.`);
     for (const f of listFiles(alloc.path)) if (/\.mp4$/i.test(f) || f === "cover.png" || f === "caption.md") rmSync(join(alloc.path, f), { force: true });
   }
-  ctx.update({ log: `Folder brand/${p.brand}/reels/${alloc.folder}, closing ${p.closing}`, step: MAKE_STEPS[0], progress: MAKE_MARKS[0] });
-  const prompt = buildReelPrompt({ root: ctx.root, brand: p.brand, question: p.question, closing: p.closing, source: p.source, sourceKind: p.sourceKind, folder: alloc.folder, blogDir: ctx.blogDir, ...(ctx.brand ? { brandInfo: ctx.brand.brand } : {}), ...(typeof job.params.note === "string" ? { note: job.params.note } : {}) });
-  const args = ["-p", "--output-format", "stream-json", "--verbose", "--permission-mode", "acceptEdits", "--allowedTools", MAKE_ALLOWED_TOOLS, "--disallowedTools", MAKE_DENIED_TOOLS];
+  ctx.update({ log: `Folder ${alloc.path}, closing ${p.closing}`, step: MAKE_STEPS[0], progress: MAKE_MARKS[0] });
+  const brandDir = ctx.dataDir;
+  const character = ctx.brand?.brand.character;
+  const moves = character?.enabled && ctx.brand ? listMoves(ctx.root, ctx.brand.paths.mascotDir, character.id).filter((m) => m.rendered).map((m) => m.name) : [];
+  const prompt = buildReelPrompt({ root: ctx.root, brandDir, moves, brand: p.brand, question: p.question, closing: p.closing, source: p.source, sourceKind: p.sourceKind, folder: alloc.folder, blogDir: ctx.blogDir, ...(ctx.brand ? { brandInfo: ctx.brand.brand } : {}), ...(typeof job.params.note === "string" ? { note: job.params.note } : {}) });
+  const args = ["-p", "--output-format", "stream-json", "--verbose", "--permission-mode", "acceptEdits", "--allowedTools", MAKE_ALLOWED_TOOLS, "--disallowedTools", MAKE_DENIED_TOOLS, "--add-dir", brandDir];
   if (ctx.settings.claudeModel) args.push("--model", ctx.settings.claudeModel);
 
   let state: MakeState = initialMakeState();

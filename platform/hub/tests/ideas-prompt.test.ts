@@ -6,7 +6,7 @@ const base = { root: "/r", brand: "acme", dataDir: "/d/brands/acme", count: 10, 
 describe("buildIdeasPrompt", () => {
   const p = buildIdeasPrompt(base);
   it("lists the files to read", () => {
-    expect(p).toContain("brand/acme/identity/style.md");
+    expect(p).toContain("/d/brands/acme/identity/style.md");
     expect(p).toContain("/d/brands/acme/reel-questions.md");
     expect(p).toMatch(/done ones/i);
     expect(p).toContain("/er/app/blog/posts");

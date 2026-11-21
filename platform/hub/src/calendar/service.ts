@@ -9,10 +9,11 @@ const firstLine = (file: string): string => {
 };
 
 /** Every reel folder with the first line of its caption, its closing (from the question list) and cover state. */
-export function loadReelRefs(root: string, dataDir: string, brand: string): ReelRef[] {
-  const closings = new Map(readBrandQuestions(dataDir, brand).filter((q) => q.folder).map((q) => [`${q.brand}/${q.folder}`, q.closing]));
-  return scanReels(root, readScheduled(join(dataDir, "scheduled.json")), new Set(), brand).map((r) => {
-    const cap = join(reelDirOf(root, r.brand, r.folder), "caption.md");
+export function loadReelRefs(brandDir: string, brand: string): ReelRef[] {
+  const reelsDir = join(brandDir, "reels");
+  const closings = new Map(readBrandQuestions(brandDir, brand).filter((q) => q.folder).map((q) => [`${q.brand}/${q.folder}`, q.closing]));
+  return scanReels(reelsDir, brand, readScheduled(join(brandDir, "scheduled.json"))).map((r) => {
+    const cap = join(reelDirOf(reelsDir, r.folder), "caption.md");
     return { key: r.key, brand: r.brand, folder: r.folder, n: r.n, name: r.name, closing: closings.get(r.key) ?? null, firstLine: existsSync(cap) ? firstLine(cap) : "", hasCover: r.hasCover };
   });
 }

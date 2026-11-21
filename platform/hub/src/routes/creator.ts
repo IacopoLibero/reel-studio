@@ -15,6 +15,7 @@ import { readZip, ZipError } from "../creator/zip.js";
 import type { CreatorServices } from "../creator/services.js";
 import { validateBrand } from "../brands/schema.js";
 import { findCharacter, listCharacters } from "../character/gallery.js";
+import { brandsDirOf } from "../brands/paths.js";
 import { BrandError } from "../brands/registry.js";
 import type { AppDeps } from "../app.js";
 import { HttpError, makeScope } from "./scope.js";
@@ -39,7 +40,7 @@ const folderBody = z.object({ files: z.array(z.object({ path: z.string().max(300
 export function creatorRoutes(app: FastifyInstance, d: AppDeps, svc: CreatorServices): void {
   const prefix = "/api/brand-creator";
   // The characters that exist on this machine (any brand's mascot/<id>.py); one id once, even when two brands have it.
-  const mascots = (): string[] => [...new Set(listCharacters(d.config.root).map((c) => c.id))].sort();
+  const mascots = (): string[] => [...new Set(listCharacters(brandsDirOf(d.config.dataDir)).map((c) => c.id))].sort();
 
   app.get(`${prefix}/options`, async () => {
     const a = d.settings.getGlobal().assistant;
@@ -83,7 +84,7 @@ export function creatorRoutes(app: FastifyInstance, d: AppDeps, svc: CreatorServ
   });
 
   const stageImport = (files: { path: string; data: Buffer }[]) => {
-    const { preview, kept } = inspectBundle(normalizeBundle(files), { takenSlugs: d.brands.slugs(), hasMascot: (id) => findCharacter(d.config.root, id) !== null });
+    const { preview, kept } = inspectBundle(normalizeBundle(files), { takenSlugs: d.brands.slugs(), hasMascot: (id) => findCharacter(brandsDirOf(d.config.dataDir), id) !== null });
     return { importId: stageBundle(svc.uploads.dir, kept), preview };
   };
 

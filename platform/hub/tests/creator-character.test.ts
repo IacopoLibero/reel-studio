@@ -15,52 +15,54 @@ import { writeTestBrand } from "./helpers/brand.js";
 
 const FAKE = join(import.meta.dirname, "fixtures/fake-claude-character.mjs");
 let env: Env;
-beforeEach(() => { env = makeEnv({ claudeBin: FAKE }); writeTestBrand(env.root, "acme", { name: "Acme" }); });
+beforeEach(() => { env = makeEnv({ claudeBin: FAKE }); writeTestBrand(env.root, "acme", { name: "Acme" }, undefined, env.data); });
+/** The folder of the brand "acme": the character studio is its mascot/studio. */
+const dir = () => join(env.data, "brands", "acme");
 afterEach(() => { delete process.env.FAKE_MODE; rmSync(env.tmp, { recursive: true, force: true }); });
 const run = (params: Record<string, unknown> = {}) => characterBuild(job("character.build", "acme", params), env.ctx(job("character.build", "acme", params)));
 
 describe("the character studio files", () => {
   it("keeps the sheet, the state and the previews under brand/<slug>/mascot/studio", () => {
-    expect(sheetFile(env.root, "acme")).toBeNull();
-    expect(saveSheet(env.root, "acme", PNG)).toBe("reference-sheet.png");
-    expect(existsSync(join(env.root, "brand/acme/mascot/studio/reference-sheet.png"))).toBe(true);
-    expect(() => saveSheet(env.root, "acme", Buffer.from("nope"))).toThrow(/PNG or a JPG/);
-    expect(readState(env.root, "acme").status).toBe("draft");
-    expect(patchState(env.root, "acme", { name: "Bun" }).name).toBe("Bun");
-    expect(listPreviews(env.root, "acme")).toEqual([]);
-    writeFileSync(join(env.root, "brand/acme/mascot/studio/state.json"), "{broken");
-    expect(readState(env.root, "acme").name).toBe("");
+    expect(sheetFile(dir())).toBeNull();
+    expect(saveSheet(dir(), PNG)).toBe("reference-sheet.png");
+    expect(existsSync(join(env.data, "brands/acme/mascot/studio/reference-sheet.png"))).toBe(true);
+    expect(() => saveSheet(dir(), Buffer.from("nope"))).toThrow(/PNG or a JPG/);
+    expect(readState(dir()).status).toBe("draft");
+    expect(patchState(dir(), { name: "Bun" }).name).toBe("Bun");
+    expect(listPreviews(dir())).toEqual([]);
+    writeFileSync(join(env.data, "brands/acme/mascot/studio/state.json"), "{broken");
+    expect(readState(dir()).name).toBe("");
   });
 });
 
 describe("character.build with a fake claude", () => {
-  beforeEach(() => { saveSheet(env.root, "acme", PNG); });
+  beforeEach(() => { saveSheet(dir(), PNG); });
   it("writes a plan and builder and ends with a preview for approval", async () => {
     const r = await run();
     expect(r).toMatchObject({ previews: ["front.png"], experimental: true, plan: { parts: 1 } });
-    expect(JSON.parse(readFileSync(join(env.root, "brand/acme/mascot/studio/plan.json"), "utf8")).character).toBe("Bun");
-    expect(readState(env.root, "acme")).toMatchObject({ status: "preview", builds: 1 });
+    expect(JSON.parse(readFileSync(join(env.data, "brands/acme/mascot/studio/plan.json"), "utf8")).character).toBe("Bun");
+    expect(readState(dir())).toMatchObject({ status: "preview", builds: 1 });
     expect(env.patches.map((p) => p.step).filter(Boolean)).toEqual(["Read the sheet", "Plan", "Write the builder", "Render previews", "Done"]);
   });
   it("reruns with the person's notes and passes all of them to Claude", async () => {
     await run({ notes: "Make the arms shorter" });
     const second = await run({ notes: "Bigger eyes" });
     expect(second.summary).toBe("Built again with your notes.");
-    expect(readState(env.root, "acme").notes).toEqual(["Make the arms shorter", "Bigger eyes"]);
-    expect(readState(env.root, "acme").builds).toBe(2);
+    expect(readState(dir()).notes).toEqual(["Make the arms shorter", "Bigger eyes"]);
+    expect(readState(dir()).builds).toBe(2);
   });
   it("fails clearly when there is no sheet, no plan, no preview, or Claude errors", async () => {
-    rmSync(join(env.root, "brand/acme/mascot/studio/reference-sheet.png"));
+    rmSync(join(env.data, "brands/acme/mascot/studio/reference-sheet.png"));
     await expect(run()).rejects.toThrow(/no reference sheet/);
-    saveSheet(env.root, "acme", PNG);
+    saveSheet(dir(), PNG);
     process.env.FAKE_MODE = "noplan";
     await expect(run()).rejects.toThrow(/plan\.json/);
     process.env.FAKE_MODE = "nopreview";
-    rmSync(join(env.root, "brand/acme/mascot/studio/previews"), { recursive: true, force: true });
+    rmSync(join(env.data, "brands/acme/mascot/studio/previews"), { recursive: true, force: true });
     await expect(run()).rejects.toThrow(/no new preview/);
     process.env.FAKE_MODE = "error";
     await expect(run()).rejects.toThrow(/boom/);
-    expect(readState(env.root, "acme").status).toBe("draft");
+    expect(readState(dir()).status).toBe("draft");
   });
   it("needs a brand", async () => {
     await expect(characterBuild(job("character.build", undefined, {}), { ...env.ctx(job("character.build", "acme", {})), brand: null })).rejects.toThrow(/needs a brand/);
@@ -69,17 +71,18 @@ describe("character.build with a fake claude", () => {
 
 describe("character.build safety and job creation", () => {
   it("can only write inside the brand's character folder and cannot read credentials", () => {
-    const t = characterTools("acme");
-    expect(t.allowed).toContain("Write(brand/acme/mascot/studio/**)");
+    const t = characterTools(join(dir(), "mascot", "studio"));
+    expect(t.allowed).toContain(`Write(/${join(dir(), "mascot", "studio")}/**)`); // an absolute path in a rule starts with //
+    expect(t.allowed).toContain(`Edit(/${join(dir(), "mascot", "studio")}/**)`);
     expect(t.allowed).not.toMatch(/Bash\(\*|,Bash,|WebFetch/);
     expect(t.allowed).toContain("Bash(bash scripts/slot.sh blender 1 --:*)");
     expect(t.denied).toContain("Read(**/.env)");
     expect(t.denied).toContain("Bash(docker:*)");
   });
   it("tells Claude about the sheet, the colours, the notes, the Blender queue and that it is experimental", () => {
-    const p = buildCharacterPrompt({ root: "/p", brand: testBrand("acme", { name: "Acme" }), sheet: "reference-sheet.png", notes: ["shorter arms"], fields: { what: "a bun", personality: "kind", extra: "" }, mascotExample: "mascot/x.py" });
-    for (const t of ["EXPERIMENTAL", "brand/acme/mascot/studio/reference-sheet.png", "#2f6fed", "shorter arms", "bash scripts/slot.sh blender 1 --", "BLENDER_WORKBENCH", "mascot/x.py", "write only inside brand/acme/mascot/studio/", "a bun"]) expect(p).toContain(t);
-    expect(buildCharacterPrompt({ root: "/p", brand: testBrand("acme"), sheet: "s.png", notes: [], fields: { what: "", personality: "", extra: "" }, mascotExample: null })).not.toContain("For the method only");
+    const p = buildCharacterPrompt({ root: "/p", studio: "/d/brands/acme/mascot/studio", brand: testBrand("acme", { name: "Acme" }), sheet: "reference-sheet.png", notes: ["shorter arms"], fields: { what: "a bun", personality: "kind", extra: "" }, mascotExample: "mascot/x.py" });
+    for (const t of ["EXPERIMENTAL", "/d/brands/acme/mascot/studio/reference-sheet.png", "#2f6fed", "shorter arms", "bash scripts/slot.sh blender 1 --", "BLENDER_WORKBENCH", "mascot/x.py", "write only inside /d/brands/acme/mascot/studio/", "a bun"]) expect(p).toContain(t);
+    expect(buildCharacterPrompt({ root: "/p", studio: "/d/brands/acme/mascot/studio", brand: testBrand("acme"), sheet: "s.png", notes: [], fields: { what: "", personality: "", extra: "" }, mascotExample: null })).not.toContain("For the method only");
   });
   it("uses the blender-run wrapper when it is on the path, the flatpak otherwise", () => {
     expect(blenderCommand("/s.py", ["preview"], "/nowhere").cmd).toBe("flatpak");
@@ -91,7 +94,7 @@ describe("character.build safety and job creation", () => {
     const body = createSchema.parse({ type: "character.build", params: { notes: "  more red  " } });
     const deps = (jobs = [] as never[]) => ({ root: env.root, brand, settings: DEFAULT_SETTINGS, jobs });
     expect(() => buildSpec(body, deps())).toThrow(/reference sheet/);
-    saveSheet(env.root, "acme", PNG);
+    saveSheet(dir(), PNG);
     const spec = buildSpec(body, deps());
     expect(spec).toMatchObject({ type: "character.build", brand: "acme", params: { notes: "more red" } });
     expect(() => buildSpec(body, deps([{ ...job("character.build", "acme", {}), status: "queued" }] as never[]))).toThrow(/already running/);

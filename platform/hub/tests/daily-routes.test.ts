@@ -57,7 +57,7 @@ describe("brand scoping", () => {
     const r = await app.inject({ url: "/api/brands/nope/daily" });
     expect(r.statusCode).toBe(404);
     expect(r.json().error).toMatch(/does not exist/);
-    rmSync(join(tmp, "root", "brand"), { recursive: true });
+    rmSync(join(tmp, "data", "brands"), { recursive: true });
     expect((await app.inject({ url: "/api/daily" })).statusCode).toBe(409);
   });
   it("keeps the notifications of every brand in one list, each naming its brand", async () => {

@@ -20,38 +20,36 @@ function captionStart(file: string): string {
   return first.length > 120 ? `${first.slice(0, 120)}…` : first;
 }
 
-/** The folder of one reel: brand/<brand>/reels/<n>-<name>/ in the workspace. */
-export const reelDirOf = (root: string, brand: string, folder: string): string => join(root, "brand", brand, "reels", folder);
+/** The folder name of a reel key "<brand>/<folder>" (an empty string for a key that is not one). */
+export const folderOfKey = (key: string): string => (key.split("/").length === 2 ? (key.split("/")[1] as string) : "");
 
-/** Every brand/<brand>/reels/<n>-<name>/ folder with its files and schedule state. `only` limits the scan to one brand. */
-export function scanReels(root: string, scheduled: ScheduleMap, active: ReadonlySet<string> = new Set(), only?: string): Reel[] {
-  const base = join(root, "brand");
+/** The folder of one reel inside a brand's reels folder (<brand>/reels/<n>-<name>/). */
+export const reelDirOf = (reelsDir: string, folder: string): string => join(reelsDir, folder);
+
+/** Every <n>-<name>/ folder of one brand's reels folder, with its files and schedule state. */
+export function scanReels(reelsDir: string, brand: string, scheduled: ScheduleMap, active: ReadonlySet<string> = new Set()): Reel[] {
   const out: Reel[] = [];
-  for (const brand of only === undefined ? dirs(base) : dirs(base).filter((d) => d === only)) {
-    if (!SAFE.test(brand) || brand.startsWith(".")) continue;
-    for (const folder of dirs(join(base, brand, "reels"))) {
-      const m = FOLDER.exec(folder);
-      if (!m) continue;
-      const dir = reelDirOf(root, brand, folder);
-      const key = `${brand}/${folder}`;
-      const cap = join(dir, "caption.md");
-      out.push({
-        key, brand, folder, n: Number(m[1]), name: m[2] as string, mp4: firstMp4(dir),
-        hasCaption: existsSync(cap), captionStart: existsSync(cap) ? captionStart(cap) : "",
-        hasCover: existsSync(join(dir, "cover.png")), schedule: scheduled[key] ?? null, scheduling: active.has(key),
-      });
-    }
+  for (const folder of dirs(reelsDir)) {
+    const m = FOLDER.exec(folder);
+    if (!m) continue;
+    const dir = reelDirOf(reelsDir, folder);
+    const key = `${brand}/${folder}`;
+    const cap = join(dir, "caption.md");
+    out.push({
+      key, brand, folder, n: Number(m[1]), name: m[2] as string, mp4: firstMp4(dir),
+      hasCaption: existsSync(cap), captionStart: existsSync(cap) ? captionStart(cap) : "",
+      hasCover: existsSync(join(dir, "cover.png")), schedule: scheduled[key] ?? null, scheduling: active.has(key),
+    });
   }
-  return out.sort((a, b) => a.brand.localeCompare(b.brand) || a.n - b.n);
+  return out.sort((a, b) => a.n - b.n);
 }
 
 export type ReelFileKind = "mp4" | "cover" | "caption";
 
-/** Absolute path of a reel file, or null when the key is unsafe or the file is missing. */
-export function resolveReelFile(root: string, key: string, kind: ReelFileKind): string | null {
-  const parts = key.split("/");
-  if (parts.length !== 2 || !parts.every((p) => SAFE.test(p) && p !== "." && p !== "..")) return null;
-  const dir = reelDirOf(root, parts[0] as string, parts[1] as string);
+/** Absolute path of a file of a reel (given the brand's reels folder and the reel's folder name), or null when the name is unsafe or the file is missing. */
+export function resolveReelFile(reelsDir: string, folder: string, kind: ReelFileKind): string | null {
+  if (!SAFE.test(folder) || folder === "." || folder === "..") return null;
+  const dir = reelDirOf(reelsDir, folder);
   if (!existsSync(dir) || !statSync(dir).isDirectory()) return null;
   const name = kind === "mp4" ? firstMp4(dir) : kind === "cover" ? "cover.png" : "caption.md";
   if (!name) return null;

@@ -28,8 +28,8 @@ describe("migrate-brand-folders", () => {
     const r = cli("--apply");
     expect(r.code).toBe(0);
     expect(r.text).toContain("Done and verified");
-    expect(existsSync(join(home, "workspace/brand/acme/identity/brand.json"))).toBe(true);
-    expect(existsSync(join(home, "workspace/brand/acme/reels/1-x/a.mp4"))).toBe(true);
+    expect(existsSync(join(home, "data/brands/acme/identity/brand.json"))).toBe(true);
+    expect(existsSync(join(home, "data/brands/acme/reels/1-x/a.mp4"))).toBe(true);
     expect(existsSync(join(home, "workspace/reels/acme/1-x/a.mp4"))).toBe(true);
     expect(cli("--apply").text).toContain("Already moved");
   });
@@ -41,7 +41,20 @@ describe("migrate-brand-folders", () => {
     expect(existsSync(join(home, "workspace/reels/acme"))).toBe(true);
     expect(cli("--remove-old", "--yes").text).toContain("Removed:");
     expect(existsSync(join(home, "workspace/reels"))).toBe(false);
+    expect(existsSync(join(home, "data/brands/acme/identity/brand.json"))).toBe(true);
+  });
+  it("moves brand folders already in the workspace into the data folder with --into-data", () => {
+    put("workspace/brand/acme/identity/brand.json", JSON.stringify(testBrand("acme", { name: "Acme" }))); put("workspace/brand/acme/reels/1-x/a.mp4", "v");
+    rmSync(join(home, "workspace/brand/acme/brand.json")); rmSync(join(home, "workspace/reels"), { recursive: true });
+    const plan = cli("--into-data");
+    expect(plan.text).toContain("Plan only");
     expect(existsSync(join(home, "workspace/brand/acme/identity/brand.json"))).toBe(true);
+    const done = cli("--into-data", "--apply");
+    expect(done.code).toBe(0);
+    expect(done.text).toContain("one folder in the data folder");
+    expect(existsSync(join(home, "data/brands/acme/reels/1-x/a.mp4"))).toBe(true);
+    expect(existsSync(join(home, "workspace/brand/acme/identity"))).toBe(false); // the old flat style.md of the fixture stays: it is not part of the move
+    expect(cli("--into-data").text).toContain("Nothing to move");
   });
   it("exits with 1 and says what to fix when a brand cannot be moved", () => {
     put("workspace/brand/bad/brand.json", "{nope");

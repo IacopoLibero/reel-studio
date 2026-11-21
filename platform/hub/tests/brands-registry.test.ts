@@ -19,11 +19,11 @@ describe("listing and loading", () => {
   it("lists the brands that have a valid identity/brand.json, sorted, never the template or hidden folders", () => {
     writeTestBrand(root, "zeta"); writeTestBrand(root, "alpha");
     mkdirSync(join(root, "brand/_template"), { recursive: true }); writeFileSync(join(root, "brand/_template/brand.json"), "{}");
-    mkdirSync(join(root, "brand/.hidden"), { recursive: true });
-    mkdirSync(join(root, "brand/nojson"), { recursive: true });
+    mkdirSync(join(data, "brands/.hidden"), { recursive: true });
+    mkdirSync(join(data, "brands/nojson"), { recursive: true });
     // A brand.json at the top of the brand folder is the layout of the first releases: not a brand any more.
-    mkdirSync(join(root, "brand/old"), { recursive: true }); writeFileSync(join(root, "brand/old/brand.json"), JSON.stringify(testBrand("old")));
-    expect(listBrandSlugs(root)).toEqual(["alpha", "zeta"]);
+    mkdirSync(join(data, "brands/old"), { recursive: true }); writeFileSync(join(data, "brands/old/brand.json"), JSON.stringify(testBrand("old")));
+    expect(listBrandSlugs(data)).toEqual(["alpha", "zeta"]);
     expect(reg().list().map((b) => b.slug)).toEqual(["alpha", "zeta"]);
     expect(reg().defaultSlug()).toBe("alpha");
     expect(reg().has("zeta")).toBe(true);
@@ -34,48 +34,48 @@ describe("listing and loading", () => {
     expect(reg().defaultSlug()).toBeNull();
   });
   it("explains why a brand.json cannot be used", () => {
-    expect(readBrandFile(root, "nope")).toEqual({ ok: false, errors: ["brand.json: not found"] });
-    mkdirSync(join(root, "brand/broken/identity"), { recursive: true });
-    writeFileSync(join(root, "brand/broken/identity/brand.json"), "{ not json");
-    expect(readBrandFile(root, "broken")).toEqual({ ok: false, errors: ["brand.json: is not valid JSON"] });
-    writeFileSync(join(root, "brand/broken/identity/brand.json"), JSON.stringify(testBrand("other")));
-    expect((readBrandFile(root, "broken") as { errors: string[] }).errors[0]).toMatch(/folder is "broken"/);
-    expect((readBrandFile(root, "../x") as { errors: string[] }).errors[0]).toMatch(/not a valid brand slug/);
-    expect(readBrand(root, "broken")).toBeNull();
+    expect(readBrandFile(data, "nope")).toEqual({ ok: false, errors: ["brand.json: not found"] });
+    mkdirSync(join(data, "brands/broken/identity"), { recursive: true });
+    writeFileSync(join(data, "brands/broken/identity/brand.json"), "{ not json");
+    expect(readBrandFile(data, "broken")).toEqual({ ok: false, errors: ["brand.json: is not valid JSON"] });
+    writeFileSync(join(data, "brands/broken/identity/brand.json"), JSON.stringify(testBrand("other")));
+    expect((readBrandFile(data, "broken") as { errors: string[] }).errors[0]).toMatch(/folder is "broken"/);
+    expect((readBrandFile(data, "../x") as { errors: string[] }).errors[0]).toMatch(/not a valid brand slug/);
+    expect(readBrand(data, "broken")).toBeNull();
   });
   it("writes brand.json atomically and refuses an invalid brand", () => {
     const b = testBrand("acme");
-    writeBrand(root, { ...b, name: "Acme 2" });
-    expect(readBrand(root, "acme")?.name).toBe("Acme 2");
-    expect(existsSync(join(root, "brand/acme/identity/brand.json.tmp"))).toBe(false);
-    expect(() => writeBrand(root, { ...b, colors: { ...b.colors, accent: "nope" } })).toThrow();
+    writeBrand(data, { ...b, name: "Acme 2" });
+    expect(readBrand(data, "acme")?.name).toBe("Acme 2");
+    expect(existsSync(join(data, "brands/acme/identity/brand.json.tmp"))).toBe(false);
+    expect(() => writeBrand(data, { ...b, colors: { ...b.colors, accent: "nope" } })).toThrow();
   });
 });
 
 describe("paths", () => {
   it("puts everything of a brand under its own folders", () => {
-    const p = brandPaths("acme", { root: "/r", dataDir: "/r/platform/data", chromeRoot: "/chrome" });
+    const p = brandPaths("acme", { dataDir: "/d", chromeRoot: "/chrome" });
+    const b = "/d/brands/acme"; // everything of a brand is in this one folder
     expect(p).toMatchObject({
-      brandDir: "/r/brand/acme", identityDir: "/r/brand/acme/identity", brandJson: "/r/brand/acme/identity/brand.json", styleMd: "/r/brand/acme/identity/style.md", logo: "/r/brand/acme/identity/logo.png",
-      mascotDir: "/r/brand/acme/mascot", movementsDir: "/r/brand/acme/mascot/movements", reelsDir: "/r/brand/acme/reels",
-      questionsMd: "/r/platform/data/brands/acme/reel-questions.md",
-      dataDir: "/r/platform/data/brands/acme", scheduledFile: "/r/platform/data/brands/acme/scheduled.json", settingsFile: "/r/platform/data/brands/acme/settings.json",
-      dailyDir: "/r/platform/data/brands/acme/daily", analyticsDir: "/r/platform/data/brands/acme/analytics", ideasDir: "/r/platform/data/brands/acme/ideas",
-      seriesFile: "/r/platform/data/brands/acme/series.json", locksDir: "/r/platform/data/brands/acme/locks", notificationsFile: "/r/platform/data/brands/acme/notifications.json",
+      brandDir: b, dataDir: b, identityDir: `${b}/identity`, brandJson: `${b}/identity/brand.json`, styleMd: `${b}/identity/style.md`, logo: `${b}/identity/logo.png`,
+      mascotDir: `${b}/mascot`, movementsDir: `${b}/mascot/movements`, reelsDir: `${b}/reels`,
+      questionsMd: `${b}/reel-questions.md`, scheduledFile: `${b}/scheduled.json`, settingsFile: `${b}/settings.json`,
+      dailyDir: `${b}/daily`, analyticsDir: `${b}/analytics`, ideasDir: `${b}/ideas`,
+      seriesFile: `${b}/series.json`, locksDir: `${b}/locks`, notificationsFile: `${b}/notifications.json`,
       profileDir: "/chrome/acme",
     });
   });
   it("two brands never share a path", () => {
-    const a = Object.values(brandPaths("acme", { root: "/r", dataDir: "/d", chromeRoot: "/c" }));
-    const b = Object.values(brandPaths("beta", { root: "/r", dataDir: "/d", chromeRoot: "/c" }));
+    const a = Object.values(brandPaths("acme", { dataDir: "/d", chromeRoot: "/c" }));
+    const b = Object.values(brandPaths("beta", { dataDir: "/d", chromeRoot: "/c" }));
     expect(a.filter((x) => typeof x === "string" && b.includes(x) && x !== "acme")).toEqual([]);
   });
   it("refuses a slug that could leave the folder", () => {
-    for (const bad of ["../etc", "a/b", "", "A", "new"]) expect(() => brandPaths(bad, { root: "/r", dataDir: "/d" })).toThrow(/Invalid brand slug/);
+    for (const bad of ["../etc", "a/b", "", "A", "new"]) expect(() => brandPaths(bad, { dataDir: "/d" })).toThrow(/Invalid brand slug/);
   });
   it("uses the brand's own profile folder when it has one, the template stays addressable", () => {
-    expect(brandPaths("acme", { root: "/r", dataDir: "/d", chromeRoot: "/c", profileDir: "/data/chrome-profile" }).profileDir).toBe("/data/chrome-profile");
-    expect(brandPaths("_template", { root: "/r", dataDir: "/d" }).brandDir).toBe("/r/brand/_template");
+    expect(brandPaths("acme", { dataDir: "/d", chromeRoot: "/c", profileDir: "/data/chrome-profile" }).profileDir).toBe("/data/chrome-profile");
+    expect(brandPaths("_template", { dataDir: "/d" }).brandDir).toBe("/d/brands/_template");
   });
   it("reads the Chrome profile root from the environment", () => {
     expect(chromeProfileRoot({})).toBe("/data/chrome-profile");
@@ -113,16 +113,16 @@ describe("creating the folders of a brand", () => {
     expect(existsSync(join(p.identityDir, "voice-sample.md"))).toBe(false); // the voice guide is in the reel skill now
     expect(existsSync(p.mascotDir)).toBe(false); // the character folder is made only for a brand with a character
     expect(p.questionsMd).toBe(join(data, "brands", "acme", "reel-questions.md"));
-    expect(readBrand(root, "acme")?.name).toBe("Acme");
+    expect(readBrand(data, "acme")?.name).toBe("Acme");
     expect(reg().defaultSlug()).toBe("acme");
     expect(r.created).toContain(p.brandJson);
   });
   it("refuses an invalid brand and a slug that already exists, and never overwrites", () => {
     expect(() => reg().create({ ...defaultBrandValues("acme", "Acme"), colors: { background: "x", text: "x", accent: "x", secondary: "x" } })).toThrow(BrandError);
     reg().create(defaultBrandValues("acme", "Acme"));
-    writeFileSync(join(root, "brand/acme/identity/style.md"), "mine");
+    writeFileSync(join(data, "brands/acme/identity/style.md"), "mine");
     expect(() => reg().create(defaultBrandValues("acme", "Other"))).toThrow(/already exists/);
-    expect(readFileSync(join(root, "brand/acme/identity/style.md"), "utf8")).toBe("mine");
+    expect(readFileSync(join(data, "brands/acme/identity/style.md"), "utf8")).toBe("mine");
   });
   it("keeps files it finds in a half-made folder and still works without a template", () => {
     mkdirSync(join(data, "brands/acme"), { recursive: true });

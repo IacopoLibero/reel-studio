@@ -19,7 +19,7 @@ export const reelIdeas: Handler = async (job, ctx) => {
   const count = Number(job.params.count);
   ctx.update({ step: IDEAS_STEPS[0], stepIndex: 0, progress: MARKS[0], log: `Brand ${brand}, ${count} ideas, reading ${ctx.blogDir} and ${productDir(ctx.blogDir)}` });
   const slugs = blogSlugs(ctx.blogDir);
-  const prompt = buildIdeasPrompt({ root: ctx.root, brand, ...(ctx.brand ? { brandInfo: ctx.brand.brand } : {}), count, dataDir: ctx.dataDir, blogDir: ctx.blogDir, slugs, ...brandData(ctx.root, brand) });
+  const prompt = buildIdeasPrompt({ root: ctx.root, brand, ...(ctx.brand ? { brandInfo: ctx.brand.brand } : {}), count, dataDir: ctx.dataDir, blogDir: ctx.blogDir, slugs, ...brandData(ctx.dataDir) });
   const args = ["-p", "--output-format", "stream-json", "--verbose", "--permission-mode", "acceptEdits", "--allowedTools", IDEAS_ALLOWED_TOOLS, "--disallowedTools", IDEAS_DENIED_TOOLS, "--add-dir", ctx.blogDir, "--add-dir", productDir(ctx.blogDir)];
   if (ctx.settings.claudeModel) args.push("--model", ctx.settings.claudeModel);
 

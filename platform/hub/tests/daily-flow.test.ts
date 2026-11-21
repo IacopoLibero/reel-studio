@@ -28,7 +28,7 @@ afterAll(() => { delete process.env.HUB_SCHEDULER_MODULE; delete process.env.HUB
 beforeEach(() => {
   tmp = mkdtempSync(join(tmpdir(), "daily-flow-"));
   root = join(tmp, "root"); data = join(tmp, "data"); blog = join(tmp, "er/app/blog/posts");
-  mkdirSync(data); mkdirSync(blog, { recursive: true });
+  mkdirSync(data); mkdirSync(root, { recursive: true }); mkdirSync(blog, { recursive: true });
   const { reg, ctx } = testRegistry(root, data, "acme", { offer: { lastDay: "2026-11-30", regex: "ACMEFREE" } });
   bdata = ctx.paths.dataDir;
   copyFileSync(join(import.meta.dirname, "fixtures/reel-questions.md"), qfile());
@@ -133,7 +133,7 @@ describe("the daily loop end to end (fake claude, fake collector, fake scheduler
     await until(() => dailyView(dd, DATE).reels.find((r) => r.ideaId === a.ideaId)?.state === "scheduled" || undefined);
     const logged = readFileSync(schedLog(), "utf8").trim().split("\n").map((l) => JSON.parse(l) as Record<string, string>);
     expect(logged[0]).toMatchObject({ date: "2026-12-02", time: "17:30", captionFile: "caption.instagram.md" });
-    const dir = join(root, "brand", a.key!.split("/")[0]!, "reels", a.key!.split("/")[1]!);
+    const dir = join(bdata, "reels", a.key!.split("/")[1]!);
     expect(readFileSync(join(dir, "caption.md"), "utf8")).toContain("ACMEFREE");
     expect(readFileSync(join(dir, "caption.instagram.md"), "utf8")).not.toMatch(/ACMEFREE|🎁/);
     expect(readPlan(bdata, DATE)?.reels.find((r) => r.ideaId === a.ideaId)?.offerDropped).toBe(true);

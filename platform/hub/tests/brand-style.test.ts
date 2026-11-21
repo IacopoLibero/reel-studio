@@ -44,11 +44,11 @@ describe("the brand style (colours, fonts, closing lines)", () => {
     writeFileSync(join(dir, "package.json"), JSON.stringify({ name: "@remotion/google-fonts", version: "0.0.0", main: "index.js" }));
     writeFileSync(join(dir, "index.js"), 'exports.getAvailableFonts = () => [{ fontFamily: "Oswald" }, { fontFamily: "Inter" }];');
     try {
-      const before = readBrand(root, "acme")!;
+      const before = readBrand(data, "acme")!;
       const r = await put("/api/brands/acme/style", { ...style, fonts: { headline: "Oswlad", body: "Inter" } });
       expect(r.statusCode).toBe(400);
       expect(r.json().error).toMatch(/fonts\.headline.*Oswlad/);
-      expect(readBrand(root, "acme")).toEqual(before);
+      expect(readBrand(data, "acme")).toEqual(before);
       expect((await put("/api/brands/acme/style", style)).statusCode).toBe(200);
     } finally { resetFontCache(); }
   });
@@ -59,24 +59,24 @@ describe("the brand style (colours, fonts, closing lines)", () => {
     expect(Object.keys(r.closing)).toEqual(["A", "B"]);
   });
   it("saves a new style into brand.json and leaves the rest of the brand and the other brands alone", async () => {
-    const before = readBrand(root, "acme")!;
-    const betaBefore = readBrand(root, "beta")!;
+    const before = readBrand(data, "acme")!;
+    const betaBefore = readBrand(data, "beta")!;
     const r = await put("/api/brands/acme/style", style);
     expect(r.statusCode).toBe(200);
-    const after = readBrand(root, "acme")!;
+    const after = readBrand(data, "acme")!;
     expect(after.colors).toEqual(style.colors);
     expect(after.fonts).toEqual(style.fonts);
     expect(after.closing).toEqual(style.closing);
     expect({ ...after, colors: before.colors, fonts: before.fonts, closing: before.closing }).toEqual(before);
-    expect(readBrand(root, "beta")).toEqual(betaBefore);
+    expect(readBrand(data, "beta")).toEqual(betaBefore);
     expect((await get("/api/brands")).json().brands[0].accent).toBe("#ff8800");
   });
   it("refuses a colour that is not a hex colour and keeps brand.json as it was", async () => {
-    const before = readBrand(root, "acme")!;
+    const before = readBrand(data, "acme")!;
     const r = await put("/api/brands/acme/style", { ...style, colors: { ...style.colors, accent: "orange" } });
     expect(r.statusCode).toBe(400);
     expect(r.json().error).toMatch(/colou?r/i);
-    expect(readBrand(root, "acme")).toEqual(before);
+    expect(readBrand(data, "acme")).toEqual(before);
   });
   it("refuses an empty font name and a missing field", async () => {
     expect((await put("/api/brands/acme/style", { ...style, fonts: { headline: " ", body: "Inter" } })).statusCode).toBe(400);

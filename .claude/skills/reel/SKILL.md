@@ -5,19 +5,18 @@ description: Make a finished vertical reel (1080 × 1920, voice, word-timed capt
 
 # Make a reel
 
-One line in, one finished video out. Work in `brand/<brand>/reels/<n>-<short-name>/` (`<n>` is the next free number: look at the folders already there) (script, audio, plan, storyboard, the rendered MP4,
+One line in, one finished video out. Work in `<brand folder>/reels/<n>-<short-name>/` (`<n>` is the next free number: look at the folders already there) (script, audio, plan, storyboard, the rendered MP4,
 `caption.md` and `cover.png`). Every reel stays in its own folder: there is no `final` folder and no copying. Make the reel
 in the chosen voice from the brand's `style.md` only: no second version unless the person asks. Read that file first,
 every time.
 
-**Brands.** Each brand has its own folder, `brand/<brand>/` (your brands live on your machine, outside git), with:
+**Brands.** Each brand has its own folder, the **brand folder**: `../data/brands/<brand>/` (in your data folder, next to this workspace, outside git; the hub gives you its full path in the prompt of a job), with:
 `identity/` (`brand.json`: the machine-readable facts: name, language, website, colours, fonts, closing lines, offer,
 Instagram, character, voice; `style.md`: the prose guide: voice, closing hook, numbers for the checks; `logo.png`, only
 when the brand has a logo; and the voice sample `voice.wav` with its words in `voice.txt`, when the brand has no
 character), `mascot/` (only for a brand with a character: its Blender script `<id>.py`, its voice `<id>-voice.wav` with
-`<id>-voice.txt`, and the rendered `movements/`) and `reels/` (one folder per reel). The question list is hub data, in
-`../data/brands/<brand>/reel-questions.md`. Read `identity/brand.json` and `identity/style.md` first.
-Everything below that says `style.md` means `brand/<brand>/identity/style.md`. If there is only one brand folder, use it and
+`<id>-voice.txt`, and the rendered `movements/`) and `reels/` (one folder per reel). The hub's own data for the brand (the question list `reel-questions.md`, the schedule, the analytics) is in the same folder. Read `identity/brand.json` and `identity/style.md` first.
+Everything below that says `style.md` means `<brand folder>/identity/style.md`. If there is only one brand folder, use it and
 say nothing. If there are several, ask which one at the start (see step 1), unless the hub gave you the brand. A new
 brand is made in the hub ("New brand") or with `scripts/new-brand.sh`, never by copying a finished brand.
 
@@ -29,11 +28,11 @@ they want to switch first.
 
 1. **The idea.** If the line doesn't make clear what the reel should say or who it is for, talk it through with the
    person first: two or three short questions, then go on.
-   - **Brand and closing, always ask at the start**, in the same message as any other questions: which brand folder
-     in `brand/` (only if there is more than one), and which closing from that brand's `style.md` ("Closing hook")
+   - **Brand and closing, always ask at the start**, in the same message as any other questions: which brand
+     (the folders of `../data/brands/`, only if there is more than one), and which closing from that brand's `style.md` ("Closing hook")
      this reel ends on, **A: the brand's offer** or **B: Follow for tips**. Skip a question only if the person already
-     said the answer. Then read `brand/<brand>/identity/style.md`.
-   - **Question list.** `../data/brands/<brand>/reel-questions.md` lists reel questions with a checkbox. If the person gives no
+     said the answer. Then read `<brand folder>/identity/style.md`.
+   - **Question list.** `<brand folder>/reel-questions.md` lists reel questions with a checkbox. If the person gives no
      idea, propose the next unchecked ones (with their hook and source) and let them pick. When a reel is finished,
      tick its box and add its folder name, so the list always shows what is done.
    - **Source (optional parameter).** After the idea the person can give where the facts come from: a blog post
@@ -67,8 +66,8 @@ they want to switch first.
      mistake. Run `bash scripts/ensure-voice.sh`. It starts VoiceStudio's own server (`uvicorn`, port 3900) detached,
      waits until `GET /health` answers, and selects the `voxcpm2` engine. It does nothing if the server is already
      up. Then use only the local API (`http://localhost:3900`), never the app's screen.
-   - Save the approved script as `brand/<brand>/reels/<name>/script.json` and run
-     `node scripts/voice.mjs brand/<brand>/reels/<name> <voice>=brand/<brand>/<the sample .wav that style.md names> ...`. It reads the sample's
+   - Save the approved script as `<brand folder>/reels/<name>/script.json` and run
+     `node scripts/voice.mjs <brand folder>/reels/<name> <voice>=<brand folder>/<the sample .wav that style.md names> ...`. It reads the sample's
      spoken words from the `.txt` next to it, and its speed and pauses from the `.json` next to it when there is one. The audio stays in
      the reel's `audio/` folder: the final file is `audio/<voice>.wav`. It calls `ensure-voice.sh` first, speaks every
      sentence through `POST /generate` in the cloned voice, joins them with pauses, times every word with Whisper and
@@ -93,23 +92,24 @@ they want to switch first.
    - Show the sheet and wait. Go on only when the person approves it; redraw the scenes they want changed.
 6. **Build.** Animate each approved scene in Remotion, following Remotion's agent skills.
    - Every movement is calculated from the current frame. No CSS animations or transitions: they flicker in renders.
+   - **Decide the character's moves from what exists.** Before you choose any move or expression, list what the brand has: the folders of `<brand folder>/mascot/movements/` that hold an `info.json` (one folder is one move; the hub's Character page shows the same list, and a job prompt gives it to you). Choose every scene's moves only from that list, by its exact names, and use `idle` when nothing fits. Never invent a name and never use a move that has no folder: it would render as an empty picture. Only when no existing move fits the moment, add one (see below), and say so in your summary.
    - **The brand's character, in every reel (only when `character.enabled`):** it stands on the left, the drawing on
      the right. Use the brand's character component (in the brand's own reel code, outside git) and give each scene a
      list of moves, each starting on the word it belongs to. The moves a character has are listed in its Blender script
-     (`brand/<brand>/mascot/<character.id>.py`, `MOVES`) and in the hub's Character page; typical ones are `idle`, `talk`, `wave`,
+     (`<brand folder>/mascot/<character.id>.py`, `MOVES`) and in the hub's Character page; typical ones are `idle`, `talk`, `wave`,
      `point`, `thumbs_up`, `jump`, plus faces that hold a pose and loop (`surprised`, `thinking`, `wink`...). Moves are PNG
-     sequences with a transparent background in `brand/<brand>/mascot/movements/<move>/` (the composition reads them as `staticFile("mascot/<move>/...")`): `f-NNNN` has the mouth closed, `o-NNNN` the
+     sequences with a transparent background in `<brand folder>/mascot/movements/<move>/` (the composition reads them as `staticFile("mascot/<move>/...")`): `f-NNNN` has the mouth closed, `o-NNNN` the
      same frame with the mouth open.
    - **No character:** use the generic kit (`src/kit`: `theme.ts` reads the brand's colours and fonts from `brand.json`,
      `Captions.tsx` draws the word-timed captions) and build full-width scenes. Run renders with `REEL_BRAND=<brand>` so
      the kit picks the right `brand.json` (the hub sets it for you).
    - **The character's mouth moves little:** pass `open={mouthOpen(frame, wf)}`, which opens it for a few frames on every other
      word. Never flap it on every syllable.
-   - A new move or prop is a function in the character's Blender script `brand/<brand>/mascot/<character.id>.py`; render it with
-     `blender -b -P <project root>/brand/<brand>/mascot/<character.id>.py -- move <name>` (in the container; on a host with Flatpak:
-     `flatpak run --filesystem=home org.blender.Blender -b -P <project root>/brand/<brand>/mascot/<character.id>.py -- move <name>`).
+   - A new move or prop is a function in the character's Blender script `<brand folder>/mascot/<character.id>.py`; render it with
+     `blender -b -P <project root>/<brand folder>/mascot/<character.id>.py -- move <name>` (in the container; on a host with Flatpak:
+     `flatpak run --filesystem=home org.blender.Blender -b -P <project root>/<brand folder>/mascot/<character.id>.py -- move <name>`).
      Use the absolute path of the script; Blender has no window; the frames are written next to the script, in `movements/<name>/`. Add its
-     frame count to `MOVE_FRAMES`. `brand/<brand>/mascot/<character.id>.blend` opens the rigged model in Blender.
+     frame count to `MOVE_FRAMES`. `<brand folder>/mascot/<character.id>.blend` opens the rigged model in Blender.
    - The question headline must be fully visible from frame 0; a hello wave is fine.
    - Each change on screen lands on the word it belongs to.
 7. **Captions.** Each word appears when it is spoken, and the spoken word is highlighted.
@@ -128,7 +128,7 @@ they want to switch first.
       cut off or still animating in, and inside the safe area). If not, fix it and render again.
     - **Sound.** Every line of the script plays to its end: compare the audio's length with the last word's time.
     - Fix what fails and render again, three rounds at most. Say what you measured, what failed and what you changed.
-11. **Caption.** Write the Instagram caption and save it as `brand/<brand>/reels/<short-name>/caption.md` (the caption text
+11. **Caption.** Write the Instagram caption and save it as `<brand folder>/reels/<short-name>/caption.md` (the caption text
     only, ready to paste, no notes in the file). It always follows this pattern, in this order, with a blank line
     between blocks:
 
@@ -168,11 +168,11 @@ they want to switch first.
     - **Checklist (inside the pattern, not instead of it):** hashtags are searchable words people type in Explore, not
       only brand tags; the call to action is one kind per reel (save, follow, or the keyword/site), never two; the
       first comment (if used) adds one useful extra, never a repeat of the caption.
-12. **Cover.** Make the cover image of the reel and save it as `brand/<brand>/reels/<short-name>/cover.png` (1080 × 1920).
+12. **Cover.** Make the cover image of the reel and save it as `<brand folder>/reels/<short-name>/cover.png` (1080 × 1920).
     - Write `cover.json` in the reel folder: `{"lines":[{"text":"..."},{"text":"...","red":true}]}`. The lines are the
       reel's opening question cut into 2 to 4 short lines (about 16 characters at most each), the last line in red.
-    - Render it with the `Cover` composition: `npx remotion still Cover brand/<brand>/reels/<name>/cover.png
-      --props=brand/<brand>/reels/<name>/cover.json`. The logo comes from the brand's `identity/` folder by itself. If the brand
+    - Render it with the `Cover` composition: `npx remotion still Cover <brand folder>/reels/<name>/cover.png
+      --props=<brand folder>/reels/<name>/cover.json`. The logo comes from the brand's `identity/` folder by itself. If the brand
       has no logo file, add `"logo": false` to `cover.json`: the cover then has no logo frame. The look
       (kicker, question, logo) is in `src/cover/Cover.tsx`; keep it the same in every reel so the profile grid is
       recognised.
@@ -180,7 +180,7 @@ they want to switch first.
       the middle band (y 340 to 1440) so Instagram's grid crop does not cut it.
     - Text rules (cover and on screen): the question in plain words, few words, one idea per line, big enough to read
       on a phone, high contrast, no text that repeats what the picture already shows.
-13. **Hand over.** Tick the reel's question in `../data/brands/<brand>/reel-questions.md` (if it is there; if not, add it under
+13. **Hand over.** Tick the reel's question in `<brand folder>/reel-questions.md` (if it is there; if not, add it under
     "Done"). Then give the reel's MP4 path, the caption file's path, the cover's path, and one thing you'd improve
     next. Show the caption in the message too.
 

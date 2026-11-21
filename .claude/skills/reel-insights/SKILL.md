@@ -16,7 +16,7 @@ description: Read the analytics of the reels and say in plain words what to repe
 2. Compare like with like: the same age of post, closing A versus closing B, hook emotion, topic.
 3. With fewer than 8 reels, say the sample is small and keep claims modest. Never claim cause from one reel.
 4. Find hook patterns that won and lost (use hook-mining on hooks.csv when it has 8 or more rows).
-5. Check the brand fit: does what wins match the voice and the offer in `brand/<brand>/identity/style.md`? Comment themes: note questions viewers ask, as ideas.
+5. Check the brand fit: does what wins match the voice and the offer in `<brand folder>/identity/style.md`? Comment themes: note questions viewers ask, as ideas.
 6. Proposals are only proposals: a change to `style.md` or the question rules is written as "Proposal: ..." with the number behind it. Never apply one without the user's approval.
 
 ## Output

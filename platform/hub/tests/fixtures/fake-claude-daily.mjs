@@ -11,10 +11,10 @@ process.stdin.on("end", () => {
   out({ type: "system", subtype: "init", model: "fake" });
   let text;
   if (/You are making one finished reel/.test(prompt)) {
-    const dir = /Work in the folder (brand\/[^ ]+),/.exec(prompt)?.[1];
+    const dir = /Work in the folder (\/[^ ]+),/.exec(prompt)?.[1];
     const root = /reel-studio project at (\S+)\./.exec(prompt)?.[1] ?? process.cwd();
     const note = /reviewer rejected .* with this note: "([^"]*)"/.exec(prompt)?.[1] ?? "";
-    const abs = join(root, dir);
+    const abs = dir; // the prompt names the reel folder with its absolute path
     mkdirSync(abs, { recursive: true });
     if (process.env.FAKE_MP4 && existsSync(process.env.FAKE_MP4)) copyFileSync(process.env.FAKE_MP4, join(abs, "reel.mp4")); else writeFileSync(join(abs, "reel.mp4"), "x");
     if (process.env.FAKE_COVER && existsSync(process.env.FAKE_COVER)) copyFileSync(process.env.FAKE_COVER, join(abs, "cover.png")); else writeFileSync(join(abs, "cover.png"), "x");

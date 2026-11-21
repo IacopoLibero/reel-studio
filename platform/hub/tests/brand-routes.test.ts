@@ -16,7 +16,7 @@ beforeAll(() => { process.env.HUB_SCHEDULER = "off"; process.env.HUB_LOG_LEVEL =
 afterAll(() => { delete process.env.HUB_SCHEDULER; delete process.env.HUB_LOG_LEVEL; });
 
 function reelFolder(brand: string, folder: string): void {
-  const dir = join(root, "brand", brand, "reels", folder);
+  const dir = join(data, "brands", brand, "reels", folder);
   mkdirSync(dir, { recursive: true });
   writeFileSync(join(dir, "a.mp4"), "video"); writeFileSync(join(dir, "caption.md"), `Caption of ${brand}\n#x`); writeFileSync(join(dir, "cover.png"), "png");
 }
@@ -109,8 +109,8 @@ describe("settings per brand", () => {
     expect(beta.daily).toMatchObject({ enabled: false, earliest: "06:00" });
     expect(beta.blenderDevice).toBe("cpu");
     expect((await get("/api/settings")).json().daily.earliest).toBe("08:15");
-    expect(readBrand(root, "acme")?.instagram.account).toBe("acme_new");
-    expect(readBrand(root, "beta")?.instagram.account).toBe("");
+    expect(readBrand(data, "acme")?.instagram.account).toBe("acme_new");
+    expect(readBrand(data, "beta")?.instagram.account).toBe("");
     expect(JSON.parse(readFileSync(join(data, "brands/acme/settings.json"), "utf8")).daily.earliest).toBe("08:15");
   });
   it("refuses invalid settings", async () => {
@@ -134,8 +134,8 @@ describe("slots, Instagram login and the character files", () => {
     expect((await app.inject({ method: "POST", url: "/api/brands/nope/instagram/login-window", headers: auth })).statusCode).toBe(404);
   });
   it("serves a character's frames and counts its images, only for the brand that has one", async () => {
-    mkdirSync(join(root, "brand/beta/mascot/movements/hop"), { recursive: true });
-    writeFileSync(join(root, "brand/beta/mascot/movements/hop/f-0001.png"), "png"); writeFileSync(join(root, "brand/beta/mascot/movements/hop/info.json"), JSON.stringify({ frames: 1 }));
+    mkdirSync(join(data, "brands/beta/mascot/movements/hop"), { recursive: true });
+    writeFileSync(join(data, "brands/beta/mascot/movements/hop/f-0001.png"), "png"); writeFileSync(join(data, "brands/beta/mascot/movements/hop/info.json"), JSON.stringify({ frames: 1 }));
     expect((await get("/api/brands/beta/character/hop/frame/f-0001.png")).statusCode).toBe(200);
     expect((await get("/api/brands/beta/character/hop/frame/f-0009.png")).statusCode).toBe(404);
     expect((await get("/api/brands/acme/character/hop/frame/f-0001.png")).statusCode).toBe(404);

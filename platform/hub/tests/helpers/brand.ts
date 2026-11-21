@@ -12,19 +12,15 @@ export function testBrand(slug = "acme", over: Partial<BrandInput> = {}): Brand 
 }
 
 /**
- * Writes brand/<slug>/identity/brand.json under `root`, and the question list in the brand's data folder when `questions` is given.
+ * Writes <data>/brands/<slug>/identity/brand.json, and the question list in the same brand folder when `questions` is given.
  * The data folder is `dataDir`, else the `data` folder next to `root` (the layout most tests use: <tmp>/root and <tmp>/data).
  */
 export function writeTestBrand(root: string, slug = "acme", over: Partial<BrandInput> = {}, questions?: string, dataDir?: string): Brand {
   const brand = testBrand(slug, over);
-  const dir = join(root, "brand", slug, "identity");
-  mkdirSync(dir, { recursive: true });
-  writeFileSync(join(dir, "brand.json"), JSON.stringify(brand, null, 2));
-  if (questions !== undefined) {
-    const qdir = join(dataDir ?? join(dirname(root), "data"), "brands", slug);
-    mkdirSync(qdir, { recursive: true });
-    writeFileSync(join(qdir, "reel-questions.md"), questions);
-  }
+  const brandDir = join(dataDir ?? join(dirname(root), "data"), "brands", slug);
+  mkdirSync(join(brandDir, "identity"), { recursive: true });
+  writeFileSync(join(brandDir, "identity", "brand.json"), JSON.stringify(brand, null, 2));
+  if (questions !== undefined) writeFileSync(join(brandDir, "reel-questions.md"), questions);
   return brand;
 }
 

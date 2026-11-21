@@ -10,10 +10,10 @@ import { HttpError, makeScope } from "./scope.js";
 const TWICE_THE_LIMIT = LIMITS.logo * 2;
 
 /** Rewrites the logo sentence of the brand's style.md (the reel skill reads it); a missing file or sentence is left alone. */
-function syncStyleGuide(file: string, slug: string, hasLogo: boolean): void {
+function syncStyleGuide(file: string, hasLogo: boolean): void {
   if (!existsSync(file)) return;
   const md = readFileSync(file, "utf8");
-  const next = withLogoLine(md, slug, hasLogo);
+  const next = withLogoLine(md, hasLogo);
   if (next !== md) writeFileSync(file, next);
 }
 
@@ -38,14 +38,14 @@ export function logoRoutes(app: FastifyInstance, d: AppDeps): void {
       if (!isPng(body)) throw new HttpError(400, "The logo must be a PNG. Covers and reels cannot draw other formats (an SVG included).");
       writeFileSync(`${file}.tmp`, body);
       renameSync(`${file}.tmp`, file);
-      syncStyleGuide(ctx.paths.styleMd, ctx.slug, true);
+      syncStyleGuide(ctx.paths.styleMd, true);
       return { ok: true };
     });
 
     sub.delete<{ Params: { slug: string } }>("/api/brands/:slug/logo", async (req) => {
       const ctx = scope(req);
       rmSync(ctx.paths.logo, { force: true });
-      syncStyleGuide(ctx.paths.styleMd, ctx.slug, false);
+      syncStyleGuide(ctx.paths.styleMd, false);
       return { ok: true };
     });
   });

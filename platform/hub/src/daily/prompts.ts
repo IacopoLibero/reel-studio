@@ -7,7 +7,7 @@ export interface AnalyseInput { root: string; brand: string; brandInfo?: BrandIn
 
 /** Prompt for the analysis step: readout, what to repeat and stop, proposals. Answers with JSON only. */
 export function buildAnalysePrompt(i: AnalyseInput): string {
-  const b = `brand/${i.brand}`;
+  const b = i.dataDir; // the brand's own folder (identity/, mascot/, reels/ and the hub data are all in it)
   return `You are the analyst of the reel-studio project at ${i.root}, brand ${i.brand}. Today is ${i.date}. You only read and think: do not write, edit or create any file, and never apply a change.
 
 Call the Skill tool for these, in this order (a real call, not a mention):
@@ -28,7 +28,7 @@ export interface IdeasInput {
 
 /** Prompt for exactly N ideas, with research, quality gate, a reason from the user's data and an optional Threads text. */
 export function buildDailyIdeasPrompt(i: IdeasInput): string {
-  const b = `brand/${i.brand}`;
+  const b = i.dataDir; // the brand's own folder (identity/, mascot/, reels/ and the hub data are all in it)
   const product = productDir(i.blogDir);
   const data = i.readout
     ? `What the analysis found (use it for "basedOnData"):\n${[i.readout.text, ...i.readout.repeat.map((x) => `repeat: ${x}`), ...i.readout.stop.map((x) => `stop: ${x}`), ...i.readout.hookPatterns.map((x) => `pattern: ${x}`)].join("\n")}`

@@ -1,7 +1,7 @@
 import { readFileSync, renameSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { buildSpec, JobRequestError } from "../jobs/create.js";
-import { readScheduled, reelDirOf, resolveReelFile } from "../reels/scanner.js";
+import { folderOfKey, readScheduled, reelDirOf, resolveReelFile } from "../reels/scanner.js";
 import type { Slot } from "../shared/types.js";
 import { DailyError, type DailyDeps } from "./deps.js";
 import { offerOf, humanDay } from "../brands/offer.js";
@@ -22,7 +22,7 @@ const reelOf = (p: DailyPlan, ideaId: string): PlanReel => {
   return r;
 };
 const jobDeps = (d: DailyDeps) => ({ root: d.config.root, brand: d.brand, settings: d.settings.get(), jobs: d.store.list(), now: d.now() });
-const readCaption = (d: DailyDeps, key: string): string => { const f = resolveReelFile(d.config.root, key, "caption"); return f ? readFileSync(f, "utf8") : ""; };
+const readCaption = (d: DailyDeps, key: string): string => { const f = resolveReelFile(d.brand.paths.reelsDir, folderOfKey(key), "caption"); return f ? readFileSync(f, "utf8") : ""; };
 
 export interface SlotOptions {
   slots: Array<Slot & { offerExpired: boolean }>;
@@ -56,7 +56,7 @@ export function confirmReel(d: DailyDeps, date: string, ideaId: string, c: Confi
     const spec = buildSpec({ type: "instagram.schedule", params: { reel: reel.key, date: c.date, time: c.time } }, jobDeps(d));
     let params = spec.params ?? {};
     if (offer.applies) {
-      const dir = reelDirOf(d.config.root, ...(reel.key.split("/") as [string, string]));
+      const dir = reelDirOf(d.brand.paths.reelsDir, folderOfKey(reel.key));
       writeFileSync(join(dir, "caption.instagram.md.tmp"), dropOfferLines(caption, cfg));
       renameSync(join(dir, "caption.instagram.md.tmp"), join(dir, "caption.instagram.md"));
       params = { ...params, captionFile: "caption.instagram.md" };

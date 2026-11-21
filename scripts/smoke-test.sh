@@ -14,14 +14,14 @@ if curl -fsS -m 5 http://127.0.0.1:4000/api/health >/dev/null 2>&1; then pass "h
 
 if blender --version >/dev/null 2>&1; then pass "Blender starts ($(blender --version 2>/dev/null | head -n1))"; else bad "Blender does not start"; fi
 # A character render is only tried when a character script exists on this machine (characters are not part of the public tree).
-script="$(find brand -mindepth 3 -maxdepth 3 -path '*/mascot/*.py' 2>/dev/null | sort | head -n1)"
+script="$(find "${REEL_BRANDS_DIR:-../data/brands}" -mindepth 3 -maxdepth 3 -path '*/mascot/*.py' 2>/dev/null | sort | head -n1)"
 if [ -n "$script" ]; then
   out="${TMPDIR:-/tmp}/mascot-stills/still-idle-0-0.png"
   rm -f "$out"
   if blender -b -P "$script" -- still idle >/tmp/smoke-blender.log 2>&1 && [ -s "$out" ]; then
     pass "Blender rendered a character still ($(stat -c %s "$out") bytes)"
   else bad "Blender still (log: /tmp/smoke-blender.log)"; fi
-else note "no character in brand/*/mascot/: character render skipped"; fi
+else note "no character in <data>/brands/*/mascot/: character render skipped"; fi
 
 if [ -d node_modules/remotion ]; then
   rm -f /tmp/smoke-remotion.png
