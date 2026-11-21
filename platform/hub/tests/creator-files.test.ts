@@ -1,4 +1,4 @@
-import { mkdtempSync, rmSync, existsSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
@@ -92,6 +92,24 @@ describe("font list", () => {
     const list = await loadFontList(async () => { throw new Error("not installed"); });
     expect(list.checked).toBe(false);
     expect(checkFont(list, "Anything").ok).toBe(true);
+  });
+  it("finds the package in the workspace when the hub itself does not have it", async () => {
+    resetFontCache();
+    const ws = mkdtempSync(join(tmpdir(), "fonts-ws-"));
+    try {
+      const dir = join(ws, "node_modules/@remotion/google-fonts");
+      mkdirSync(dir, { recursive: true });
+      writeFileSync(join(dir, "package.json"), JSON.stringify({ name: "@remotion/google-fonts", version: "0.0.0", main: "index.js" }));
+      writeFileSync(join(dir, "index.js"), 'exports.getAvailableFonts = () => [{ fontFamily: "Bebas Neue" }, { fontFamily: "Inter" }];');
+      const list = await loadFontList(undefined, [ws]);
+      expect(list).toEqual({ names: ["Bebas Neue", "Inter"], checked: true });
+    } finally { resetFontCache(); rmSync(ws, { recursive: true, force: true }); }
+  });
+  it("does not cache a failure: the list is found once the package appears", async () => {
+    resetFontCache();
+    expect((await loadFontList(async () => { throw new Error("no"); }, [])).checked).toBe(false);
+    expect((await loadFontList(async () => ({ getAvailableFonts: () => [{ fontFamily: "Inter" }] }), [])).checked).toBe(true);
+    resetFontCache();
   });
   it("knows the real Google fonts when the package is installed", async () => {
     resetFontCache();

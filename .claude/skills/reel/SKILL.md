@@ -79,8 +79,9 @@ they want to switch first.
    - **No voice:** skip it and time the words at a natural reading speed.
 4. **Plan.** Write `plan.md`: one scene per sentence, with its words, its start and end from the word times, and what
    is on screen. Check the plan against "Make it look good" before drawing anything.
-   - The last scene is the closing hook: the brand logo from `brand/<brand>/logo.png`
-     (copy it to `public/logo.png` before building: the closing scenes load it from there), the website large in the accent colour, and the
+   - The last scene is the closing hook: the brand logo from `brand/<brand>/logo.png` (or `logo.svg`)
+     (copy it to `public/logo.png` before building: the closing scenes load it from there; a brand with no logo file has no logo:
+     leave it out, never reuse another brand's `public/logo.png`), the website large in the accent colour, and the
      call to action, landing on the spoken words. It stays on screen for at least 2 seconds and keeps moving
      (the logo lands, the website draws or counts in). Same look in every reel, so the brand is recognised.
    - In the storyboard it is the last still. Keep it inside the Instagram safe area like everything else.
@@ -168,7 +169,8 @@ they want to switch first.
     - Write `cover.json` in the reel folder: `{"lines":[{"text":"..."},{"text":"...","red":true}]}`. The lines are the
       reel's opening question cut into 2 to 4 short lines (about 16 characters at most each), the last line in red.
     - Render it with the `Cover` composition: `npx remotion still Cover reels/<brand>/<name>/cover.png
-      --props=reels/<brand>/<name>/cover.json`. Copy the brand logo to `public/logo.png` first (step 4). The look
+      --props=reels/<brand>/<name>/cover.json`. Copy the brand logo to `public/logo.png` first (step 4). If the brand
+      has no logo file, add `"logo": false` to `cover.json`: the cover then has no logo frame. The look
       (kicker, question, logo) is in `src/cover/Cover.tsx`; keep it the same in every reel so the profile grid is
       recognised.
     - Look at the image: the whole question is readable, nothing touches the side margins, and everything sits in

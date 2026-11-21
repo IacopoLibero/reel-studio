@@ -22,7 +22,8 @@ const section = (md: string, title: string): { from: number; to: number } | null
  */
 export function adaptStyle(filled: string, b: Brand, o: StyleOptions): string {
   let md = filled;
-  md = md.split(`brand/${b.slug}/logo.png`).join(`brand/${b.slug}/logo.${o.logo ?? "png"}`);
+  if (o.logo) md = md.split(`brand/${b.slug}/logo.png`).join(`brand/${b.slug}/logo.${o.logo}`);
+  else md = md.replace(/ Logo: `brand\/[^`]*\/logo\.png`\./, " No logo yet: the cover is drawn without a logo frame. When there is one, save it in this folder as logo.png (or logo.svg).");
   if (o.voice) md = md.split(`brand/${b.slug}/voice.wav`).join(`brand/${b.slug}/voice/voice.wav`).replace("(its words are in `voice.txt` next to it", "(its words are in `voice/voice.txt`");
   else md = md.replace(/^- Chosen voice:.*$/m, `- No voice sample yet. Record one (see \`voice-sample.md\`), save it as \`brand/${b.slug}/voice/voice.wav\` with its words in \`voice/voice.txt\`, and set "voice" in brand.json.`);
   const mascot = section(md, "Mascot");

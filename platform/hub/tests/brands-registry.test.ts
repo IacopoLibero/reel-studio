@@ -101,7 +101,9 @@ describe("creating the folders of a brand", () => {
     for (const d of [p.brandDir, p.voiceDir, p.reelsDir, p.dataDir, p.dailyDir, p.analyticsDir, p.ideasDir, p.locksDir, p.shotsDir, p.profileDir]) expect(existsSync(d), d).toBe(true);
     expect(readFileSync(p.styleMd, "utf8")).toBe("# Acme acme.example #2f6fed\n");
     expect(readFileSync(p.questionsMd, "utf8")).toContain("# Reel questions: Acme");
-    expect(existsSync(p.logo)).toBe(true);
+    // The template has a placeholder logo: a new brand must not inherit it, or every cover would show a blank frame.
+    expect(existsSync(p.logo)).toBe(false);
+    expect(existsSync(join(p.brandDir, "logo.svg"))).toBe(false);
     expect(existsSync(join(p.brandDir, "README.md"))).toBe(false);
     expect(readBrand(root, "acme")?.name).toBe("Acme");
     expect(reg().defaultSlug()).toBe("acme");

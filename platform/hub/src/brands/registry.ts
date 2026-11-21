@@ -89,7 +89,7 @@ export class BrandRegistry {
     const tpl = join(this.root, "brand", "_template");
     if (existsSync(tpl)) {
       for (const name of readdirSync(tpl)) {
-        if (name === "brand.json" || name === "README.md") continue;
+        if (name === "brand.json" || name === "README.md" || /^logo\.(png|svg)$/.test(name)) continue; // the template logo is a placeholder: a brand has a logo only when someone gives it one
         const dest = join(p.brandDir, name);
         if (existsSync(dest)) continue;
         cpSync(join(tpl, name), dest, { recursive: true });

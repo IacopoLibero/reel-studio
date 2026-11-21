@@ -1,6 +1,7 @@
-import { useId, type ReactNode } from "react";
+import { useEffect, useId, useState, type ReactNode } from "react";
 import { Row } from "../components/SettingsParts";
 import { contrastNote, sharedKeywords, wordCount } from "./draft";
+import { googleFontCss, previewableFont } from "./font-preview";
 
 export function Text({ label, help, problem, value, onChange, placeholder, multiline, type = "text" }: { label: string; help?: string; problem?: string | undefined; value: string; onChange: (v: string) => void; placeholder?: string; multiline?: boolean; type?: string }) {
   const id = useId();
@@ -28,15 +29,45 @@ export function ColorField({ label, help, value, onChange, against, againstLabel
   );
 }
 
-/** A font name with the Google fonts Remotion can load as suggestions; says at once when the name is not one of them. */
-export function FontField({ label, value, onChange, names, checked, problem }: { label: string; value: string; onChange: (v: string) => void; names: readonly string[]; checked: boolean; problem?: string | undefined }) {
+type FontState = "none" | "loading" | "ready" | "failed";
+
+/** Loads the Google font `name` into the page (once per name) and says when it can be used. Needs the internet, like the render does. */
+function useGoogleFont(name: string, enabled: boolean): FontState {
+  const [state, setState] = useState<FontState>("none");
+  useEffect(() => {
+    if (!enabled) { setState("none"); return; }
+    setState("loading");
+    let live = true;
+    const id = `gfont-${name.trim().replace(/[^A-Za-z0-9]/g, "-")}`;
+    let link = document.getElementById(id) as HTMLLinkElement | null;
+    if (!link) { link = document.createElement("link"); link.id = id; link.rel = "stylesheet"; link.href = googleFontCss(name); document.head.appendChild(link); }
+    const done = () => { void document.fonts.load(`32px "${name.trim()}"`).then((f) => live && setState(f.length ? "ready" : "failed"), () => live && setState("failed")); };
+    if (link.sheet) done(); else { link.addEventListener("load", done, { once: true }); link.addEventListener("error", () => live && setState("failed"), { once: true }); }
+    return () => { live = false; };
+  }, [name, enabled]);
+  return state;
+}
+
+/** A font name with the Google fonts Remotion can load as suggestions, a preview of how it looks, and a hint when the name is not one of them. */
+export function FontField({ label, value, onChange, names, checked, problem, sample = "Why does your bread go hard?" }: { label: string; value: string; onChange: (v: string) => void; names: readonly string[]; checked: boolean; problem?: string | undefined; sample?: string }) {
   const id = useId(), list = `${id}-fonts`;
   const near = checked && value && !names.includes(value) ? names.filter((n) => n.toLowerCase().includes(value.toLowerCase())).slice(0, 5) : [];
+  const known = previewableFont(value, names, checked);
+  const [shown, setShown] = useState(value);
+  useEffect(() => { const t = window.setTimeout(() => setShown(value), 350); return () => window.clearTimeout(t); }, [value]);
+  const state = useGoogleFont(shown, known && previewableFont(shown, names, checked));
   return (
     <Row label={label} htmlFor={id} help={checked ? "A Google font Remotion can load. Start typing to see names." : "The font list is not available here, so the name is not checked."} {...(problem ? { problem } : {})}>
       <input id={id} type="text" list={list} value={value} onChange={(e) => onChange(e.target.value)} />
       <datalist id={list}>{names.slice(0, 2000).map((n) => <option key={n} value={n} />)}</datalist>
-      {near.length > 0 && <p className="muted">Did you mean: {near.map((n, i) => <span key={n}>{i > 0 && ", "}<button type="button" className="linklike" onClick={() => onChange(n)}>{n}</button></span>)}?</p>}
+      {near.length > 0 && <p className="muted">Did you mean: {near.map((n, i) => <span key={n}>{i > 0 && ", "}<button type="button" className="linklike" onClick={() => onChange(n)}>{n}</button></span>)}</p>}
+      {known && (
+        <div className="font-preview" aria-label={`Preview of ${value}`}>
+          <span style={state === "ready" ? { fontFamily: `"${shown.trim()}", sans-serif` } : { opacity: 0.5 }}>{sample}</span>
+          {state === "loading" && <span className="muted"> Loading the preview</span>}
+          {state === "failed" && <span className="muted"> No preview: the font could not be loaded (no internet?). The reel still uses it.</span>}
+        </div>
+      )}
     </Row>
   );
 }

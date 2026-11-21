@@ -51,7 +51,7 @@ export function creatorRoutes(app: FastifyInstance, d: AppDeps, svc: CreatorServ
     };
   });
 
-  app.get(`${prefix}/fonts`, async () => loadFontList());
+  app.get(`${prefix}/fonts`, async () => loadFontList(undefined, [d.config.root]));
 
   app.post(`${prefix}/validate`, async (req) => {
     const body = z.object({ brand: z.record(z.string(), z.unknown()) }).safeParse(req.body);
@@ -59,7 +59,7 @@ export function creatorRoutes(app: FastifyInstance, d: AppDeps, svc: CreatorServ
     const v = validateBrand(body.data.brand);
     const errors = v.ok ? [] : v.errors;
     if (v.ok) {
-      const fonts = await loadFontList();
+      const fonts = await loadFontList(undefined, [d.config.root]);
       for (const [k, name] of Object.entries(v.brand.fonts)) if (!checkFont(fonts, name).ok) errors.push(`fonts.${k}: "${name}" is not a Google font that Remotion can load.`);
       if (d.brands.has(v.brand.slug)) errors.push(`slug: the brand "${v.brand.slug}" already exists.`);
     }
@@ -138,7 +138,7 @@ export function creatorRoutes(app: FastifyInstance, d: AppDeps, svc: CreatorServ
       const brand = assembleBrand(r, svc, null);
       if (d.brands.has(brand.slug)) throw new BrandError(`The brand "${brand.slug}" already exists. Choose another slug.`);
       if (d.store.list().some((j) => j.type === "brand.create" && j.brand === brand.slug && (j.status === "queued" || j.status === "running"))) throw new BrandError(`The brand "${brand.slug}" is already being created.`);
-      const fonts = await loadFontList();
+      const fonts = await loadFontList(undefined, [d.config.root]);
       for (const [k, name] of Object.entries(brand.fonts)) if (!checkFont(fonts, name).ok) throw new BrandError(`fonts.${k}: "${name}" is not a Google font that Remotion can load.`);
       for (const [id, kind] of [[r.logoUpload, "logo"], [r.character.sheetUpload, "sheet"], [r.voice.mode === "upload" ? r.voice.wavUpload : undefined, "voice"]] as const) if (id && !svc.uploads.get(id, kind)) throw new BrandError(`The uploaded ${kind} file is gone. Upload it again.`);
       if (r.importId && !bundleDir(svc.uploads.dir, r.importId)) throw new BrandError("The imported folder is gone. Import it again.");

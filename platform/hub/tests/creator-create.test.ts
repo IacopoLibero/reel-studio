@@ -33,6 +33,9 @@ describe("brand.create from the form", () => {
     expect(read("brand/acme-bakery/reel-questions.md")).toMatch(/## Done\n\n## To do\n\n$/);
     expect(read("brand/acme-bakery/reel-questions.md")).not.toContain("{{");
     expect(r).toMatchObject({ slug: "acme-bakery", source: "form", daily: false, character: "none", logo: null, voice: null });
+    expect(existsSync(join(env.root, "brand/acme-bakery/logo.png"))).toBe(false);
+    expect(read("brand/acme-bakery/style.md")).toContain("No logo yet");
+    expect(read("brand/acme-bakery/style.md")).not.toContain("brand/acme-bakery/logo.png");
     expect(r.nextSteps).toHaveLength(3);
     expect(env.daily).toEqual([]);
     expect(env.svc.settings.get("acme-bakery").daily.enabled).toBe(false);
