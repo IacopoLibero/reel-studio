@@ -21,7 +21,7 @@ What is still open, on purpose. Move an item out of this file when it is done. L
 
 ## Roadmap
 
-**Fixed point: Reel Studio becomes a standalone app** (a Flatpak and a pacman package) instead of a cloned repository plus Docker. The goal is stable data: brands, reels, settings,
+**Fixed point: Reel Studio becomes a standalone app** (a pacman package; a Flatpak is probably not worth it, see below) instead of a cloned repository plus Docker. The goal is stable data: brands, reels, settings,
 the Instagram login, voices and analytics live in one folder outside the app, so updating or reinstalling the app never touches them. The order is: small things first (in the current Docker setup),
 then the app, then the big features, which are born with the final structure and are not moved twice. The data restructure is done.
 
@@ -47,7 +47,7 @@ then the app, then the big features, which are born with the final structure and
 
 ### 2. The app
 
-- **Packages.** A pacman package (declares its dependencies) and a Flatpak. Models and other heavy files never go inside the package: they are downloaded on first run into the data folder.
+- **Packages.** A pacman package (declares its dependencies). Flatpak: probably avoided (2026-11-21), because the sandbox makes the GPU, Claude Code and Chrome harder; decide after trying the pacman package. Models and other heavy files never go inside the package: they are downloaded on first run into the data folder.
 - **Blender and VoiceStudio are managed by the app, not packed in it** (leaning, to confirm): the app installs or finds them, starts them and checks they answer. Blender can come from its own Flatpak; VoiceStudio
   (Python, GPU, about 27 GB of models today) is the hard part inside a Flatpak sandbox, so test the GPU path early. Claude Code and Chrome (Instagram scheduling) also need to work from the sandbox.
 - **Delete brand** leaves the Instagram login in place when it cannot be moved cheaply (another volume, or a custom `instagram.profileDir`): remove that profile folder by hand.
