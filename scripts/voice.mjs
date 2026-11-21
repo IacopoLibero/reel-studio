@@ -30,7 +30,6 @@ const dir = path.resolve(dirArg);
 const name = path.basename(dir);
 const audioDir = path.join(dir, "audio");
 fs.mkdirSync(audioDir, { recursive: true });
-fs.mkdirSync(path.resolve("public", name), { recursive: true });
 // script.json: sentences are strings, or { "text": shown in captions, "spoken": what the voice says } when they differ
 const raw = JSON.parse(fs.readFileSync(path.join(dir, "script.json"), "utf8")).sentences;
 const sentences = raw.map((x) => (typeof x === "string" ? x : x.text));
@@ -153,7 +152,7 @@ for (const arg of voiceArgs) {
     return { text, startMs: Math.round(start * 1000), endMs: Math.round(end * 1000), words: timed };
   });
   const totalMs = Math.round((t - GAP_S) * 1000);
-  fs.copyFileSync(joined, path.resolve("public", name, `${voice}.wav`));
+    // The audio stays in <reel folder>/audio/. Remotion reads it as <name>/<voice>.wav: remotion.config.ts builds that path for the brand (scripts/brand-public.ts).
   fs.writeFileSync(path.join(dir, `${voice}-props.json`), JSON.stringify({ audio: `${name}/${voice}.wav`, totalMs, sentences: out }));
   console.log(voice, "total", totalMs, "ms", out.map((s) => `${s.startMs}-${s.endMs}`).join(" | "));
 }

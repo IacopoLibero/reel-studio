@@ -21,7 +21,7 @@ Usage: ./install.sh [options]
   --no-smoke           skip the smoke test at the end
   --no-wait-voice      do not wait for the VoiceStudio download (it continues in the background)
   --no-voice-engine    install VoiceStudio but not its VoxCPM2 engine and model (saves about 15 GB)
-  --render-mascot      also render every move of the characters in mascot/ with Blender (about 20 minutes on CPU)
+  --render-mascot      also render every move of the characters in brand/*/mascot/ with Blender (about 20 minutes on CPU)
   --project NAME       Docker compose project name, also the prefix of the volumes (default reel-studio)
   --container NAME     container name (default reel-hub)
   --image NAME         image name (default reel-hub)
@@ -208,12 +208,14 @@ ok "Remotion and whisper.cpp are ready"
 say "Fetching the Remotion agent skills from upstream (not bundled in this repository)..."
 dexec bash scripts/install-remotion-skills.sh --quiet || warn "Remotion skills not fetched; retry with: scripts/install-remotion-skills.sh"
 if [ "$RENDER_MASCOT" -eq 1 ]; then
-  say "  rendering every move of the characters in mascot/ (this takes a while)..."
-  for script in "$WORKSPACE"/mascot/*.py; do
-    [ -f "$script" ] || { say "  no character script in mascot/: nothing to render"; break; }
-    dexec blender -b -P "mascot/$(basename "$script")" -- move all >/dev/null
+  say "  rendering every move of the characters in brand/*/mascot/ (this takes a while)..."
+  found=0
+  for script in "$WORKSPACE"/brand/*/mascot/*.py; do
+    [ -f "$script" ] || continue
+    found=1
+    dexec blender -b -P "${script#"$WORKSPACE"/}" -- move all >/dev/null
   done
-  ok "Character frames rendered into public/mascot"
+  if [ "$found" -eq 1 ]; then ok "Character frames rendered into each brand's mascot/movements"; else say "  no character script in brand/*/mascot/: nothing to render"; fi
 fi
 
 step "8/8 Smoke test"

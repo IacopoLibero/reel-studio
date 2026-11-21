@@ -1,19 +1,17 @@
 #!/usr/bin/env bash
-# Create a new brand from brand/_template: brand/<slug>/ (brand.json, style.md, question list, voice notes, logo),
-# reels/<slug>/ and platform/data/brands/<slug>/. Nothing that exists is overwritten. The hub lists the brand without a restart.
-# usage: scripts/new-brand.sh <slug> [--name "Display Name"] [--website example.com] [--yes]
+# Create a new brand from brand/_template (in the program folder): brand/<slug>/identity/ (brand.json, style.md), brand/<slug>/reels/,
+# and the hub's data folder of the brand with its question list. Nothing that exists is overwritten. The hub lists the brand without a restart.
+# usage: ./scripts/new-brand.sh <slug> [--name "Display Name"] [--website example.com] [--yes]   (run it from the repository)
 # <slug> is the folder name: lowercase letters, digits and "-", up to 40 characters.
 set -euo pipefail
 SELF="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-# Your brands live in the workspace of your studio folder, their hub data next to it. Run from the repository, the folder comes from STUDIO_HOME in .env;
-# run from the workspace's own copy of this script, it is that workspace. HUB_DATA overrides the data folder.
+# Your brands live in the workspace of your studio folder, their hub data next to it: the folder comes from STUDIO_HOME in .env. HUB_DATA overrides the data folder.
 studio="$(sed -n 's/^STUDIO_HOME=//p' "$SELF/.env" 2>/dev/null | tail -n1 | tr -d "\"'")"
-if [ -f "$SELF/.reel-studio/program.json" ]; then ROOT="$SELF"; DATA="$(dirname "$SELF")/data"
-elif [ -n "$studio" ]; then ROOT="$studio/workspace"; DATA="$studio/data"
+if [ -n "$studio" ]; then ROOT="$studio/workspace"; DATA="$studio/data"
 else echo "STUDIO_HOME is not set in .env: run ./install.sh first (old install: scripts/migrate-layout.sh)." >&2; exit 1; fi
 DATA="${HUB_DATA:-$DATA}"
-[ -d "$ROOT/brand/_template" ] || { echo "$ROOT/brand/_template not found: start the hub once (it fills the workspace) or run ./update.sh." >&2; exit 1; }
-TEMPLATE="$ROOT/brand/_template"
+TEMPLATE="$SELF/brand/_template"
+[ -d "$TEMPLATE" ] || { echo "$TEMPLATE not found: run this script from the repository (./scripts/new-brand.sh), not from the workspace." >&2; exit 1; }
 
 id="${1:-}"
 if [ -z "$id" ]; then echo "usage: $0 <slug> [--name N] [--website W] [--yes]" >&2; exit 2; fi
@@ -22,6 +20,7 @@ shift
 case "$id" in new|api|brands|template|default|settings|admin|global) echo "'$id' is a reserved name" >&2; exit 2 ;; esac
 dest="$ROOT/brand/$id"
 [ ! -e "$dest" ] || { echo "brand/$id already exists" >&2; exit 1; }
+[ ! -e "$DATA/brands/$id" ] || { echo "$DATA/brands/$id already exists" >&2; exit 1; }
 
 name="$id"; website="example.com"; yes=0
 while [ $# -gt 0 ]; do
@@ -40,15 +39,17 @@ fi
 # Escape a value for the replacement side of sed (| is the delimiter).
 esc() { printf '%s' "$1" | sed -e 's/[\\&|]/\\&/g'; }
 
-cp -R "$TEMPLATE" "$dest"
-rm -f "$dest/README.md" "$dest/brand.json"
+mkdir -p "$dest/identity" "$dest/reels" "$DATA/brands/$id"/{daily,analytics,ideas,locks}
+cp "$TEMPLATE/style.md" "$dest/identity/style.md"
+cp "$TEMPLATE/reel-questions.md" "$DATA/brands/$id/reel-questions.md"
 n="$(esc "$name")"; w="$(esc "$website")"; b="$(esc "$id")"
 sed -i \
   -e "s|{{BRAND_NAME}}|$n|g" -e "s|{{WEBSITE}}|$w|g" -e "s|{{BRAND}}|$b|g" \
   -e "s|{{BACKGROUND_HEX}}|#f5f5f0|g" -e "s|{{TEXT_HEX}}|#1a1a1a|g" -e "s|{{ACCENT_HEX}}|#2f6fed|g" -e "s|{{SECOND_ACCENT_HEX}}|#7a4dff|g" \
   -e "s|{{HEADLINE_FONT}}|Oswald|g" -e "s|{{BODY_FONT}}|Inter|g" \
   -e "s|{{OFFER_NAME}}|Try $n|g" -e "s|{{CLOSING_A_LINE}}|Try $n today at $w.|g" -e "s|{{CLOSING_B_LINE}}|Follow me for more tips.|g" -e "s|{{VOICE_NAME}}|the narrator|g" \
-  "$dest/style.md" "$dest/reel-questions.md" "$dest/voice-sample.md"
+  -e "s|{{LOGO_PATH}}|brand/$b/identity/logo.png|g" -e "s|{{VOICE_BASE}}|brand/$b/identity/voice|g" \
+  "$dest/identity/style.md" "$DATA/brands/$id/reel-questions.md"
 
 # brand.json from the template, with this brand's identity (JSON-escaped by node).
 BRAND_SLUG="$id" BRAND_NAME="$name" BRAND_SITE="$website" TEMPLATE_JSON="$TEMPLATE/brand.json" node -e '
@@ -58,15 +59,14 @@ BRAND_SLUG="$id" BRAND_NAME="$name" BRAND_SITE="$website" TEMPLATE_JSON="$TEMPLA
   b.slug = process.env.BRAND_SLUG; b.name = name; b.website = site;
   b.closing.A = { label: "Try " + name, line: "Try " + name + " today at " + site + "." };
   process.stdout.write(JSON.stringify(b, null, 2) + "\n");
-' > "$dest/brand.json"
-
-mkdir -p "$ROOT/reels/$id" "$dest/voice" "$DATA/brands/$id"/{daily,analytics,ideas,locks,shots}
+' > "$dest/identity/brand.json"
 
 cat <<MSG
-Created $ROOT/brand/$id (brand.json, style.md, reel-questions.md), reels/$id and $DATA/brands/$id.
+Created $ROOT/brand/$id (identity/brand.json, identity/style.md, reels/) and $DATA/brands/$id (reel-questions.md and the hub's data).
 Next:
-  1. Open brand/$id/brand.json: colours, fonts, closing lines, Instagram account and user id, offer rule, source texts folder.
-  2. Put your logo in brand/$id/logo.png and record the voice sample (brand/$id/voice-sample.md).
-  3. Add real questions to brand/$id/reel-questions.md.
+  1. Open brand/$id/identity/brand.json: colours, fonts, closing lines, Instagram account and user id, offer rule, source texts folder.
+  2. Put your logo in brand/$id/identity/logo.png (a PNG; without one, covers have no logo frame) and record the voice sample
+     as .claude/skills/reel/voice-sample.md describes (identity/voice.wav and identity/voice.txt).
+  3. Add real questions to $DATA/brands/$id/reel-questions.md.
   4. In the hub pick the brand in the menu, open its Instagram page and log in with that brand's account.
 MSG
