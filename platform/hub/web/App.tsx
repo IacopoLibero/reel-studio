@@ -15,6 +15,7 @@ import { AnalyticsPage } from "./pages/Analytics";
 import { SeriesPage } from "./pages/Series";
 import { SettingsPage } from "./pages/Settings";
 import { NewBrandPage } from "./pages/NewBrand";
+import { SetupPage } from "./pages/Setup";
 import { NextSteps, markWelcome } from "./components/NextSteps";
 import { BRANDS_CHANGED } from "./hooks";
 import type { Created } from "./creator/useCreate";
@@ -42,11 +43,18 @@ function Shell({ onLogout }: { onLogout: () => void }) {
     window.addEventListener(BRANDS_CHANGED, reload);
     return () => window.removeEventListener(BRANDS_CHANGED, reload);
   }, []);
+  const [setup, setSetup] = useState<"loading" | "needed" | "done">("loading");
+  useEffect(() => { api.setup().then((d) => setSetup(d.state.completed ? "done" : "needed")).catch(() => setSetup("done")); }, []);
   const route = useRoute(PAGE_IDS);
   const fallbackPage = window.location.pathname === "/daily" ? "daily" : "calendar";
 
   if (error) return <p className="error" style={{ padding: 24 }}>{error}</p>;
-  if (!list) return null;
+  if (!list || setup === "loading") return null;
+  // First run (setup not finished and no brand yet) and the "#/setup" link: the setup screen instead of the hub.
+  if ((setup === "needed" && list.brands.length === 0) || window.location.hash === "#/setup") {
+    const leave = () => { setSetup("done"); window.location.hash = ""; };
+    return <main style={{ maxWidth: 760, margin: "0 auto", padding: 24 }}><SetupPage onFinished={leave} onSkip={leave} /></main>;
+  }
   const known = (slug: string | null): BrandSummary | undefined => list.brands.find((b) => b.slug === slug);
   const remembered = known(rememberedBrand()) ? rememberedBrand() : null;
   const wanted = route.brand && route.brand !== NEW_BRAND ? route.brand : (remembered ?? list.default);
@@ -73,6 +81,7 @@ function Shell({ onLogout }: { onLogout: () => void }) {
           <NavLink key={id} brand={current.slug} id={id} label={label} on={route.page === id} />
         ))}
         <div className="spacer" />
+        <a href="#/setup">Setup</a>
         <a href="#/jobs" onClick={(e) => { e.preventDefault(); onLogout(); }}>Sign out</a>
       </nav>
       <main>

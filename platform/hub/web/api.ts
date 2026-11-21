@@ -96,7 +96,16 @@ export interface TimeSuggestions {
   suggestions: { day: string; time: string; why: string }[]; defaults: { day: string; times: string[] }[];
 }
 
+export interface SetupItem { id: string; label: string; status: "ok" | "missing"; required: boolean; auto: boolean; detail: string; hint: string }
+export interface VoiceModeInfo { id: string; label: string; description: string; downloadGb: number; needsGpu: boolean; cloning: boolean }
+export interface StepStatus { state: "idle" | "running" | "done" | "failed"; lines: string[]; error: string | null }
+export interface SetupData { state: { completed: boolean; voiceMode: string | null }; items: SetupItem[]; modes: VoiceModeInfo[]; recommended: string; steps: Record<string, StepStatus> }
+
 export const api = {
+  setup: () => call<SetupData>("GET", "/api/setup"),
+  setupVoiceMode: (id: string) => call<{ voiceMode: string }>("PUT", "/api/setup/voice-mode", { id }),
+  setupStep: (id: string) => call<{ started: boolean; status: StepStatus }>("POST", `/api/setup/steps/${encodeURIComponent(id)}`),
+  setupComplete: () => call<{ completed: boolean }>("POST", "/api/setup/complete"),
   analytics: () => call<AnalyticsData>("GET", scoped("/analytics")),
   series: () => call<SeriesData>("GET", scoped("/series")),
   seriesBadges: () => call<Record<string, { id: string; name: string }>>("GET", scoped("/series/badges")),
