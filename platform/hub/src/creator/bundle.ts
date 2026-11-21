@@ -19,7 +19,17 @@ export function cleanPath(raw: string): string {
   return parts.join("/");
 }
 
-/** Cleans every path, refuses duplicates and oversized input, and drops a single wrapping folder ("my-brand/brand.json" becomes "brand.json"). */
+const IDENTITY_FILE = /^identity\/(brand\.json|style\.md|logo\.png|voice\.(wav|txt|json))$/;
+
+/** The files of the identity folder of a brand (brand/<slug>/identity/) are read as if they sat at the top: "identity/brand.json" becomes "brand.json". The identity folder wins over a loose file of the same name. */
+function flattenIdentity(files: Map<string, Buffer>): Map<string, Buffer> {
+  const out = new Map<string, Buffer>();
+  for (const [path, data] of files) if (!IDENTITY_FILE.test(path)) out.set(path, data);
+  for (const [path, data] of files) if (IDENTITY_FILE.test(path)) out.set(path.slice("identity/".length), data);
+  return out;
+}
+
+/** Cleans every path, refuses duplicates and oversized input, and drops a single wrapping folder ("my-brand/identity/brand.json" becomes "brand.json"). */
 export function normalizeBundle(files: BundleFile[]): Map<string, Buffer> {
   if (files.length === 0) throw new BundleError("The folder is empty.");
   if (files.length > BUNDLE_LIMITS.files) throw new BundleError(`Too many files (the limit is ${BUNDLE_LIMITS.files}).`);
@@ -31,7 +41,7 @@ export function normalizeBundle(files: BundleFile[]): Map<string, Buffer> {
   });
   if (total > BUNDLE_LIMITS.totalBytes) throw new BundleError(`The folder is too big (the limit is ${BUNDLE_LIMITS.totalBytes / 1_000_000} MB).`);
   const firsts = new Set(cleaned.map((f) => f.path.split("/")[0]));
-  const strip = !cleaned.some((f) => f.path === "brand.json") && firsts.size === 1 && cleaned.every((f) => f.path.includes("/"));
+  const strip = !cleaned.some((f) => f.path === "brand.json" || f.path === "identity/brand.json") && firsts.size === 1 && cleaned.every((f) => f.path.includes("/"));
   const out = new Map<string, Buffer>();
   const seen = new Set<string>();
   for (const f of cleaned) {
@@ -40,19 +50,30 @@ export function normalizeBundle(files: BundleFile[]): Map<string, Buffer> {
     seen.add(path.toLowerCase());
     out.set(path, f.data);
   }
-  return out;
+  return flattenIdentity(out);
 }
 
 export interface BundlePreview {
   brand: Brand;
   styleMd: boolean;
   questions: boolean;
-  logo: "png" | "svg" | null;
+  logo: "png" | null;
   voice: boolean;
   warnings: string[];
 }
 
-const keep = (path: string): boolean => /^(brand\.json|style\.md|reel-questions\.md|logo\.(png|svg)|voice\/[A-Za-z0-9._-]+\.(wav|txt))$/.test(path);
+const keep = (path: string): boolean => /^(brand\.json|style\.md|reel-questions\.md|logo\.png|voice\.(wav|txt)|voice\/[A-Za-z0-9._-]+\.(wav|txt)|mascot\/[a-z][a-z0-9_-]*-voice\.(wav|txt))$/.test(path);
+
+/** The voice sample of a folder as ["voice.wav", "voice.txt"] bytes: identity voice first, then the character's voice, then an old voice/ folder (the one brand.json names). */
+function findVoice(files: Map<string, Buffer>, named: string | null): { wav: Buffer; txt: Buffer | null } | null {
+  const wavPath = files.has("voice.wav") ? "voice.wav"
+    : [...files.keys()].find((p) => /^mascot\/[a-z][a-z0-9_-]*-voice\.wav$/.test(p))
+      ?? (named && /^voice\/[A-Za-z0-9._-]+\.wav$/.test(named) && files.has(named) ? named : undefined);
+  const wav = wavPath ? files.get(wavPath) : undefined;
+  if (!wavPath || !wav) return null;
+  const txt = files.get(wavPath.replace(/\.wav$/, ".txt")) ?? (named && files.has(named.replace(/\.wav$/, ".txt")) ? files.get(named.replace(/\.wav$/, ".txt")) : undefined) ?? null;
+  return { wav, txt };
+}
 
 export interface InspectOptions { takenSlugs: Iterable<string>; hasMascot?: (id: string) => boolean }
 
@@ -93,13 +114,22 @@ export function inspectBundle(files: Map<string, Buffer>, o: InspectOptions): { 
       if (path.startsWith("logo.")) checkFile("logo", data);
       if (path.endsWith(".wav")) checkFile("voice", data);
     } catch (e) { throw new BundleError(`"${path}": ${(e as FileError).message}`); }
+    if (path.startsWith("voice") || path.startsWith("mascot/")) continue; // the voice files are picked below and kept as voice.wav / voice.txt
     kept.set(path, data);
   }
   if (skipped.length) warnings.push(`Not imported (only brand.json, style.md, reel-questions.md, the logo and the voice files are): ${skipped.slice(0, 6).join(", ")}${skipped.length > 6 ? ` and ${skipped.length - 6} more` : ""}.`);
-  const logo = kept.has("logo.png") ? "png" : kept.has("logo.svg") ? "svg" : null;
-  const voice = !!brand.voice.sample && kept.has(brand.voice.sample);
-  if (brand.voice.sample && !voice) warnings.push("brand.json names a voice sample that is not in the folder: the voice is set to decide later.");
+  const logo = kept.has("logo.png") ? "png" : null;
+  const found = findVoice(files, brand.voice.sample);
+  if (found) {
+    try { checkFile("voice", found.wav); } catch (e) { throw new BundleError(`The voice sample: ${(e as FileError).message}`); }
+    if (found.txt && found.txt.length > BUNDLE_LIMITS.textBytes) throw new BundleError("The text of the voice sample is too big for a text file.");
+    kept.set("voice.wav", found.wav);
+    if (found.txt) kept.set("voice.txt", found.txt);
+  }
+  const voice = !!found && !!found.txt;
+  if (brand.voice.sample && !voice) warnings.push("brand.json names a voice sample, but the folder has no usable sample with its text: the voice is set to decide later.");
   const clean = voice ? brand : { ...brand, voice: { ...brand.voice, sample: null, sampleText: null } };
+  if (!voice) { kept.delete("voice.wav"); kept.delete("voice.txt"); }
   return { preview: { brand: clean, styleMd: kept.has("style.md"), questions: kept.has("reel-questions.md"), logo, voice, warnings }, kept };
 }
 

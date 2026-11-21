@@ -28,11 +28,12 @@ describe("inspecting a brand folder", () => {
   const run = (files: ReturnType<typeof file>[], taken: string[] = [], hasMascot = false) => inspectBundle(normalizeBundle(files), { takenSlugs: taken, hasMascot: () => hasMascot });
 
   it("accepts a folder with brand.json and keeps only the known files", () => {
-    const r = run([file("brand.json", brandFile()), file("style.md", "# S"), file("reel-questions.md", "## To do\n"), file("logo.svg", SVG), file("secret.env", "TOKEN=1"), file("node_modules/x.js", "1")]);
-    expect(r.preview).toMatchObject({ styleMd: true, questions: true, logo: "svg", voice: false });
+    const r = run([file("brand.json", brandFile()), file("style.md", "# S"), file("reel-questions.md", "## To do\n"), file("logo.png", PNG), file("logo.svg", SVG), file("secret.env", "TOKEN=1"), file("node_modules/x.js", "1")]);
+    expect(r.preview).toMatchObject({ styleMd: true, questions: true, logo: "png", voice: false });
     expect(r.preview.brand.slug).toBe("acme-bakery");
-    expect([...r.kept.keys()].sort()).toEqual(["logo.svg", "reel-questions.md", "style.md"]);
+    expect([...r.kept.keys()].sort()).toEqual(["logo.png", "reel-questions.md", "style.md"]);
     expect(r.preview.warnings.join(" ")).toContain("Not imported");
+    expect(r.preview.warnings.join(" ")).toContain("logo.svg");
   });
   it("never reuses a taken slug: the brand gets a new one", () => {
     const r = run([file("brand.json", brandFile())], ["acme-bakery"]);
@@ -48,11 +49,32 @@ describe("inspecting a brand folder", () => {
     expect(run([file("brand.json", brandFile({ character: { enabled: true, id: "bun", name: "Bun" } }))], [], true).preview.brand.character.enabled).toBe(true);
   });
   it("keeps the voice sample only when it is in the folder", () => {
-    const voice = { engine: "voxcpm2", sample: "voice/v.wav", sampleText: "voice/v.txt" };
+    const voice = { engine: "voxcpm2", sample: "voice/v.wav", sampleText: "voice/v.txt" }; // the layout of the first releases still imports
     expect(run([file("brand.json", brandFile({ voice })), file("voice/v.wav", WAV), file("voice/v.txt", "hi")]).preview.voice).toBe(true);
     const r = run([file("brand.json", brandFile({ voice }))]);
     expect(r.preview.voice).toBe(false);
     expect(r.preview.brand.voice.sample).toBeNull();
+  });
+  it("reads the files of an identity folder as if they sat at the top, and strips a wrapping brand folder", () => {
+    const files = [file("my-brand/identity/brand.json", brandFile()), file("my-brand/identity/style.md", "# S"), file("my-brand/identity/logo.png", PNG), file("my-brand/reel-questions.md", "## To do\n"), file("my-brand/reels/1-x/a.mp4", "v")];
+    const r = run(files);
+    expect(r.preview).toMatchObject({ styleMd: true, questions: true, logo: "png", voice: false });
+    expect([...r.kept.keys()].sort()).toEqual(["logo.png", "reel-questions.md", "style.md"]);
+    expect(r.preview.warnings.join(" ")).toContain("reels/1-x/a.mp4");
+  });
+  it("takes the voice from identity/voice.*, else the character's <id>-voice.*, and keeps it as voice.wav and voice.txt", () => {
+    const voice = { engine: "voxcpm2", sample: "identity/voice.wav", sampleText: "identity/voice.txt" };
+    const own = run([file("identity/brand.json", brandFile({ voice })), file("identity/voice.wav", WAV), file("identity/voice.txt", "hi there")]);
+    expect(own.preview.voice).toBe(true);
+    expect([...own.kept.keys()].sort()).toEqual(["voice.txt", "voice.wav"]);
+    const mascot = { engine: "voxcpm2", sample: "mascot/pip-voice.wav", sampleText: "mascot/pip-voice.txt" };
+    const ch = run([file("brand.json", brandFile({ voice: mascot })), file("mascot/pip-voice.wav", WAV), file("mascot/pip-voice.txt", "pip says hi"), file("mascot/pip.py", "x")]);
+    expect(ch.preview.voice).toBe(true);
+    expect(ch.kept.get("voice.txt")?.toString()).toBe("pip says hi");
+    expect(ch.preview.warnings.join(" ")).toContain("mascot/pip.py");
+    const noText = run([file("brand.json", brandFile({ voice })), file("voice.wav", WAV)]);
+    expect(noText.preview.voice).toBe(false);
+    expect([...noText.kept.keys()]).toEqual([]);
   });
   it("refuses a missing, broken or invalid brand.json and a bad logo or voice file", () => {
     expect(() => run([file("style.md", "x")])).toThrow(/no brand.json/);

@@ -1,7 +1,7 @@
 import { readFileSync, renameSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { buildSpec, JobRequestError } from "../jobs/create.js";
-import { readScheduled, resolveReelFile } from "../reels/scanner.js";
+import { readScheduled, reelDirOf, resolveReelFile } from "../reels/scanner.js";
 import type { Slot } from "../shared/types.js";
 import { DailyError, type DailyDeps } from "./deps.js";
 import { offerOf, humanDay } from "../brands/offer.js";
@@ -56,7 +56,7 @@ export function confirmReel(d: DailyDeps, date: string, ideaId: string, c: Confi
     const spec = buildSpec({ type: "instagram.schedule", params: { reel: reel.key, date: c.date, time: c.time } }, jobDeps(d));
     let params = spec.params ?? {};
     if (offer.applies) {
-      const dir = join(d.config.root, "reels", reel.key);
+      const dir = reelDirOf(d.config.root, ...(reel.key.split("/") as [string, string]));
       writeFileSync(join(dir, "caption.instagram.md.tmp"), dropOfferLines(caption, cfg));
       renameSync(join(dir, "caption.instagram.md.tmp"), join(dir, "caption.instagram.md"));
       params = { ...params, captionFile: "caption.instagram.md" };

@@ -50,6 +50,7 @@ function workspaceItems(i: PlanInput): PlanItem[] {
   const out: PlanItem[] = [];
   for (const top of ["brand", "src"]) {
     for (const name of names(join(i.legacyRoot, top))) {
+      if (top === "brand" && name === "_template") continue; // the template is read from the program folder, never copied
       if (!isProgramPath(`${top}/${name}`)) out.push(item("workspace", join(i.legacyRoot, top, name), join(i.workspace, top, name)));
     }
   }

@@ -8,6 +8,9 @@ export function templateValues(b: Brand): Record<string, string> {
     HEADLINE_FONT: b.fonts.headline, BODY_FONT: b.fonts.body,
     OFFER_NAME: b.closing.A.label, CLOSING_A_LINE: b.closing.A.line, CLOSING_B_LINE: b.closing.B.line,
     VOICE_NAME: b.character.enabled && b.character.name ? b.character.name : "the narrator",
+    LOGO_PATH: `brand/${b.slug}/identity/logo.png`,
+    // The voice files without their extension: the character's own voice when the brand has one, else the brand's.
+    VOICE_BASE: b.character.enabled ? `brand/${b.slug}/mascot/${b.character.id}-voice` : `brand/${b.slug}/identity/voice`,
   };
 }
 

@@ -1,6 +1,4 @@
 import { randomBytes } from "node:crypto";
-import { existsSync, readdirSync } from "node:fs";
-import { join } from "node:path";
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
 import { bundleDir, BundleError, inspectBundle, normalizeBundle, stageBundle } from "../creator/bundle.js";
@@ -16,6 +14,7 @@ import { UPLOAD_ID } from "../creator/uploads.js";
 import { readZip, ZipError } from "../creator/zip.js";
 import type { CreatorServices } from "../creator/services.js";
 import { validateBrand } from "../brands/schema.js";
+import { findCharacter, listCharacters } from "../character/gallery.js";
 import { BrandError } from "../brands/registry.js";
 import type { AppDeps } from "../app.js";
 import { HttpError, makeScope } from "./scope.js";
@@ -39,7 +38,8 @@ const folderBody = z.object({ files: z.array(z.object({ path: z.string().max(300
 /** The brand creator: uploads, import, the interview, creating a brand (one brand.create job) and deleting one (to the trash). */
 export function creatorRoutes(app: FastifyInstance, d: AppDeps, svc: CreatorServices): void {
   const prefix = "/api/brand-creator";
-  const mascots = (): string[] => { try { return readdirSync(join(d.config.root, "mascot")).filter((f) => f.endsWith(".py")).map((f) => f.slice(0, -3)).sort(); } catch { return []; } };
+  // The characters that exist on this machine (any brand's mascot/<id>.py); one id once, even when two brands have it.
+  const mascots = (): string[] => [...new Set(listCharacters(d.config.root).map((c) => c.id))].sort();
 
   app.get(`${prefix}/options`, async () => {
     const a = d.settings.getGlobal().assistant;
@@ -83,7 +83,7 @@ export function creatorRoutes(app: FastifyInstance, d: AppDeps, svc: CreatorServ
   });
 
   const stageImport = (files: { path: string; data: Buffer }[]) => {
-    const { preview, kept } = inspectBundle(normalizeBundle(files), { takenSlugs: d.brands.slugs(), hasMascot: (id) => existsSync(join(d.config.root, "mascot", `${id}.py`)) });
+    const { preview, kept } = inspectBundle(normalizeBundle(files), { takenSlugs: d.brands.slugs(), hasMascot: (id) => findCharacter(d.config.root, id) !== null });
     return { importId: stageBundle(svc.uploads.dir, kept), preview };
   };
 
@@ -103,7 +103,7 @@ export function creatorRoutes(app: FastifyInstance, d: AppDeps, svc: CreatorServ
       const g = d.settings.getGlobal();
       return await interviewTurn(body.data.messages, {
         takenSlugs: d.brands.slugs(),
-        run: (prompt) => runAssistant({ config: g.assistant, claudeBin: d.config.claudeBin, model: g.claudeModel, prompt, root: d.config.root, scratch: scratchDir(d.config.dataDir), env: process.env }),
+        run: (prompt) => runAssistant({ config: g.assistant, claudeBin: d.config.claudeBin, model: g.claudeModel, prompt, root: d.config.root, scratch: scratchDir(d.config.dataDir), dataDir: d.config.dataDir, env: process.env }),
       });
     } catch (e) {
       throw new HttpError(424, `The assistant could not answer: ${(e as Error).message}`);
@@ -135,7 +135,7 @@ export function creatorRoutes(app: FastifyInstance, d: AppDeps, svc: CreatorServ
     if (!p.success) throw new HttpError(400, `${p.error.issues[0]?.path.join(".") || "request"}: ${p.error.issues[0]?.message ?? "invalid"}`);
     const r = p.data;
     try {
-      const brand = assembleBrand(r, svc, null);
+      const brand = assembleBrand(r, svc, false);
       if (d.brands.has(brand.slug)) throw new BrandError(`The brand "${brand.slug}" already exists. Choose another slug.`);
       if (d.store.list().some((j) => j.type === "brand.create" && j.brand === brand.slug && (j.status === "queued" || j.status === "running"))) throw new BrandError(`The brand "${brand.slug}" is already being created.`);
       const fonts = await loadFontList(undefined, [d.config.root]);

@@ -6,10 +6,10 @@ const base = { root: "/r", brand: "acme", question: "Is a paper menu really chea
 describe("buildReelPrompt", () => {
   const p = buildReelPrompt(base);
   it("names the folder, brand, question and skill", () => {
-    expect(p).toContain("reels/acme/22-paper-menu");
+    expect(p).toContain("brand/acme/reels/22-paper-menu");
     expect(p).toContain("Is a paper menu really cheaper?");
     expect(p).toContain(".claude/skills/reel/SKILL.md");
-    expect(p).toContain("brand/acme/style.md");
+    expect(p).toContain("brand/acme/identity/style.md");
   });
   it("requires a real reel-hooks call before the script, and reel-research when there is no source", () => {
     expect(p).toContain("Skill tool call to \`reel-hooks\`");

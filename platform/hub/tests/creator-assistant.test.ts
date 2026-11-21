@@ -36,7 +36,7 @@ describe("the claude adapter", () => {
     expect(rec.args).toContain("-p");
     expect(arg("--allowedTools")).toBe(ASSISTANT_ALLOWED_TOOLS);
     expect(arg("--allowedTools")).not.toMatch(/Bash|Write|Edit/);
-    for (const d of ["Bash", "Write", "Edit", "Read(**/.env)", "Read(/project/brand/**)", "Read(/project/platform/data/**)", "Read(/project/reels/**)"]) expect(arg("--disallowedTools").split(",")).toContain(d);
+    for (const d of ["Bash", "Write", "Edit", "Read(**/.env)", "Read(/project/brand/**)", "Read(/project/platform/data/**)"]) expect(arg("--disallowedTools").split(",")).toContain(d);
     expect(arg("--model")).toBe("sonnet");
     expect(rec.cwd.endsWith("scratch")).toBe(true);
     expect(rec.prompt).toBe("hello there prompt");
@@ -64,6 +64,11 @@ describe("the claude adapter", () => {
   it("exposes the deny list for credentials and other brands", () => {
     expect(assistantDenied("/p")).toContain("Read(/p/brand/**)");
     expect(assistantDenied("/p")).toContain("Read(**/.credentials.json)");
+  });
+  it("also keeps the hub data of the brands unreadable when the data folder is known", () => {
+    const denied = assistantDenied("/p", "/d").split(",");
+    for (const x of ["Read(/d/brands/**)", "Read(/d/jobs.json)", "Read(/d/settings.json)"]) expect(denied).toContain(x);
+    expect(assistantDenied("/p")).not.toContain("/d/brands");
   });
 });
 

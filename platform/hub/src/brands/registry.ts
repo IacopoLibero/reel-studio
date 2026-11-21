@@ -1,24 +1,24 @@
-import { cpSync, existsSync, mkdirSync, readdirSync, readFileSync, renameSync, statSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
-import { defaultDataDir, defaultRoot } from "../paths.js";
+import { defaultDataDir, defaultProgramRoot, defaultRoot } from "../paths.js";
 import { brandPaths, explicitChromeRoot, type BrandPathOptions, type BrandPaths } from "./paths.js";
 import { brandSchema, isValidSlug, validateBrand, type Brand } from "./schema.js";
 import { fillTemplate } from "./template.js";
 
-export interface RegistryOptions { root?: string; dataDir?: string; chromeRoot?: string; env?: NodeJS.ProcessEnv }
+export interface RegistryOptions { root?: string; dataDir?: string; chromeRoot?: string; /** The program folder, where brand/_template lives (default: the folder this program runs from). */ programRoot?: string; env?: NodeJS.ProcessEnv }
 
 const SKELETON = "## To do\n\n## Done\n";
 
-/** Brand folders that hold a valid brand.json, found in <root>/brand (the template and hidden folders are skipped). */
+/** Brand folders that hold a brand.json (brand/<slug>/identity/brand.json), found in <root>/brand (hidden folders are skipped). */
 export function listBrandSlugs(root: string): string[] {
   try {
     return readdirSync(join(root, "brand"), { withFileTypes: true })
-      .filter((d) => d.isDirectory() && isValidSlug(d.name) && existsSync(join(root, "brand", d.name, "brand.json")))
+      .filter((d) => d.isDirectory() && isValidSlug(d.name) && existsSync(join(root, "brand", d.name, "identity", "brand.json")))
       .map((d) => d.name).sort();
   } catch { return []; }
 }
 
-/** Reads and validates brand/<slug>/brand.json. Null when it is missing or invalid (the reason is in `readBrandFile`). */
+/** Reads and validates brand/<slug>/identity/brand.json. Null when it is missing or invalid (the reason is in `readBrandFile`). */
 export function readBrand(root: string, slug: string): Brand | null {
   const r = readBrandFile(root, slug);
   return r.ok ? r.brand : null;
@@ -27,7 +27,7 @@ export function readBrand(root: string, slug: string): Brand | null {
 export function readBrandFile(root: string, slug: string): ReturnType<typeof validateBrand> {
   if (!isValidSlug(slug)) return { ok: false, errors: [`slug: "${slug}" is not a valid brand slug`] };
   let raw: unknown;
-  try { raw = JSON.parse(readFileSync(join(root, "brand", slug, "brand.json"), "utf8")); } catch (e) {
+  try { raw = JSON.parse(readFileSync(join(root, "brand", slug, "identity", "brand.json"), "utf8")); } catch (e) {
     return { ok: false, errors: [`brand.json: ${(e as NodeJS.ErrnoException).code === "ENOENT" ? "not found" : "is not valid JSON"}`] };
   }
   const v = validateBrand(raw);
@@ -38,7 +38,7 @@ export function readBrandFile(root: string, slug: string): ReturnType<typeof val
 /** Writes brand.json atomically (validated first). */
 export function writeBrand(root: string, brand: Brand): void {
   const parsed = brandSchema.parse(brand);
-  const file = join(root, "brand", parsed.slug, "brand.json");
+  const file = join(root, "brand", parsed.slug, "identity", "brand.json");
   mkdirSync(dirname(file), { recursive: true });
   writeFileSync(`${file}.tmp`, `${JSON.stringify(parsed, null, 2)}\n`);
   renameSync(`${file}.tmp`, file);
@@ -52,12 +52,15 @@ export class BrandRegistry {
   readonly root: string;
   readonly dataDir: string;
   readonly chromeRoot: string | null;
+  /** brand/_template inside the program folder: the starting files of a new brand. */
+  readonly templateDir: string;
 
   constructor(o: RegistryOptions = {}) {
     const env = o.env ?? process.env;
     this.root = o.root ?? defaultRoot(env);
     this.dataDir = o.dataDir ?? defaultDataDir(env);
     this.chromeRoot = o.chromeRoot ?? explicitChromeRoot(env);
+    this.templateDir = join(o.programRoot ?? defaultProgramRoot(), "brand", "_template");
   }
 
   slugs(): string[] { return listBrandSlugs(this.root); }
@@ -75,30 +78,24 @@ export class BrandRegistry {
 
   /**
    * Creates everything a brand needs and writes brand.json. Never overwrites: a file that exists stays as it is,
-   * and a slug that already has a brand.json is refused. Files of brand/_template are copied for the ones the brand does not have.
+   * and a slug that already has a brand.json is refused. The program's brand/_template/style.md becomes identity/style.md.
+   * The character folder (mascot/) is not made here: the creator makes it when the brand has a character.
    */
   create(input: unknown): { brand: Brand; paths: BrandPaths; created: string[] } {
     const v = validateBrand(input);
     if (!v.ok) throw new BrandError(v.errors.join("; "));
     const brand = v.brand;
-    if (existsSync(join(this.root, "brand", brand.slug, "brand.json"))) throw new BrandError(`The brand "${brand.slug}" already exists.`);
     const p = this.paths(brand.slug, brand);
+    if (existsSync(p.brandJson)) throw new BrandError(`The brand "${brand.slug}" already exists.`);
     const created: string[] = [];
     const ensureDir = (d: string) => { if (!existsSync(d)) { mkdirSync(d, { recursive: true }); created.push(d); } };
-    ensureDir(p.brandDir);
-    const tpl = join(this.root, "brand", "_template");
-    if (existsSync(tpl)) {
-      for (const name of readdirSync(tpl)) {
-        if (name === "brand.json" || name === "README.md" || /^logo\.(png|svg)$/.test(name)) continue; // the template logo is a placeholder: a brand has a logo only when someone gives it one
-        const dest = join(p.brandDir, name);
-        if (existsSync(dest)) continue;
-        cpSync(join(tpl, name), dest, { recursive: true });
-        if (name.endsWith(".md") && statSync(dest).isFile()) writeFileSync(dest, fillTemplate(readFileSync(dest, "utf8"), brand));
-        created.push(dest);
-      }
+    for (const d of [p.brandDir, p.identityDir, p.reelsDir, p.dataDir, p.dailyDir, p.analyticsDir, p.ideasDir, p.locksDir]) ensureDir(d);
+    const style = join(this.templateDir, "style.md");
+    if (existsSync(style) && !existsSync(p.styleMd)) {
+      writeFileSync(p.styleMd, fillTemplate(readFileSync(style, "utf8"), brand));
+      created.push(p.styleMd);
     }
     if (!existsSync(p.questionsMd)) { writeFileSync(p.questionsMd, `# Reel questions: ${brand.name}\n\n${SKELETON}`); created.push(p.questionsMd); }
-    for (const d of [p.voiceDir, p.reelsDir, p.dataDir, p.dailyDir, p.analyticsDir, p.ideasDir, p.locksDir]) ensureDir(d);
     try { ensureDir(p.profileDir); } catch { /* the profile root (/data/...) exists only inside the container; the scheduler creates it on first use */ }
     writeBrand(this.root, brand);
     created.push(p.brandJson);

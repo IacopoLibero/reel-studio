@@ -4,7 +4,7 @@ import { audienceOf, languageName, type BrandInfo } from "../brands/wording.js";
 const HEADINGS_IT = ["Come sta andando", "Da ripetere", "Da smettere", "Hook che hanno funzionato", "Proposte", "Proposta:"] as const;
 const HEADINGS_EN = ["How it is going", "To repeat", "To stop", "Hooks that worked", "Proposals", "Proposal:"] as const;
 
-export function insightsPrompt(o: { root: string; brand: string; brandInfo?: BrandInfo; date: string; csvRows: number; snapshotPath: string; dir: string }): string {
+export function insightsPrompt(o: { root: string; brand: string; brandInfo?: BrandInfo; date: string; csvRows: number; snapshotPath: string; dir: string; questionsFile: string }): string {
   const lang = o.brandInfo?.readoutLanguage ?? "en";
   const h = lang.startsWith("it") ? HEADINGS_IT : HEADINGS_EN;
   return `You write the plain-language readout of the Instagram results of the ${o.brand} reels in the reel-studio project at ${o.root}. You only read and think: do not write or edit files and do not run commands. The hub saves your answer.
@@ -14,7 +14,7 @@ You MUST call the Skill tool with the skill "reel-insights" first (a real Skill 
 Read:
 - ${o.snapshotPath} (newest snapshot, collected ${o.date}; older ones are in the same folder: ${o.dir}/<date>.json)
 - ${o.dir}/hooks.csv (hook, plays, reach, saves, shares, likes, comments, posted_at, reel)
-- brand/${o.brand}/style.md and brand/${o.brand}/reel-questions.md (the hook of each reel, the closing A or B)
+- brand/${o.brand}/identity/style.md and ${o.questionsFile} (the hook of each reel, the closing A or B)
 A reel with insights "too_early" is too new to judge: say "too early", never call it a flop. A missing metric is not zero: say it is missing.
 
 Produce, in plain ${languageName(lang)} for the person who runs the brand (short sentences, no jargon), exactly this layout in Markdown:
@@ -26,12 +26,12 @@ ${h[4]}: 1 to 3 bullets, each starting with "${h[5]}" and the why. Proposals are
 Answer with the Markdown only.`;
 }
 
-export function seriesPrompt(o: { root: string; brand: string; brandInfo?: BrandInfo; focus: string; existing: string[]; hasData: boolean; dir: string }): string {
+export function seriesPrompt(o: { root: string; brand: string; brandInfo?: BrandInfo; focus: string; existing: string[]; hasData: boolean; dir: string; questionsFile: string }): string {
   return `You propose one new recurring reel series for the ${o.brand} brand in the reel-studio project at ${o.root}. You only read and think: do not write or edit files and do not run commands.
 
 You MUST call the Skill tool, in this order: "series-planner" (the series design) then "reel-hooks" (the example hooks as strong opening questions). Real Skill tool calls, not mentions.
 
-Read: brand/${o.brand}/style.md, brand/${o.brand}/reel-questions.md (all questions, done and to do)${o.hasData ? `, ${o.dir}/hooks.csv and the newest ${o.dir}/<date>.json (what won and flopped)` : " (no analytics data yet: say nothing about results)"}.
+Read: brand/${o.brand}/identity/style.md, ${o.questionsFile} (all questions, done and to do)${o.hasData ? `, ${o.dir}/hooks.csv and the newest ${o.dir}/<date>.json (what won and flopped)` : " (no analytics data yet: say nothing about results)"}.
 Series that already exist (do not repeat them): ${o.existing.join("; ") || "none"}.
 ${o.focus ? `The person who runs the brand asks for this focus: ${o.focus}\n` : ""}Rules:
 - A named, repeatable format ${audienceOf(o.brandInfo)} would follow so as not to miss one: a short name, a one-line promise, a cadence (for example "weekly"), 3 to 5 example hooks written as opening questions.

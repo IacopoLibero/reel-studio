@@ -48,7 +48,7 @@ export async function approve(d: DailyDeps, date: string, picks: ReadonlyArray<{
   approving.add(date);
   try {
     await withFileLock(join(dataDir, "locks", `questions-${d.brand.slug}.lock`), async () => {
-      const file = questionsPath(d.config.root, d.brand.slug);
+      const file = questionsPath(d.brand.paths.dataDir);
       const out = appendIdeas(readFileSync(file, "utf8"), chosen.map((c) => ({ question: c.idea.question, hook: c.idea.hook, source: c.idea.source })));
       if (out.added.length) { writeFileSync(`${file}.tmp`, out.md); renameSync(`${file}.tmp`, file); }
     });

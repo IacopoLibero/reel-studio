@@ -11,12 +11,13 @@ import type { Job, JobPatch } from "../src/shared/types.js";
 
 const FAKE = join(import.meta.dirname, "fixtures/fake-claude-ideas.mjs");
 let tmp: string, root: string, data: string, blog: string;
-const qfile = () => join(root, "brand/acme/reel-questions.md");
+// Here `data` is the brand's own data folder (what a job gets as ctx.dataDir); the question list is hub data and sits in it.
+const qfile = () => join(data, "reel-questions.md");
 
 beforeEach(() => {
   tmp = mkdtempSync(join(tmpdir(), "ideas-"));
   root = join(tmp, "root"); data = join(tmp, "data"); blog = join(tmp, "er/app/blog/posts");
-  mkdirSync(join(root, "brand/acme"), { recursive: true }); mkdirSync(data); mkdirSync(blog, { recursive: true });
+  mkdirSync(join(root, "brand/acme/identity"), { recursive: true }); mkdirSync(data); mkdirSync(blog, { recursive: true });
   copyFileSync(join(import.meta.dirname, "fixtures/reel-questions.md"), qfile());
   for (const f of ["improve-restaurant-efficiency.ts", "index.ts", "translations.ts"]) writeFileSync(join(blog, f), "");
 });

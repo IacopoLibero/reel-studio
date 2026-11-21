@@ -58,7 +58,7 @@ export const makeDailyRun = (collectFn: Collect = collectViaAdapter): Handler =>
     const run = await runClaude(ctx, prompt, [ctx.blogDir, productDir(ctx.blogDir)]);
     run.called.forEach((s) => used.add(s));
     if (!skillGateOk(run.called)) throw new Error("Claude did not call reel-hooks or reel-research, so the ideas are not skill-based.");
-    const parsed = parseDailyIdeas(run.answer, settings.ideas, { slugs: new Set(slugs), existing: existingQuestions(ctx.root, brand), rules: ctx.settings.factory.closingRules });
+    const parsed = parseDailyIdeas(run.answer, settings.ideas, { slugs: new Set(slugs), existing: existingQuestions(ctx.dataDir, brand), rules: ctx.settings.factory.closingRules });
     const missing = REQUIRED_SKILLS.filter((s) => !run.called.includes(s));
     ctx.update({ log: [`Skills used: ${[...used].join(", ")}`, ...parsed.dropped.map((d) => `Dropped: ${d.question} (${d.reason})`), ...parsed.notes] });
 

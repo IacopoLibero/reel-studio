@@ -24,7 +24,7 @@ beforeEach(() => { tmp = mkdtempSync(join(tmpdir(), "scoping-")); root = join(tm
 afterEach(() => rmSync(tmp, { recursive: true, force: true }));
 
 function reel(brand: string, folder: string, caption = "Caption") {
-  const dir = join(root, "reels", brand, folder);
+  const dir = join(root, "brand", brand, "reels", folder);
   mkdirSync(dir, { recursive: true });
   writeFileSync(join(dir, "a.mp4"), "v"); writeFileSync(join(dir, "caption.md"), caption); writeFileSync(join(dir, "cover.png"), "p");
 }
@@ -38,14 +38,14 @@ describe("data scoped by brand", () => {
     expect(scanReels(root, {}, new Set(), "ghost")).toEqual([]);
   });
   it("reads the questions of one brand and no other", () => {
-    writeTestBrand(root, "acme", {}, Q("Is paper cheaper?")); writeTestBrand(root, "beta", {}, Q("Is plastic cheaper?"));
-    expect(readBrandQuestions(root, "acme").map((q) => q.question)).toEqual(["Is paper cheaper?"]);
-    expect(readBrandQuestions(root, "ghost")).toEqual([]);
+    writeTestBrand(root, "acme", {}, Q("Is paper cheaper?"), data); writeTestBrand(root, "beta", {}, Q("Is plastic cheaper?"), data);
+    expect(readBrandQuestions(join(data, "brands/acme"), "acme").map((q) => q.question)).toEqual(["Is paper cheaper?"]);
+    expect(readBrandQuestions(join(data, "brands/ghost"), "ghost")).toEqual([]);
     expect(listFactoryQuestions(root, "beta", join(data, "brands/beta"), DEFAULT_SETTINGS, []).map((q) => [q.brand, q.question])).toEqual([["beta", "Is plastic cheaper?"]]);
   });
   it("matches calendar posts against the reels of the brand only", () => {
     reel("acme", "1-a", "Same first line"); reel("beta", "1-b", "Same first line");
-    writeTestBrand(root, "acme", {}, Q("x")); writeTestBrand(root, "beta", {}, Q("y"));
+    writeTestBrand(root, "acme", {}, Q("x"), data); writeTestBrand(root, "beta", {}, Q("y"), data);
     expect(loadReelRefs(root, join(data, "brands/acme"), "acme").map((r) => r.key)).toEqual(["acme/1-a"]);
     expect(loadReelRefs(root, join(data, "brands/beta"), "beta").map((r) => r.key)).toEqual(["beta/1-b"]);
   });
@@ -69,12 +69,12 @@ describe("jobs of a brand", () => {
     const { ctx } = testRegistry(root, data, "acme", {}, Q("Is paper cheaper?"));
     reel("acme", "1-a"); reel("beta", "1-b");
     const d = { root, brand: ctx, settings: DEFAULT_SETTINGS, jobs: [] as Job[], now: new Date("2026-11-20T09:00:00Z") };
-    const q = readBrandQuestions(root, "acme")[0]!;
+    const q = readBrandQuestions(ctx.paths.dataDir, "acme")[0]!;
     const make = buildSpec({ type: "reel.make", params: { questionId: q.id } }, d);
     expect(make).toMatchObject({ type: "reel.make", brand: "acme", params: { brand: "acme", questionId: q.id } });
     expect(() => buildSpec({ type: "reel.make", params: { questionId: "0".repeat(12) } }, d)).toThrow(JobRequestError);
     const sched = buildSpec({ type: "instagram.schedule", params: { reel: "acme/1-a", date: "2026-11-24", time: "17:30" } }, d);
-    expect(sched).toMatchObject({ brand: "acme", params: { reelDir: join(root, "reels/acme/1-a") } });
+    expect(sched).toMatchObject({ brand: "acme", params: { reelDir: join(root, "brand/acme/reels/1-a") } });
     // another brand's reel is not found through this brand
     expect(() => buildSpec({ type: "instagram.schedule", params: { reel: "beta/1-b", date: "2026-11-24", time: "17:30" } }, d)).toThrow(/not found/);
   });
@@ -114,12 +114,12 @@ describe("prompts take everything from the brand", () => {
     const p = buildReelPrompt({ ...input, closing: "A", brandInfo: b });
     expect(p).toContain("Try Acme at acme.example.");
     expect(p).toContain("Brand: Acme Cafe (folder acme)");
-    expect(p).toContain("brand/acme/style.md");
+    expect(p).toContain("brand/acme/identity/style.md");
     expect(p).not.toMatch(/restaurant|mascot voice/i);
     expect(buildReelPrompt({ ...input, closing: "B" })).toContain("option B (Follow for tips)");
   });
   it("the ideas and daily prompts speak to the brand's audience and read its data folder", () => {
-    const i = { root: "/r", brand: "acme", brandInfo: b, count: 3, blogDir: "/b", slugs: [], hasCsv: false, hasComments: false, hasResults: false };
+    const i = { root: "/r", brand: "acme", dataDir: "/d/brands/acme", brandInfo: b, count: 3, blogDir: "/b", slugs: [], hasCsv: false, hasComments: false, hasResults: false };
     const ideas = buildIdeasPrompt(i);
     expect(ideas).toContain("We roast coffee.");
     expect(ideas).toContain("cafe owners use");
@@ -132,18 +132,19 @@ describe("prompts take everything from the brand", () => {
     expect(an).toContain("plain Italian");
   });
   it("the readout follows the owner's language", () => {
-    const o = { root: "/r", brand: "acme", date: "2026-11-20", csvRows: 2, snapshotPath: "/s.json", dir: "/d" };
+    const o = { root: "/r", brand: "acme", date: "2026-11-20", csvRows: 2, snapshotPath: "/s.json", dir: "/d", questionsFile: "/d/reel-questions.md" };
     expect(insightsPrompt({ ...o, brandInfo: b })).toContain("Da ripetere");
     expect(insightsPrompt({ ...o, brandInfo: { ...b, readoutLanguage: "en" } })).toContain("To repeat");
     expect(insightsPrompt(o)).toContain("To repeat");
   });
   it("the character prompt and Blender script come from the character id", () => {
-    expect(characterScript("/r", "pip")).toBe("/r/mascot/pip.py");
-    const cmd = renderCommand("/r", "pip", "hop", "/nowhere");
-    expect(cmd.text).toContain("/r/mascot/pip.py");
-    const p = buildAddMovePrompt("/r", { id: "pip", name: "Pip" }, "hop", "jumps", "/nowhere");
+    const mascotDir = "/r/brand/acme/mascot";
+    expect(characterScript(mascotDir, "pip")).toBe("/r/brand/acme/mascot/pip.py");
+    const cmd = renderCommand(characterScript(mascotDir, "pip"), "hop", "/nowhere");
+    expect(cmd.text).toContain("/r/brand/acme/mascot/pip.py");
+    const p = buildAddMovePrompt("/r", mascotDir, { id: "pip", name: "Pip" }, "hop", "jumps", "/nowhere");
     expect(p).toContain("character Pip");
-    expect(p).toContain("mascot/pip.py");
-    expect(p).toContain("character Pip");
+    expect(p).toContain("/r/brand/acme/mascot/pip.py");
+    expect(p).toContain("/r/brand/acme/mascot/movements/hop/");
   });
 });

@@ -5,5 +5,3 @@ export * from "./offer.js";
 export * from "./template.js";
 export * from "./context.js";
 export * from "./wording.js";
-export * from "./seed.js";
-export * from "./migrate.js";

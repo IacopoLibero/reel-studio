@@ -37,9 +37,9 @@ export function Extras({ value: v, onChange, options, brandName, colors, problem
   return (
     <>
       {!scope.hideLogo && (
-        <Card title="Logo" intro="Shown on the last card of every reel. PNG or SVG, up to 1 MB. You can add it later too.">
+        <Card title="Logo" intro="Shown on the last card and on the cover of every reel. A PNG up to 1 MB. Without one, covers have no logo frame. You can add it later in Settings.">
           <Row label="Logo file" htmlFor="x-logo" help="A transparent PNG works best." {...(logo.error ? { problem: logo.error } : {})}>
-            <input id="x-logo" type="file" accept="image/png,image/svg+xml,.png,.svg" onChange={(e) => { const f = e.target.files?.[0]; void logo.send(f).then((u) => { if (u || !f) set({ logo: u }); }); }} />
+            <input id="x-logo" type="file" accept="image/png,.png" onChange={(e) => { const f = e.target.files?.[0]; void logo.send(f).then((u) => { if (u || !f) set({ logo: u }); }); }} />
             {logo.busy && <p className="muted">Uploading</p>}
             {v.logo && <div className="logo-preview" style={{ background: colors.background }}><img alt="Your logo" src={v.logo.url} /><span className="muted">{v.logo.name}</span></div>}
           </Row>

@@ -8,8 +8,8 @@ let root: string;
 beforeEach(() => {
   root = mkdtempSync(join(tmpdir(), "hub-reels-"));
   const mk = (p: string, files: Record<string, string>) => {
-    mkdirSync(join(root, "reels", p), { recursive: true });
-    for (const [f, c] of Object.entries(files)) writeFileSync(join(root, "reels", p, f), c);
+    mkdirSync(join(root, "brand", p.split("/")[0] as string, "reels", p.split("/")[1] as string), { recursive: true });
+    for (const [f, c] of Object.entries(files)) writeFileSync(join(root, "brand", p.split("/")[0] as string, "reels", p.split("/")[1] as string, f), c);
   };
   mk("acme/2-first-one", { "a.mp4": "x", "caption.md": "Hello world 👇\n\nMore", "cover.png": "x" });
   mk("acme/10-tenth", { "b.mp4": "x" });
@@ -38,8 +38,8 @@ describe("scanReels", () => {
 
 describe("resolveReelFile", () => {
   it("resolves known files and rejects traversal", () => {
-    expect(resolveReelFile(root, "acme/2-first-one", "cover")).toBe(join(root, "reels/acme/2-first-one/cover.png"));
-    expect(resolveReelFile(root, "acme/2-first-one", "mp4")).toBe(join(root, "reels/acme/2-first-one/a.mp4"));
+    expect(resolveReelFile(root, "acme/2-first-one", "cover")).toBe(join(root, "brand/acme/reels/2-first-one/cover.png"));
+    expect(resolveReelFile(root, "acme/2-first-one", "mp4")).toBe(join(root, "brand/acme/reels/2-first-one/a.mp4"));
     expect(resolveReelFile(root, "../etc", "cover")).toBeNull();
     expect(resolveReelFile(root, "acme/10-tenth", "cover")).toBeNull();
   });

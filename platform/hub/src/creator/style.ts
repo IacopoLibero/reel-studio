@@ -1,21 +1,23 @@
 import type { Brand } from "../brands/schema.js";
 import { languageName } from "../brands/wording.js";
+import { templateValues } from "../brands/template.js";
 
 export interface StyleOptions {
-  logo: "png" | "svg" | null;
-  /** The voice sample is stored at brand/<slug>/voice/voice.wav with its words in voice/voice.txt. */
+  /** The brand has a logo (identity/logo.png). Only PNG: covers and reel closings draw public/logo.png. */
+  logo: "png" | null;
+  /** The voice sample is stored with the brand (see voiceTarget in brands/paths.ts) and style.md already names it. */
   voice: boolean;
   /** What the character is, when one is being created (goes into the Mascot section). */
   mascot?: string;
 }
 
-const NO_LOGO_TEXT = " No logo yet: the cover is drawn without a logo frame. When there is one, save it in this folder as logo.png.";
+const NO_LOGO_TEXT = " No logo yet: the cover is drawn without a logo frame. When there is one, save it in the identity folder as logo.png.";
 const NO_LOGO_RE = / No logo yet: the cover is drawn without a logo frame\.[^\n]*/;
 const LOGO_RE = / Logo: `brand\/[^`\n]*\/logo\.png`\./;
 
 /** Keeps the logo sentence of a brand's style.md true after a logo is set or removed. A style.md without that sentence is returned unchanged. */
 export function withLogoLine(md: string, slug: string, hasLogo: boolean): string {
-  const logoText = ` Logo: \`brand/${slug}/logo.png\`.`;
+  const logoText = ` Logo: \`brand/${slug}/identity/logo.png\`.`;
   return hasLogo ? md.replace(NO_LOGO_RE, () => logoText).replace(LOGO_RE, () => logoText) : md.replace(LOGO_RE, () => NO_LOGO_TEXT);
 }
 
@@ -32,10 +34,8 @@ const section = (md: string, title: string): { from: number; to: number } | null
  */
 export function adaptStyle(filled: string, b: Brand, o: StyleOptions): string {
   let md = filled;
-  if (o.logo) md = md.split(`brand/${b.slug}/logo.png`).join(`brand/${b.slug}/logo.${o.logo}`);
-  else md = md.replace(LOGO_RE, () => NO_LOGO_TEXT);
-  if (o.voice) md = md.split(`brand/${b.slug}/voice.wav`).join(`brand/${b.slug}/voice/voice.wav`).replace("(its words are in `voice.txt` next to it", "(its words are in `voice/voice.txt`");
-  else md = md.replace(/^- Chosen voice:.*$/m, `- No voice sample yet. Record one (see \`voice-sample.md\`), save it as \`brand/${b.slug}/voice/voice.wav\` with its words in \`voice/voice.txt\`, and set "voice" in brand.json.`);
+  if (!o.logo) md = md.replace(LOGO_RE, () => NO_LOGO_TEXT);
+  if (!o.voice) md = md.replace(/^- Chosen voice:.*$/m, `- No voice sample yet. Record one (see \`.claude/skills/reel/voice-sample.md\`), save it as \`${templateValues(b).VOICE_BASE}.wav\` with its words in \`${templateValues(b).VOICE_BASE}.txt\`, and set "voice" in brand.json.`);
   const mascot = section(md, "Mascot");
   if (mascot && !o.mascot && !b.character.enabled) md = md.slice(0, mascot.from) + md.slice(mascot.to);
   else if (o.mascot) md = md.replace(/\{\{MASCOT_DESCRIPTION\}\} \(delete this section[^)]*\)/, o.mascot.trim()).replace(/\{\{MASCOT_DESCRIPTION\}\}/g, o.mascot.trim());

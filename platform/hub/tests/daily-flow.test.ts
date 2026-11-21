@@ -19,7 +19,7 @@ const SCHED = join(import.meta.dirname, "fixtures/fake-scheduler.mjs");
 const DATE = "2026-11-20";
 const NOW = new Date("2026-11-20T09:00:00Z");
 let tmp: string, root: string, data: string, bdata: string, blog: string, dd: DailyDeps, store: JobStore, stop: () => void;
-const qfile = () => join(root, "brand/acme/reel-questions.md");
+const qfile = () => join(bdata, "reel-questions.md");
 const schedLog = () => join(tmp, "sched.log");
 
 beforeAll(() => { process.env.HUB_SCHEDULER_MODULE = SCHED; process.env.HUB_DAILY_FAKE_COLLECTOR = "1"; });
@@ -133,7 +133,7 @@ describe("the daily loop end to end (fake claude, fake collector, fake scheduler
     await until(() => dailyView(dd, DATE).reels.find((r) => r.ideaId === a.ideaId)?.state === "scheduled" || undefined);
     const logged = readFileSync(schedLog(), "utf8").trim().split("\n").map((l) => JSON.parse(l) as Record<string, string>);
     expect(logged[0]).toMatchObject({ date: "2026-12-02", time: "17:30", captionFile: "caption.instagram.md" });
-    const dir = join(root, "reels", a.key!);
+    const dir = join(root, "brand", a.key!.split("/")[0]!, "reels", a.key!.split("/")[1]!);
     expect(readFileSync(join(dir, "caption.md"), "utf8")).toContain("ACMEFREE");
     expect(readFileSync(join(dir, "caption.instagram.md"), "utf8")).not.toMatch(/ACMEFREE|🎁/);
     expect(readPlan(bdata, DATE)?.reels.find((r) => r.ideaId === a.ideaId)?.offerDropped).toBe(true);

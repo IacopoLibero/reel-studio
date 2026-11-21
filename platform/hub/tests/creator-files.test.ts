@@ -4,7 +4,7 @@ import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { contrastLevel, contrastRatio, isHex } from "../src/shared/contrast.js";
 import { buildImagePrompt, EXPRESSIONS } from "../src/shared/character-prompt.js";
-import { checkFile, FileError, isSafeSvg, LIMITS } from "../src/creator/files.js";
+import { checkFile, FileError, LIMITS } from "../src/creator/files.js";
 import { UploadStore } from "../src/creator/uploads.js";
 import { checkFont, loadFontList, resetFontCache } from "../src/creator/fonts.js";
 import { readZip, ZipError } from "../src/creator/zip.js";
@@ -33,7 +33,7 @@ describe("character image prompt", () => {
 describe("file checks", () => {
   it("accepts the right content and refuses the wrong one, whatever the name says", () => {
     expect(checkFile("logo", PNG).ext).toBe("png");
-    expect(checkFile("logo", SVG).ext).toBe("svg");
+    expect(() => checkFile("logo", SVG)).toThrow(/must be a PNG/); // covers and closings draw logo.png: no SVG
     expect(checkFile("sheet", JPG).ext).toBe("jpg");
     expect(checkFile("voice", WAV).ext).toBe("wav");
     expect(() => checkFile("logo", Buffer.from("GIF89a....."))).toThrow(FileError);
@@ -42,15 +42,6 @@ describe("file checks", () => {
     expect(() => checkFile("zip", PNG)).toThrow(/zip/);
     expect(() => checkFile("logo", Buffer.alloc(0))).toThrow(/empty/);
     expect(() => checkFile("logo", Buffer.concat([PNG, Buffer.alloc(LIMITS.logo)]))).toThrow(/too big/);
-  });
-  it("refuses an SVG that can run code or load other files", () => {
-    const bad = (s: string) => isSafeSvg(Buffer.from(s));
-    expect(bad('<svg xmlns="x"><script>alert(1)</script></svg>')).toBe(false);
-    expect(bad('<svg xmlns="x" onload="x()"></svg>')).toBe(false);
-    expect(bad('<svg xmlns="x"><a href="https://evil.test"><rect/></a></svg>')).toBe(false);
-    expect(bad('<svg xmlns="x"><foreignObject/></svg>')).toBe(false);
-    expect(bad("<html></html>")).toBe(false);
-    expect(bad('<svg xmlns="x"><use href="#a"/></svg>')).toBe(true);
   });
 });
 

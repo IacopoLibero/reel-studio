@@ -39,8 +39,8 @@ const sourceText = (i: MakeInput) => {
 
 /** Prompt for a headless run that makes one finished reel, like the batch of reels made by hand. */
 export function buildReelPrompt(i: MakeInput): string {
-  const dir = `reels/${i.brand}/${i.folder}`;
-  return `You are making one finished reel in the reel-studio project at ${i.root}. Follow ${i.root}/.claude/skills/reel/SKILL.md exactly and read brand/${i.brand}/style.md first.
+  const dir = `brand/${i.brand}/reels/${i.folder}`;
+  return `You are making one finished reel in the reel-studio project at ${i.root}. Follow ${i.root}/.claude/skills/reel/SKILL.md exactly and read brand/${i.brand}/identity/style.md first.
 
 Question (the reel opens with it): ${i.question}
 Brand: ${i.brandInfo?.name ?? i.brand} (folder ${i.brand}). Work in the folder ${dir}, which already exists: use it, do not create another reel folder and do not renumber.
@@ -52,7 +52,8 @@ Factory rules:
 - Before you write the script, make a real Skill tool call to \`reel-hooks\` and use it to check the opening question against the first-3-seconds checklist: keep the question's words unless the checklist fails. If the source is "needs source", also call \`reel-research\` first. Name the skills you called in your final summary.
 - Many reels are made at the same time. Run the voice only through \`bash scripts/slot.sh voice 1 -- <command>\`, any Blender run through \`bash scripts/slot.sh blender 1 -- <command>\`, and every Remotion render (video and still) through \`bash scripts/slot.sh render 3 -- <command>\`. Never run those directly.
 - Use the voice that style.md names (the brand's voice sample). Make one version only.
-- Do not edit brand/${i.brand}/reel-questions.md and do not tick the question: the hub does it when you finish.
+- Do not edit the brand's question list (reel-questions.md) and do not tick the question: the hub does it when you finish.
+- Remotion finds the logo, the character's moves, the sounds and the reels' voice files by itself, from this brand's own folders (the hub sets REEL_BRAND). Never copy files into a public/ folder.
 - Never schedule on Instagram and never post. Skip step 14.
 - Do not run git, docker, systemctl, kill or rm -rf. Do not touch other reels' folders.
 ${i.note ? `- This is a redo. The reviewer rejected the previous version with this note: "${i.note}". Make the reel again in the same folder, fix what the note says, and overwrite the old MP4, caption.md and cover.png.\n` : ""}- The reel is finished only when ${dir} holds the MP4, caption.md and cover.png. Finish with a short summary: the closing used, the source used, what you measured in the checks and what you would improve.`;

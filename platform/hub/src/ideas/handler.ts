@@ -19,7 +19,7 @@ export const reelIdeas: Handler = async (job, ctx) => {
   const count = Number(job.params.count);
   ctx.update({ step: IDEAS_STEPS[0], stepIndex: 0, progress: MARKS[0], log: `Brand ${brand}, ${count} ideas, reading ${ctx.blogDir} and ${productDir(ctx.blogDir)}` });
   const slugs = blogSlugs(ctx.blogDir);
-  const prompt = buildIdeasPrompt({ root: ctx.root, brand, ...(ctx.brand ? { brandInfo: ctx.brand.brand } : {}), count, blogDir: ctx.blogDir, slugs, ...brandData(ctx.root, brand) });
+  const prompt = buildIdeasPrompt({ root: ctx.root, brand, ...(ctx.brand ? { brandInfo: ctx.brand.brand } : {}), count, dataDir: ctx.dataDir, blogDir: ctx.blogDir, slugs, ...brandData(ctx.root, brand) });
   const args = ["-p", "--output-format", "stream-json", "--verbose", "--permission-mode", "acceptEdits", "--allowedTools", IDEAS_ALLOWED_TOOLS, "--disallowedTools", IDEAS_DENIED_TOOLS, "--add-dir", ctx.blogDir, "--add-dir", productDir(ctx.blogDir)];
   if (ctx.settings.claudeModel) args.push("--model", ctx.settings.claudeModel);
 
@@ -59,7 +59,7 @@ export const reelIdeas: Handler = async (job, ctx) => {
   if (!called.some((x) => REQUIRED_IDEA_SKILLS.includes(x))) throw new Error("Claude did not call reel-hooks or reel-research, so the ideas are not skill-based. Check Settings > Content skills, then try again.");
   const skillsUsed = called;
   const withSources = normalizeSources(parsed.ideas, new Set(slugs));
-  const { kept, dropped } = dedupeIdeas(existingQuestions(ctx.root, brand), withSources.ideas);
+  const { kept, dropped } = dedupeIdeas(existingQuestions(ctx.dataDir, brand), withSources.ideas);
   if (!kept.length) throw new Error(`All ${parsed.ideas.length} ideas repeat existing questions. Try again.`);
   const rules = ctx.settings.factory.closingRules;
   const id = newBatchId();

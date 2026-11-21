@@ -22,7 +22,7 @@ export function analyticsRoutes(app: FastifyInstance, d: AppDeps, scope: Scope):
 
   app.get("/series", async (req) => ({
     series: series(req).list(),
-    questions: readBrandQuestions(d.config.root, scope(req).slug).map((q) => ({ id: questionId(q.question), question: q.question, done: q.done, folder: q.folder })),
+    questions: readBrandQuestions(scope(req).paths.dataDir, scope(req).slug).map((q) => ({ id: questionId(q.question), question: q.question, done: q.done, folder: q.folder })),
     badges: series(req).badges(),
   }));
   app.get("/series/badges", async (req) => series(req).badges());

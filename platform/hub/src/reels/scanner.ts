@@ -20,15 +20,19 @@ function captionStart(file: string): string {
   return first.length > 120 ? `${first.slice(0, 120)}…` : first;
 }
 
-/** Every reels/<brand>/<n>-<name>/ folder with its files and schedule state. `only` limits the scan to one brand. */
+/** The folder of one reel: brand/<brand>/reels/<n>-<name>/ in the workspace. */
+export const reelDirOf = (root: string, brand: string, folder: string): string => join(root, "brand", brand, "reels", folder);
+
+/** Every brand/<brand>/reels/<n>-<name>/ folder with its files and schedule state. `only` limits the scan to one brand. */
 export function scanReels(root: string, scheduled: ScheduleMap, active: ReadonlySet<string> = new Set(), only?: string): Reel[] {
-  const base = join(root, "reels");
+  const base = join(root, "brand");
   const out: Reel[] = [];
   for (const brand of only === undefined ? dirs(base) : dirs(base).filter((d) => d === only)) {
-    for (const folder of dirs(join(base, brand))) {
+    if (!SAFE.test(brand) || brand.startsWith(".")) continue;
+    for (const folder of dirs(join(base, brand, "reels"))) {
       const m = FOLDER.exec(folder);
       if (!m) continue;
-      const dir = join(base, brand, folder);
+      const dir = reelDirOf(root, brand, folder);
       const key = `${brand}/${folder}`;
       const cap = join(dir, "caption.md");
       out.push({
@@ -47,7 +51,7 @@ export type ReelFileKind = "mp4" | "cover" | "caption";
 export function resolveReelFile(root: string, key: string, kind: ReelFileKind): string | null {
   const parts = key.split("/");
   if (parts.length !== 2 || !parts.every((p) => SAFE.test(p) && p !== "." && p !== "..")) return null;
-  const dir = join(root, "reels", parts[0] as string, parts[1] as string);
+  const dir = reelDirOf(root, parts[0] as string, parts[1] as string);
   if (!existsSync(dir) || !statSync(dir).isDirectory()) return null;
   const name = kind === "mp4" ? firstMp4(dir) : kind === "cover" ? "cover.png" : "caption.md";
   if (!name) return null;

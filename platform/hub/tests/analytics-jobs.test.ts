@@ -22,7 +22,7 @@ beforeEach(() => {
   mkdirSync(data);
   bctx = testRegistry(root, data, "acme").ctx;
   data = bctx.paths.dataDir;
-  writeFileSync(join(root, "brand/acme/reel-questions.md"), "## To do\n\n- [ ] Is a paper menu really cheaper? · hook: myth · source: needs source\n- [ ] How long does a QR menu take? · hook: effort · source: needs source\n");
+  writeFileSync(join(data, "reel-questions.md"), "## To do\n\n- [ ] Is a paper menu really cheaper? · hook: myth · source: needs source\n- [ ] How long does a QR menu take? · hook: effort · source: needs source\n");
 });
 afterEach(() => { for (const k of ["FAKE_SKILL", "FAKE_ANSWER"]) delete process.env[k]; rmSync(tmp, { recursive: true, force: true }); });
 
@@ -97,13 +97,13 @@ describe("job schema and spec", () => {
     const body = createSchema.parse({ type: "analytics.collect" });
     if (body.type !== "analytics.collect") throw new Error("type");
     const busy = [{ type: "analytics.collect", brand: "acme", status: "running" }] as Job[];
-    expect(() => analyticsSpec(body, { root, jobs: busy, brand: "acme" })).toThrow(/already running/);
-    expect(analyticsSpec(body, { root, jobs: [], brand: "acme" }).steps).toHaveLength(3);
+    expect(() => analyticsSpec(body, { root, dataDir: data, jobs: busy, brand: "acme" })).toThrow(/already running/);
+    expect(analyticsSpec(body, { root, dataDir: data, jobs: [], brand: "acme" }).steps).toHaveLength(3);
     const ins = createSchema.parse({ type: "reel.insights" });
     if (ins.type !== "reel.insights") throw new Error("type");
-    expect(() => analyticsSpec(ins, { root, jobs: [], brand: "nope" })).toThrow(/no reel-questions/);
+    expect(() => analyticsSpec(ins, { root, dataDir: join(tmp, "nowhere"), jobs: [], brand: "nope" })).toThrow(/no reel-questions/);
     // another brand running the same job does not block this one
-    expect(analyticsSpec(body, { root, jobs: [{ type: "analytics.collect", brand: "other", status: "running" }] as Job[], brand: "acme" }).brand).toBe("acme");
+    expect(analyticsSpec(body, { root, dataDir: data, jobs: [{ type: "analytics.collect", brand: "other", status: "running" }] as Job[], brand: "acme" }).brand).toBe("acme");
   });
 });
 

@@ -7,7 +7,7 @@ import { readState, sheetFile } from "../src/creator/studio.js";
 import { readScheduled } from "../src/reels/scanner.js";
 import { DEFAULT_SETTINGS } from "../src/settings.js";
 import { type Env, formBrand, job, makeEnv } from "./helpers/creator.js";
-import { JPG, PNG, SVG, WAV } from "./helpers/zip.js";
+import { JPG, PNG, WAV } from "./helpers/zip.js";
 import { writeTestBrand } from "./helpers/brand.js";
 
 let env: Env;
@@ -23,19 +23,24 @@ describe("brand.create from the form", () => {
     const b = env.reg.get("acme-bakery");
     expect(b?.name).toBe("Acme Bakery");
     expect(b?.instagram.profileDir).toBeNull();
-    for (const d of ["brand/acme-bakery", "brand/acme-bakery/voice", "reels/acme-bakery"]) expect(existsSync(join(env.root, d)), d).toBe(true);
+    for (const d of ["brand/acme-bakery", "brand/acme-bakery/identity", "brand/acme-bakery/reels"]) expect(existsSync(join(env.root, d)), d).toBe(true);
+    expect(existsSync(join(env.root, "brand/acme-bakery/mascot"))).toBe(false); // no character, no mascot folder
+    expect(existsSync(join(env.root, "reels")) || existsSync(join(env.root, "characters")) || existsSync(join(env.root, "public"))).toBe(false);
     const p = env.reg.paths("acme-bakery");
     for (const d of [p.dataDir, p.dailyDir, p.analyticsDir, p.ideasDir, p.locksDir, p.profileDir]) expect(existsSync(d), d).toBe(true);
-    expect(read("brand/acme-bakery/style.md")).toContain("Acme Bakery");
-    expect(read("brand/acme-bakery/style.md")).toContain("## About the brand");
-    expect(read("brand/acme-bakery/style.md")).not.toContain("## Mascot");
-    expect(read("brand/acme-bakery/style.md")).not.toContain("{{");
-    expect(read("brand/acme-bakery/reel-questions.md")).toMatch(/## Done\n\n## To do\n\n$/);
-    expect(read("brand/acme-bakery/reel-questions.md")).not.toContain("{{");
+    expect(read("brand/acme-bakery/identity/style.md")).toContain("Acme Bakery");
+    expect(read("brand/acme-bakery/identity/style.md")).toContain("## About the brand");
+    expect(read("brand/acme-bakery/identity/style.md")).not.toContain("## Mascot");
+    expect(read("brand/acme-bakery/identity/style.md")).not.toContain("{{");
+    expect(readFileSync(p.questionsMd, "utf8")).toMatch(/## Done\n\n## To do\n\n$/); // the question list is hub data
+    expect(readFileSync(p.questionsMd, "utf8")).not.toContain("{{");
+    expect(existsSync(join(env.root, "brand/acme-bakery/reel-questions.md"))).toBe(false);
+    expect(existsSync(join(env.root, "brand/acme-bakery/voice-sample.md"))).toBe(false);
     expect(r).toMatchObject({ slug: "acme-bakery", source: "form", daily: false, character: "none", logo: null, voice: null });
-    expect(existsSync(join(env.root, "brand/acme-bakery/logo.png"))).toBe(false);
-    expect(read("brand/acme-bakery/style.md")).toContain("No logo yet");
-    expect(read("brand/acme-bakery/style.md")).not.toContain("brand/acme-bakery/logo.png");
+    expect(existsSync(join(env.root, "brand/acme-bakery/identity/logo.png"))).toBe(false);
+    expect(read("brand/acme-bakery/identity/style.md")).toContain("No logo yet");
+    expect(read("brand/acme-bakery/identity/style.md")).not.toContain("brand/acme-bakery/identity/logo.png");
+    expect(read("brand/acme-bakery/identity/style.md")).toContain("brand/acme-bakery/identity/voice"); // no voice yet: the guide says where to save it
     expect(r.nextSteps).toHaveLength(3);
     expect(env.daily).toEqual([]);
     expect(env.svc.settings.get("acme-bakery").daily.enabled).toBe(false);
@@ -49,12 +54,13 @@ describe("brand.create from the form", () => {
       voice: { mode: "upload", wavUpload: wav.id, text: "Hello, this is the voice." },
       character: { mode: "create", name: "Bun", fields: { what: "a round bun", personality: "cheerful", extra: "" }, sheetUpload: sheet.id },
     });
-    expect(readFileSync(join(env.root, "brand/acme-bakery/logo.png")).equals(PNG)).toBe(true);
-    expect(readFileSync(join(env.root, "brand/acme-bakery/voice/voice.wav")).equals(WAV)).toBe(true);
-    expect(read("brand/acme-bakery/voice/voice.txt")).toContain("Hello, this is the voice.");
-    expect(env.reg.get("acme-bakery")?.voice).toMatchObject({ sample: "voice/voice.wav", sampleText: "voice/voice.txt" });
-    expect(read("brand/acme-bakery/style.md")).toContain("voice/voice.wav");
-    expect(read("brand/acme-bakery/style.md")).toContain("a round bun");
+    expect(readFileSync(join(env.root, "brand/acme-bakery/identity/logo.png")).equals(PNG)).toBe(true);
+    // The character is only a draft (not enabled), so the voice is the brand's own, in identity/.
+    expect(readFileSync(join(env.root, "brand/acme-bakery/identity/voice.wav")).equals(WAV)).toBe(true);
+    expect(read("brand/acme-bakery/identity/voice.txt")).toContain("Hello, this is the voice.");
+    expect(env.reg.get("acme-bakery")?.voice).toMatchObject({ sample: "identity/voice.wav", sampleText: "identity/voice.txt" });
+    expect(read("brand/acme-bakery/identity/style.md")).toContain("brand/acme-bakery/identity/voice.wav");
+    expect(read("brand/acme-bakery/identity/style.md")).toContain("a round bun");
     expect(sheetFile(env.root, "acme-bakery")).toBe("reference-sheet.jpg");
     expect(readState(env.root, "acme-bakery")).toMatchObject({ name: "Bun", fields: { what: "a round bun" } });
     expect(env.reg.get("acme-bakery")?.character).toMatchObject({ enabled: false, name: "Bun" });
@@ -78,25 +84,18 @@ describe("brand.create from the form", () => {
     expect(env.svc.settings.get("other").factory.closingRules).toEqual(DEFAULT_SETTINGS.factory.closingRules);
   });
 
-  it("uses an svg logo instead of the placeholder png", async () => {
-    const logo = env.svc.uploads.put("logo", SVG);
-    await create({ brand: formBrand(), logoUpload: logo.id });
-    expect(existsSync(join(env.root, "brand/acme-bakery/logo.svg"))).toBe(true);
-    expect(existsSync(join(env.root, "brand/acme-bakery/logo.png"))).toBe(false);
-    expect(read("brand/acme-bakery/style.md")).toContain("brand/acme-bakery/logo.svg");
-  });
-
   it("copies another brand's voice sample", async () => {
-    writeTestBrand(env.root, "other", { voice: { engine: "voxcpm2", sample: "voice/s.wav", sampleText: "voice/s.txt" } });
-    mkdirSync(join(env.root, "brand/other/voice"), { recursive: true });
-    writeFileSync(join(env.root, "brand/other/voice/s.wav"), WAV); writeFileSync(join(env.root, "brand/other/voice/s.txt"), "Other words\n");
+    writeTestBrand(env.root, "other", { voice: { engine: "voxcpm2", sample: "identity/voice.wav", sampleText: "identity/voice.txt" } });
+    writeFileSync(join(env.root, "brand/other/identity/voice.wav"), WAV); writeFileSync(join(env.root, "brand/other/identity/voice.txt"), "Other words\n");
+    writeFileSync(join(env.root, "brand/other/identity/voice.json"), '{ "speed": 0.9 }');
     await create({ brand: formBrand(), voice: { mode: "reuse", from: "other" } });
-    expect(read("brand/acme-bakery/voice/voice.txt")).toContain("Other words");
-    expect(env.reg.get("acme-bakery")?.voice.sample).toBe("voice/voice.wav");
+    expect(read("brand/acme-bakery/identity/voice.txt")).toContain("Other words");
+    expect(read("brand/acme-bakery/identity/voice.json")).toContain("0.9"); // the voice settings come along
+    expect(env.reg.get("acme-bakery")?.voice.sample).toBe("identity/voice.wav");
   });
 
   it("refuses a voice sample outside the other brand's folder", async () => {
-    writeTestBrand(env.root, "other", { voice: { engine: "voxcpm2", sample: "../../secret.wav", sampleText: "voice/s.txt" } });
+    writeTestBrand(env.root, "other", { voice: { engine: "voxcpm2", sample: "../../secret.wav", sampleText: "identity/voice.txt" } });
     writeFileSync(join(env.root, "secret.wav"), WAV);
     await expect(create({ brand: formBrand(), voice: { mode: "reuse", from: "other" } })).rejects.toThrow(/no voice sample/);
     expect(existsSync(join(env.root, "brand/acme-bakery"))).toBe(false);
@@ -105,11 +104,26 @@ describe("brand.create from the form", () => {
   it("forces the profile folder, keeps a character import only when the mascot exists", async () => {
     await expect(create({ brand: formBrand(), character: { mode: "import", id: "bun", name: "Bun" } })).rejects.toThrow(/no character "bun"/);
     expect(existsSync(join(env.root, "brand/acme-bakery"))).toBe(false);
-    mkdirSync(join(env.root, "mascot"), { recursive: true }); writeFileSync(join(env.root, "mascot/bun.py"), "# x");
-    await create({ brand: { ...formBrand(), instagram: { account: "a", userId: "1", profileDir: "/etc" } }, character: { mode: "import", id: "bun", name: "Bun" } });
+    // the character belongs to another brand: its files and rendered moves are copied into this brand's mascot folder
+    writeTestBrand(env.root, "donor", { character: { enabled: true, id: "bun", name: "Bun" } });
+    mkdirSync(join(env.root, "brand/donor/mascot/movements/idle"), { recursive: true });
+    writeFileSync(join(env.root, "brand/donor/mascot/bun.py"), "# x"); writeFileSync(join(env.root, "brand/donor/mascot/bun-head.json"), "{}");
+    writeFileSync(join(env.root, "brand/donor/mascot/bun-voice.wav"), WAV); // the donor's own voice is not copied
+    writeFileSync(join(env.root, "brand/donor/mascot/movements/idle/f-0001.png"), "png"); writeFileSync(join(env.root, "brand/donor/mascot/movements/idle/info.json"), "{}");
+    const wav = env.svc.uploads.put("voice", WAV);
+    const r = await create({ brand: { ...formBrand(), instagram: { account: "a", userId: "1", profileDir: "/etc" } }, character: { mode: "import", id: "bun", name: "Bun" }, voice: { mode: "upload", wavUpload: wav.id, text: "My own words." } });
     const b = env.reg.get("acme-bakery");
     expect(b?.instagram.profileDir).toBeNull();
     expect(b?.character).toMatchObject({ enabled: true, id: "bun" });
+    expect(read("brand/acme-bakery/mascot/bun.py")).toBe("# x");
+    expect(existsSync(join(env.root, "brand/acme-bakery/mascot/movements/idle/f-0001.png"))).toBe(true);
+    // with a character, the voice is the character's: mascot/<id>-voice.*, and nothing in identity/
+    expect(readFileSync(join(env.root, "brand/acme-bakery/mascot/bun-voice.wav")).equals(WAV)).toBe(true);
+    expect(read("brand/acme-bakery/mascot/bun-voice.txt")).toContain("My own words.");
+    expect(existsSync(join(env.root, "brand/acme-bakery/identity/voice.wav"))).toBe(false);
+    expect(b?.voice).toMatchObject({ sample: "mascot/bun-voice.wav", sampleText: "mascot/bun-voice.txt" });
+    expect(read("brand/acme-bakery/identity/style.md")).toContain("brand/acme-bakery/mascot/bun-voice.wav");
+    expect((r as { files: string[] }).files.some((f) => f.includes("movements"))).toBe(false); // the summary does not list the rendered frames
   });
 
   it("adds the version when the request leaves it out", async () => {
@@ -121,30 +135,30 @@ describe("brand.create from the form", () => {
   it("rejects an invalid brand before touching the disk", async () => {
     await expect(create({ brand: { ...formBrand(), colors: { background: "white", text: "#000000", accent: "#111111", secondary: "#222222" } } })).rejects.toThrow(/colors/);
     await expect(create({ brand: { ...formBrand(), sources: { blogDir: "relative/dir" } } })).rejects.toThrow(/full folder path/);
-    expect(readdirSync(join(env.root, "brand"))).toEqual(["_template"]);
+    expect(existsSync(join(env.root, "brand/acme-bakery"))).toBe(false);
   });
 });
 
 describe("safety of brand.create", () => {
   it("never overwrites an existing brand, even with the same request twice by different ids", async () => {
     await create({ brand: formBrand() }, "1".repeat(32));
-    const style = read("brand/acme-bakery/style.md");
-    writeFileSync(join(env.root, "brand/acme-bakery/style.md"), "EDITED BY HAND");
+    const style = read("brand/acme-bakery/identity/style.md");
+    writeFileSync(join(env.root, "brand/acme-bakery/identity/style.md"), "EDITED BY HAND");
     await expect(create({ brand: formBrand() }, "2".repeat(32))).rejects.toThrow(/already exists/);
-    expect(read("brand/acme-bakery/style.md")).toBe("EDITED BY HAND");
+    expect(read("brand/acme-bakery/identity/style.md")).toBe("EDITED BY HAND");
     expect(style).not.toBe("EDITED BY HAND");
   });
   it("is idempotent: the same request again returns the first summary and changes nothing", async () => {
     const first = await create({ brand: formBrand() }, "3".repeat(32));
-    writeFileSync(join(env.root, "brand/acme-bakery/style.md"), "EDITED");
+    writeFileSync(join(env.root, "brand/acme-bakery/identity/style.md"), "EDITED");
     const again = await create({ brand: formBrand() }, "3".repeat(32));
     expect(again).toEqual(first);
-    expect(read("brand/acme-bakery/style.md")).toBe("EDITED");
+    expect(read("brand/acme-bakery/identity/style.md")).toBe("EDITED");
   });
   it("refuses a slug whose folder exists but has no brand.json, and a hand-made brand", async () => {
-    mkdirSync(join(env.root, "reels/acme-bakery"), { recursive: true });
-    await expect(create({ brand: formBrand() })).rejects.toThrow(/reels\/acme-bakery already exists/);
-    expect(existsSync(join(env.root, "brand/acme-bakery"))).toBe(false);
+    mkdirSync(join(env.root, "brand/acme-bakery/reels"), { recursive: true });
+    await expect(create({ brand: formBrand() })).rejects.toThrow(/brand\/acme-bakery already exists/);
+    expect(existsSync(join(env.root, "brand/acme-bakery/identity"))).toBe(false);
     writeBrand(env.root, writeTestBrand(env.root, "mine"));
     await expect(create({ brand: formBrand("Mine", "mine") })).rejects.toThrow(/already exists/);
   });
@@ -162,10 +176,8 @@ describe("safety of brand.create", () => {
     const bad = { ...env.svc, uploads: { ...env.svc.uploads, read: (id: string, kind: "sheet") => { if (kind === "sheet") throw new Error("disk full"); return env.svc.uploads.read(id, kind); }, get: env.svc.uploads.get.bind(env.svc.uploads), dir: env.svc.uploads.dir, remove: () => undefined } } as unknown as typeof env.svc;
     const ctx = { ...env.ctx(job("brand.create", "acme-bakery", {})), creator: bad };
     await expect(brandCreate(job("brand.create", "acme-bakery", { source: "form", requestId: "5".repeat(32), brand: formBrand(), character: { mode: "create", name: "Bun", sheetUpload: sheet.id } }), ctx)).rejects.toThrow(/disk full/);
-    expect(readdirSync(join(env.root, "brand"))).toEqual(["_template"]);
-    expect(existsSync(join(env.root, "reels/acme-bakery"))).toBe(false);
+    expect(readdirSync(join(env.root, "brand"))).toEqual([]);
     expect(existsSync(env.reg.paths("acme-bakery").dataDir)).toBe(false);
-    expect(existsSync(join(env.root, "characters/acme-bakery"))).toBe(false);
     expect(existsSync(env.reg.paths("acme-bakery").profileDir)).toBe(false);
     expect(env.patches.some((p) => String(p.log).includes("Rolled back"))).toBe(true);
   });
@@ -186,13 +198,15 @@ describe("safety of brand.create", () => {
 describe("brand.create from an import", () => {
   it("takes style, questions, logo and voice from the staged folder", async () => {
     const { stageBundle } = await import("../src/creator/bundle.js");
-    const id = stageBundle(env.svc.uploads.dir, new Map([["style.md", Buffer.from("# Imported style")], ["reel-questions.md", Buffer.from("## Done\n\n## To do\n\n- [ ] Q? · hook: myth · source: needs source\n")], ["logo.png", PNG], ["voice/v.wav", WAV], ["voice/v.txt", Buffer.from("Words")]]));
-    const brand = { ...formBrand(), voice: { engine: "voxcpm2", sample: "voice/v.wav", sampleText: "voice/v.txt" } };
+    const id = stageBundle(env.svc.uploads.dir, new Map([["style.md", Buffer.from("# Imported style")], ["reel-questions.md", Buffer.from("## Done\n\n## To do\n\n- [ ] Q? · hook: myth · source: needs source\n")], ["logo.png", PNG], ["voice.wav", WAV], ["voice.txt", Buffer.from("Words")]]));
+    const brand = { ...formBrand(), voice: { engine: "voxcpm2", sample: "identity/voice.wav", sampleText: "identity/voice.txt" } };
     await create({ source: "import", importId: id, brand });
-    expect(read("brand/acme-bakery/style.md")).toContain("# Imported style");
-    expect(read("brand/acme-bakery/reel-questions.md")).toContain("Q?");
-    expect(readFileSync(join(env.root, "brand/acme-bakery/voice/v.wav")).equals(WAV)).toBe(true);
-    expect(env.reg.get("acme-bakery")?.voice.sample).toBe("voice/v.wav");
+    expect(read("brand/acme-bakery/identity/style.md")).toContain("# Imported style");
+    expect(readFileSync(env.reg.paths("acme-bakery").questionsMd, "utf8")).toContain("Q?");
+    expect(readFileSync(join(env.root, "brand/acme-bakery/identity/logo.png")).equals(PNG)).toBe(true);
+    expect(readFileSync(join(env.root, "brand/acme-bakery/identity/voice.wav")).equals(WAV)).toBe(true);
+    expect(read("brand/acme-bakery/identity/voice.txt")).toBe("Words");
+    expect(env.reg.get("acme-bakery")?.voice.sample).toBe("identity/voice.wav");
     expect(env.svc.uploads.get(id, "zip")).toBeNull();
     await expect(create({ source: "import", importId: id, brand: formBrand("Other", "other") }, "7".repeat(32))).rejects.toThrow(/gone/);
   });

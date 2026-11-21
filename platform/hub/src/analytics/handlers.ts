@@ -1,6 +1,7 @@
 import { toLocal } from "../calendar/merge.js";
 import { bestTimeStats, parseSuggestions } from "../calendar/best-times.js";
 import { questionId } from "../factory/questions.js";
+import { questionsFile } from "../brands/paths.js";
 import { readBrandQuestions } from "../factory/service.js";
 import type { Handler } from "../jobs/handlers.js";
 import { planSchema } from "../series/schema.js";
@@ -41,7 +42,7 @@ export const reelInsights: Handler = async (job, ctx) => {
   const dir = analyticsDir(ctx.dataDir);
   const date = toLocal(new Date().toISOString(), ctx.settings.slotPattern.timezone).date;
   ctx.update({ step: INSIGHTS_STEPS[0], stepIndex: 0, progress: 0.1, log: `Snapshot of ${snap.collectedAt}, ${snap.media.length} posts` });
-  const prompt = insightsPrompt({ root: ctx.root, brand, ...(ctx.brand ? { brandInfo: ctx.brand.brand } : {}), date: snap.collectedAt.slice(0, 10), csvRows: csvRowCount(join(dir, "hooks.csv")), snapshotPath: join(dir, `${toLocal(snap.collectedAt, ctx.settings.slotPattern.timezone).date}.json`), dir });
+  const prompt = insightsPrompt({ root: ctx.root, brand, ...(ctx.brand ? { brandInfo: ctx.brand.brand } : {}), date: snap.collectedAt.slice(0, 10), csvRows: csvRowCount(join(dir, "hooks.csv")), snapshotPath: join(dir, `${toLocal(snap.collectedAt, ctx.settings.slotPattern.timezone).date}.json`), dir, questionsFile: questionsFile(ctx.dataDir) });
   let step = false;
   const { answer, skills } = await runClaudeText(ctx, prompt, () => { if (!step) { step = true; ctx.update({ step: INSIGHTS_STEPS[1], stepIndex: 1, progress: 0.3 }); } });
   if (!skills.includes("reel-insights")) throw new Error(`Claude did not call the reel-insights skill (called: ${skills.join(", ") || "none"}), so the readout is not skill-based. Check that the skill exists in .claude/skills.`);
@@ -58,7 +59,7 @@ export const seriesPlan: Handler = async (job, ctx) => {
   const focus = typeof job.params.focus === "string" ? job.params.focus : "";
   const store = new SeriesStore(join(ctx.dataDir, "series.json"));
   ctx.update({ step: SERIES_STEPS[0], stepIndex: 0, progress: 0.1 });
-  const prompt = seriesPrompt({ root: ctx.root, brand, ...(ctx.brand ? { brandInfo: ctx.brand.brand } : {}), focus, existing: store.list().map((s) => s.name), hasData: !!latestSnapshot(ctx.dataDir), dir: analyticsDir(ctx.dataDir) });
+  const prompt = seriesPrompt({ root: ctx.root, brand, ...(ctx.brand ? { brandInfo: ctx.brand.brand } : {}), focus, existing: store.list().map((s) => s.name), hasData: !!latestSnapshot(ctx.dataDir), dir: analyticsDir(ctx.dataDir), questionsFile: questionsFile(ctx.dataDir) });
   let step = false;
   const { answer, skills } = await runClaudeText(ctx, prompt, () => { if (!step) { step = true; ctx.update({ step: SERIES_STEPS[1], stepIndex: 1, progress: 0.3 }); } });
   if (!skills.includes("series-planner")) throw new Error(`Claude did not call the series-planner skill (called: ${skills.join(", ") || "none"}).`);
@@ -67,7 +68,7 @@ export const seriesPlan: Handler = async (job, ctx) => {
   try { raw = extractJson(answer); } catch (e) { throw new Error((e as Error).message); }
   const plan = planSchema.safeParse(raw);
   if (!plan.success) throw new Error(`The series plan had the wrong shape at ${plan.error.issues[0]?.path.join(".") || "root"}: ${plan.error.issues[0]?.message}`);
-  const known = new Map(readBrandQuestions(ctx.root, brand).map((q) => [norm(q.question), q]));
+  const known = new Map(readBrandQuestions(ctx.dataDir, brand).map((q) => [norm(q.question), q]));
   const matched = plan.data.questions.map((q) => known.get(norm(q))).filter((q): q is NonNullable<typeof q> => !!q);
   const dropped = plan.data.questions.length - matched.length;
   const proposal = { ...plan.data, questionIds: matched.map((q) => questionId(q.question)), questions: matched.map((q) => q.question) };

@@ -11,7 +11,7 @@ process.stdin.on("end", () => {
   out({ type: "system", subtype: "init", model: "fake" });
   let text;
   if (/You are making one finished reel/.test(prompt)) {
-    const dir = /Work in the folder (reels\/[^ ]+),/.exec(prompt)?.[1];
+    const dir = /Work in the folder (brand\/[^ ]+),/.exec(prompt)?.[1];
     const root = /reel-studio project at (\S+)\./.exec(prompt)?.[1] ?? process.cwd();
     const note = /reviewer rejected .* with this note: "([^"]*)"/.exec(prompt)?.[1] ?? "";
     const abs = join(root, dir);

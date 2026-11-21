@@ -8,9 +8,11 @@ import type { AssistantSettings } from "../shared/types.js";
 /** The assistant may read and look things up on the web. It cannot run commands, write files or read credentials or other brands. */
 export const ASSISTANT_ALLOWED_TOOLS = joinTools(["Read", "Glob", "Grep", "WebFetch", "WebSearch"]);
 
-export const assistantDenied = (root: string): string => joinTools(
+/** brand/ holds every brand (identity, character, reels); the hub data folder holds their questions, results and logins. */
+export const assistantDenied = (root: string, dataDir?: string): string => joinTools(
   ["Bash", "Write", "Edit", "NotebookEdit"], DESTRUCTIVE_BASH_DENIES, SECRET_READ_DENIES,
-  ["brand", "reels", "characters", "platform/data", "platform/.env"].map((d) => `Read(${root}/${d}/**)`),
+  ["brand", "platform/data", "platform/.env"].map((d) => `Read(${root}/${d}/**)`),
+  dataDir ? [`Read(${dataDir}/brands/**)`, `Read(${dataDir}/jobs.json)`, `Read(${dataDir}/settings.json)`] : [],
 );
 
 /** What `kind` runs when no command is typed. codex is a best guess and untested; claude uses HUB_CLAUDE_BIN. */
@@ -49,6 +51,8 @@ export interface AssistantRun {
   root: string;
   /** An empty scratch folder to run in. */
   scratch: string;
+  /** The hub data folder: its brands/ folders (questions, results, logins) are kept unreadable for the assistant. */
+  dataDir?: string;
   env: NodeJS.ProcessEnv;
   /** Added after the filter (a test sets its stand-in command's switches here). */
   extraEnv?: NodeJS.ProcessEnv;
@@ -89,7 +93,7 @@ export async function runAssistant(o: AssistantRun): Promise<string> {
 }
 
 async function runClaude(o: AssistantRun, env: NodeJS.ProcessEnv, signal: AbortSignal): Promise<string> {
-  const args = ["-p", "--output-format", "stream-json", "--verbose", "--permission-mode", "default", "--allowedTools", ASSISTANT_ALLOWED_TOOLS, "--disallowedTools", assistantDenied(o.root)];
+  const args = ["-p", "--output-format", "stream-json", "--verbose", "--permission-mode", "default", "--allowedTools", ASSISTANT_ALLOWED_TOOLS, "--disallowedTools", assistantDenied(o.root, o.dataDir)];
   if (o.model) args.push("--model", o.model);
   let answer = "";
   let ok = true;

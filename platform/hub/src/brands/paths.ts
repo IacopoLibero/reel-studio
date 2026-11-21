@@ -22,17 +22,23 @@ export interface BrandPathOptions {
 
 export interface BrandPaths {
   slug: string;
-  /** brand/<slug>/ in the project (private, git-ignored except _template). */
+  /** brand/<slug>/ in the workspace: everything of one brand that is not hub data (identity, character, reels). */
   brandDir: string;
+  /** brand/<slug>/identity/: brand.json, style.md, the logo, and the voice when the brand has no character. */
+  identityDir: string;
   brandJson: string;
   styleMd: string;
-  questionsMd: string;
   logo: string;
-  voiceDir: string;
-  /** reels/<slug>/ */
+  /** brand/<slug>/mascot/: the character's script, sheet, voice and its rendered moves. Absent for a brand without a character. */
+  mascotDir: string;
+  /** brand/<slug>/mascot/movements/<move>/: the rendered PNG sequences (what Remotion reads as mascot/<move>/). */
+  movementsDir: string;
+  /** brand/<slug>/reels/<n>-<name>/: one folder per reel, with its audio in audio/. */
   reelsDir: string;
-  /** platform/data/brands/<slug>/: everything the hub stores for this brand. */
+  /** The data folder of this brand: everything the hub stores for it. */
   dataDir: string;
+  /** The question list (data/brands/<slug>/reel-questions.md): hub data, not part of the brand's identity. */
+  questionsMd: string;
   settingsFile: string;
   scheduledFile: string;
   dailyDir: string;
@@ -44,6 +50,34 @@ export interface BrandPaths {
   /** The Instagram browser profile of this brand (its login). */
   profileDir: string;
 }
+
+/** The question list of a brand lives in its data folder: data/brands/<slug>/reel-questions.md. */
+export const questionsFile = (dataDir: string): string => join(dataDir, "reel-questions.md");
+
+/** The files of a character inside brand/<slug>/mascot/. */
+export interface CharacterFiles { script: string; blend: string; sheet: string; head: string }
+export const characterFiles = (p: Pick<BrandPaths, "mascotDir">, id: string): CharacterFiles => ({
+  script: join(p.mascotDir, `${id}.py`),
+  blend: join(p.mascotDir, `${id}.blend`),
+  sheet: join(p.mascotDir, `${id}-expressions.png`),
+  head: join(p.mascotDir, `${id}-head.json`),
+});
+
+/** Where a brand's voice sample is stored: with the character when there is one (<id>-voice.*), else in identity/ (voice.*). Paths are relative to brand/<slug>/. */
+export interface VoiceTarget { dir: string; wav: string; txt: string; settings: string; relWav: string; relTxt: string }
+export function voiceTarget(p: Pick<BrandPaths, "identityDir" | "mascotDir">, character: { enabled: boolean; id: string }): VoiceTarget {
+  const own = character.enabled;
+  const dir = own ? p.mascotDir : p.identityDir;
+  const stem = own ? `${character.id}-voice` : "voice";
+  const rel = own ? "mascot" : "identity";
+  return { dir, wav: join(dir, `${stem}.wav`), txt: join(dir, `${stem}.txt`), settings: join(dir, `${stem}.json`), relWav: `${rel}/${stem}.wav`, relTxt: `${rel}/${stem}.txt` };
+}
+
+/** The paths brand.json stores for the voice sample (relative to brand/<slug>/): the same as voiceTarget gives, without needing the folders. */
+export const voiceRelPaths = (character: { enabled: boolean; id: string }): { sample: string; sampleText: string } => {
+  const t = voiceTarget({ identityDir: "", mascotDir: "" }, character);
+  return { sample: t.relWav, sampleText: t.relTxt };
+};
 
 /** A brand's login lives in its data folder; an install that still has it in the old shared profile folder (and none yet in the new place) keeps working. */
 function defaultProfile(fresh: string, slug: string, env: NodeJS.ProcessEnv): string {
@@ -58,11 +92,13 @@ export function brandPaths(slug: string, o: BrandPathOptions = {}): BrandPaths {
   const root = o.root ?? defaultRoot(env);
   const data = join(o.dataDir ?? defaultDataDir(env), "brands", slug);
   const brandDir = join(root, "brand", slug);
+  const identityDir = join(brandDir, "identity");
   return {
-    slug, brandDir,
-    brandJson: join(brandDir, "brand.json"), styleMd: join(brandDir, "style.md"), questionsMd: join(brandDir, "reel-questions.md"),
-    logo: join(brandDir, "logo.png"), voiceDir: join(brandDir, "voice"),
-    reelsDir: join(root, "reels", slug),
+    slug, brandDir, identityDir,
+    brandJson: join(identityDir, "brand.json"), styleMd: join(identityDir, "style.md"), logo: join(identityDir, "logo.png"),
+    mascotDir: join(brandDir, "mascot"), movementsDir: join(brandDir, "mascot", "movements"),
+    reelsDir: join(brandDir, "reels"),
+    questionsMd: questionsFile(data),
     dataDir: data, settingsFile: join(data, "settings.json"), scheduledFile: join(data, "scheduled.json"),
     dailyDir: join(data, "daily"), analyticsDir: join(data, "analytics"), ideasDir: join(data, "ideas"),
     seriesFile: join(data, "series.json"), locksDir: join(data, "locks"), notificationsFile: join(data, "notifications.json"),

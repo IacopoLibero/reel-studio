@@ -14,11 +14,11 @@ export function hubDataDir(): string {
 }
 export const scheduledFile = (dir = hubDataDir()) => join(dir, 'scheduled.json');
 
-/** State key: path after "/reels/" if present, else the folder name. */
+/** State key "<brand>/<folder>" of a reel folder .../brand/<brand>/reels/<folder>; any other path gives its folder name. */
 export function reelKey(reelDir: string): string {
   const clean = reelDir.replace(/\/+$/, '');
-  const i = clean.lastIndexOf('/reels/');
-  return i >= 0 ? clean.slice(i + 7) : clean.split('/').pop()!;
+  const m = /\/brand\/([^/]+)\/reels\/([^/]+)$/.exec(clean);
+  return m ? `${m[1]}/${m[2]}` : clean.split('/').pop()!;
 }
 
 export async function readState(file = scheduledFile()): Promise<ScheduledState> {

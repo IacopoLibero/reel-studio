@@ -47,7 +47,7 @@ export interface FontList { names: string[]; checked: boolean }
 export interface Uploaded { id: string; size: number; ext: string }
 export interface ImportPreview {
   importId: string;
-  preview: { brand: Record<string, unknown> & { slug: string; name: string }; styleMd: boolean; questions: boolean; logo: "png" | "svg" | null; voice: boolean; warnings: string[] };
+  preview: { brand: Record<string, unknown> & { slug: string; name: string }; styleMd: boolean; questions: boolean; logo: "png" | null; voice: boolean; warnings: string[] };
 }
 export interface InterviewMessage { role: "user" | "assistant"; text: string }
 export interface InterviewSummary { [key: string]: unknown }

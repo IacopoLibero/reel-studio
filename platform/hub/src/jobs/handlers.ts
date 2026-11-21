@@ -1,4 +1,4 @@
-import { countPngs, moveDir, readMoveFrames } from "../character/gallery.js";
+import { characterScript, countPngs, moveDir, readMoveFrames } from "../character/gallery.js";
 import { parseStreamLine, initialStreamState, reduceStream, STEPS } from "../character/claude-stream.js";
 import { ALLOWED_TOOLS, buildAddMovePrompt, renderCommand } from "../character/prompt.js";
 import { jobEnv } from "../env.js";
@@ -34,18 +34,19 @@ export type Handler = (job: Job, ctx: HandlerCtx) => Promise<Record<string, unkn
 
 const DEFAULT_FRAMES = 48;
 
-/** The character of the job's brand: its id names the Blender script (mascot/<id>.py). */
-export function characterOf(ctx: HandlerCtx): { id: string; name: string } {
+/** The character of the job's brand: its id names the Blender script (brand/<slug>/mascot/<id>.py). */
+export function characterOf(ctx: HandlerCtx): { id: string; name: string; mascotDir: string } {
   const c = ctx.brand?.brand.character;
   if (!c?.enabled) throw new Error("This brand has no character.");
-  return { id: c.id, name: c.name };
+  return { id: c.id, name: c.name, mascotDir: (ctx.brand as NonNullable<typeof ctx.brand>).paths.mascotDir };
 }
 
 /** Polls the PNG count of a move against 2 * frames and reports it as progress between `from` and `to`. */
 function watchRender(ctx: HandlerCtx, move: string, from: number, to: number, label: string): () => void {
   const timer = setInterval(() => {
-    const total = 2 * (readMoveFrames(ctx.root, characterOf(ctx).id, move) ?? DEFAULT_FRAMES);
-    const count = countPngs(moveDir(ctx.root, move), ctx.startedAtMs);
+    const c = characterOf(ctx);
+    const total = 2 * (readMoveFrames(c.mascotDir, c.id, move) ?? DEFAULT_FRAMES);
+    const count = countPngs(moveDir(c.mascotDir, move), ctx.startedAtMs);
     ctx.update({ progress: from + (to - from) * Math.min(1, count / total), step: `${label}: ${Math.min(count, total)} / ${total} images` });
   }, 1000);
   return () => clearInterval(timer);
@@ -59,7 +60,8 @@ export const instagramSchedule: Handler = async (job, ctx) => {
 
 export const blenderRender: Handler = async (job, ctx) => {
   const move = String(job.params.move);
-  const cmd = renderCommand(ctx.root, characterOf(ctx).id, move);
+  const character = characterOf(ctx);
+  const cmd = renderCommand(characterScript(character.mascotDir, character.id), move);
   ctx.update({ step: "Rendering with Blender", stepIndex: 0, log: `$ ${cmd.text}` });
   const stop = watchRender(ctx, move, 0, 0.98, "Rendering");
   try {
@@ -70,12 +72,13 @@ export const blenderRender: Handler = async (job, ctx) => {
     if (ctx.signal.aborted) throw new Error("Cancelled");
     if (code !== 0) throw new Error(`Blender stopped with exit code ${code}. See the log for details.`);
   } finally { stop(); }
-  return { move, images: countPngs(moveDir(ctx.root, move)) };
+  return { move, images: countPngs(moveDir(character.mascotDir, move)) };
 };
 
 export const claudeTask: Handler = async (job, ctx) => {
   const move = String(job.params.move);
-  const prompt = buildAddMovePrompt(ctx.root, characterOf(ctx), move, String(job.params.request));
+  const character = characterOf(ctx);
+  const prompt = buildAddMovePrompt(ctx.root, character.mascotDir, character, move, String(job.params.request));
   const args = ["-p", "--output-format", "stream-json", "--verbose", "--permission-mode", "acceptEdits", "--allowedTools", ALLOWED_TOOLS];
   if (ctx.settings.claudeModel) args.push("--model", ctx.settings.claudeModel);
   let state = initialStreamState();
@@ -104,7 +107,7 @@ export const claudeTask: Handler = async (job, ctx) => {
     if (state.failed) throw new Error(`Claude reported an error: ${state.summary || "unknown"}`);
     if (code !== 0 && !state.finished) throw new Error(`Claude stopped with exit code ${code}. Is it installed and signed in?`);
   } finally { stop(); }
-  return { move, summary: state.summary, cost, images: countPngs(moveDir(ctx.root, move)) };
+  return { move, summary: state.summary, cost, images: countPngs(moveDir(character.mascotDir, move)) };
 };
 
 export const HANDLERS: Partial<Record<Job["type"], Handler>> = {

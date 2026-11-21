@@ -21,9 +21,9 @@ const TITLES = { "analytics.collect": "Read Instagram results", "reel.insights":
 const STEPS = { "analytics.collect": COLLECT_STEPS, "reel.insights": INSIGHTS_STEPS, "series.plan": SERIES_STEPS, "schedule.suggest": SUGGEST_STEPS } as const;
 
 /** One job of each analytics type at a time. */
-export function analyticsSpec(body: AnalyticsJobBody, d: { root: string; jobs: readonly Job[]; brand: string }): JobSpec {
+export function analyticsSpec(body: AnalyticsJobBody, d: { root: string; dataDir: string; jobs: readonly Job[]; brand: string }): JobSpec {
   if (d.jobs.some((j) => j.type === body.type && j.brand === d.brand && (j.status === "queued" || j.status === "running"))) throw new AnalyticsJobError("This is already running.");
   const params: Record<string, unknown> = { ...body.params, brand: d.brand };
-  if ((body.type === "reel.insights" || body.type === "series.plan") && !brandExists(d.root, d.brand)) throw new AnalyticsJobError("That brand has no reel-questions.md.");
+  if ((body.type === "reel.insights" || body.type === "series.plan") && !brandExists(d.dataDir)) throw new AnalyticsJobError("That brand has no reel-questions.md.");
   return { type: body.type, brand: d.brand, title: TITLES[body.type], steps: [...STEPS[body.type]], params };
 }

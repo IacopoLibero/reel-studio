@@ -1,4 +1,4 @@
-import { cpSync, mkdirSync, mkdtempSync } from "node:fs";
+import { mkdirSync, mkdtempSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { BrandRegistry } from "../../src/brands/registry.js";
@@ -13,13 +13,12 @@ export const TEMPLATE = join(import.meta.dirname, "../../../../brand/_template")
 
 export interface Env { tmp: string; root: string; data: string; reg: BrandRegistry; svc: CreatorServices; daily: string[]; patches: JobPatch[]; ctx: (job: Job) => HandlerCtx }
 
-/** A scratch project (with the real brand/_template), a registry, a settings store and the creator services. */
+/** A scratch workspace and data folder, a registry that reads the real brand/_template of the program, a settings store and the creator services. */
 export function makeEnv(extra: { claudeBin?: string } = {}): Env {
   const tmp = mkdtempSync(join(tmpdir(), "creator-"));
   const root = join(tmp, "root"), data = join(tmp, "data");
   mkdirSync(join(root, "brand"), { recursive: true }); mkdirSync(data, { recursive: true });
-  cpSync(TEMPLATE, join(root, "brand/_template"), { recursive: true });
-  const reg = new BrandRegistry({ root, dataDir: data, chromeRoot: join(data, "chrome") });
+  const reg = new BrandRegistry({ root, dataDir: data, chromeRoot: join(data, "chrome"), programRoot: join(TEMPLATE, "..", "..") });
   const settings = new SettingsStore(join(data, "settings.json"), { brandFile: (s) => reg.paths(s).settingsFile, defaultSlug: () => reg.defaultSlug(), accountOf: (s) => reg.get(s)?.instagram.account ?? "" });
   const daily: string[] = [];
   const svc: CreatorServices = { root, dataDir: data, brands: reg, uploads: new UploadStore(join(data, "tmp-uploads")), settings, ensureDaily: (s) => { daily.push(s); return true; } };

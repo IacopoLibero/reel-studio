@@ -19,7 +19,7 @@ beforeEach(async () => {
   root = join(tmp, "root"); data = join(tmp, "data");
   mkdirSync(data);
   const made = testRegistry(root, data, "acme"); ctx = made.ctx; bdata = ctx.paths.dataDir;
-  copyFileSync(join(import.meta.dirname, "fixtures/reel-questions.md"), join(root, "brand/acme/reel-questions.md"));
+  copyFileSync(join(import.meta.dirname, "fixtures/reel-questions.md"), join(bdata, "reel-questions.md"));
   app = fastify();
   const deps = { config: { root, dataDir: data }, brands: made.reg } as unknown as AppDeps;
   await app.register(async (s) => ideasRoutes(s, deps, makeScope(deps)), { prefix: "/api" });
@@ -59,7 +59,7 @@ describe("reel.ideas job request", () => {
   });
   it("refuses a brand without a question list and a second run at once", () => {
     const d = { root, brand: ctx, settings: DEFAULT_SETTINGS, jobs: [] as Job[] };
-    const bare = { ...ctx, slug: "nope", paths: { ...ctx.paths, slug: "nope" } };
+    const bare = { ...ctx, slug: "nope", paths: { ...ctx.paths, slug: "nope", dataDir: join(ctx.paths.dataDir, "..", "nope") } };
     expect(() => buildSpec({ type: "reel.ideas", params: { count: 3 } }, { ...d, brand: bare })).toThrow(JobRequestError);
     const spec = buildSpec({ type: "reel.ideas", params: { count: 3 } }, d);
     expect(spec.brand).toBe("acme");

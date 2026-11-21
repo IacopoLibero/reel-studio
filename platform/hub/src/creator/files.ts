@@ -12,16 +12,6 @@ export const isJpeg = (b: Buffer): boolean => startsWith(b, [0xff, 0xd8, 0xff]);
 export const isZip = (b: Buffer): boolean => startsWith(b, [0x50, 0x4b, 0x03, 0x04]) || startsWith(b, [0x50, 0x4b, 0x05, 0x06]);
 export const isWav = (b: Buffer): boolean => b.length > 44 && b.toString("latin1", 0, 4) === "RIFF" && b.toString("latin1", 8, 12) === "WAVE";
 
-/** An SVG that is only drawing: no scripts, no event handlers, no embedded pages, no links to other files. */
-export function isSafeSvg(b: Buffer): boolean {
-  const t = b.toString("utf8");
-  if (t.includes("\u0000") || !/<svg[\s>]/i.test(t.slice(0, 2000))) return false;
-  if (/<\s*(script|foreignObject|iframe|object|embed)\b/i.test(t)) return false;
-  if (/\son[a-z]+\s*=/i.test(t) || /javascript:/i.test(t)) return false;
-  if (/<!ENTITY/i.test(t)) return false;
-  return !/(?:xlink:)?href\s*=\s*["'](?!#|data:image\/(?:png|jpeg);base64,)/i.test(t);
-}
-
 export interface Checked { ext: string; mime: string }
 
 /** Validates a file of one kind and says what it is. Throws a message a person can act on. */
@@ -29,9 +19,9 @@ export function checkFile(kind: UploadKind, data: Buffer): Checked {
   if (data.length === 0) throw new FileError("The file is empty.");
   if (data.length > LIMITS[kind]) throw new FileError(`The file is too big: the limit is ${LIMITS[kind] / MB} MB.`);
   if (kind === "logo") {
+    // Covers and reel closings draw public/logo.png, so a logo is a PNG.
     if (isPng(data)) return { ext: "png", mime: "image/png" };
-    if (isSafeSvg(data)) return { ext: "svg", mime: "image/svg+xml" };
-    throw new FileError("The logo must be a PNG or a plain SVG (no scripts or links).");
+    throw new FileError("The logo must be a PNG.");
   }
   if (kind === "sheet") {
     if (isPng(data)) return { ext: "png", mime: "image/png" };

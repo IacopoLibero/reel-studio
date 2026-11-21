@@ -41,7 +41,7 @@ export function ImportEntry({ options, onCreated }: { options: CreatorOptions; o
 
   return (
     <>
-      <Card title="Choose a brand folder or a zip" intro="It must hold brand.json at the top. Imported: brand.json, style.md, reel-questions.md, the logo (logo.png or logo.svg) and the voice files. Anything else is ignored. Files up to 25 MB each, 40 MB in all.">
+      <Card title="Choose a brand folder or a zip" intro="It must hold brand.json at the top (or in an identity folder). Imported: brand.json, style.md, reel-questions.md, the logo (logo.png) and the voice files. Anything else is ignored. Files up to 25 MB each, 40 MB in all.">
         <Row label="A zip file" htmlFor="im-zip"><input id="im-zip" type="file" accept=".zip,application/zip" disabled={busy} onChange={(e) => { onZip(e.target.files?.[0]); e.target.value = ""; }} /></Row>
         <Row label="Or a folder" htmlFor="im-dir" help="Your browser asks to upload the folder's files to this hub.">
           <input id="im-dir" type="file" disabled={busy} {...({ webkitdirectory: "", directory: "" } as Record<string, string>)} multiple onChange={(e) => { onFolder(e.target.files); e.target.value = ""; }} />

@@ -1,21 +1,23 @@
 import { existsSync, readdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
+import { questionsFile } from "../brands/paths.js";
 import { withFileLock } from "../factory/allocator.js";
 import { parseQuestions } from "../factory/questions.js";
 import { appendIdeas } from "./append.js";
 import { isDuplicate } from "./dedupe.js";
 import { readBatch, writeBatch, type IdeaBatch, type StoredIdea } from "./store.js";
 
-const SAFE_BRAND = /^[A-Za-z0-9_-]+$/;
-export const questionsPath = (root: string, brand: string) => join(root, "brand", brand, "reel-questions.md");
+/** Where the brand's question list is: reel-questions.md in the brand's data folder. */
+export const questionsPath = questionsFile;
 
-export function brandExists(root: string, brand: string): boolean {
-  return SAFE_BRAND.test(brand) && existsSync(questionsPath(root, brand));
+/** True when the brand (given by its data folder) has a question list. */
+export function brandExists(dataDir: string): boolean {
+  return existsSync(questionsPath(dataDir));
 }
 
 /** Every question of the brand, done ones included. */
-export const existingQuestions = (root: string, brand: string): string[] =>
-  parseQuestions(readFileSync(questionsPath(root, brand), "utf8"), brand).map((q) => q.question);
+export const existingQuestions = (dataDir: string, brand: string): string[] =>
+  parseQuestions(readFileSync(questionsPath(dataDir), "utf8"), brand).map((q) => q.question);
 
 /** Blog post slugs: the .ts files in the posts folder that are not the index or the translations. */
 export function blogSlugs(blogDir: string): string[] {
@@ -44,7 +46,7 @@ export async function resolveBatch(root: string, dataDir: string, batchId: strin
     const toReject = open(reject.filter((r) => !accept.includes(r)));
     let result: ResolveResult = { added: [], skipped: [], rejected: toReject.length };
     if (toAdd.length) {
-      const file = questionsPath(root, batch.brand);
+      const file = questionsPath(dataDir);
       const out = appendIdeas(readFileSync(file, "utf8"), toAdd);
       if (out.added.length) { writeFileSync(`${file}.tmp`, out.md); renameSync(`${file}.tmp`, file); }
       result = { ...result, added: out.added, skipped: out.skipped };
@@ -59,7 +61,7 @@ export async function resolveBatch(root: string, dataDir: string, batchId: strin
 
 /** Ideas still waiting for a decision, flagged when the question list now already has them. */
 export function pendingView(root: string, dataDir: string, batches: IdeaBatch[]) {
-  return batches.map((b) => ({ b, existing: brandExists(root, b.brand) ? existingQuestions(root, b.brand) : [] })).map(({ b, existing }) => ({
+  return batches.map((b) => ({ b, existing: brandExists(dataDir) ? existingQuestions(dataDir, b.brand) : [] })).map(({ b, existing }) => ({
     id: b.id, createdAt: b.createdAt, brand: b.brand, requested: b.requested, dropped: b.dropped.length, notes: b.notes, skillsUsed: b.skillsUsed,
     ideas: b.ideas.filter((i) => !b.handled[i.id]).map((i) => ({ ...i, duplicate: isDuplicate(i.question, existing) })),
   })).filter((b) => b.ideas.length > 0);

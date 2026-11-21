@@ -57,26 +57,26 @@ export function contentRoutes(app: FastifyInstance, d: AppDeps, scope: Scope): v
     try { return (await sched.openLoginWindow(targetOf(b))) ?? { opened: true, account: b.brand.instagram.account }; } catch (e) { return reply.code(502).send({ error: (e as Error).message }); }
   });
 
-  // The character of the brand (public/mascot/<move>/ frames and mascot/<id>.py): 404 for a brand without one.
+  // The character of the brand (brand/<slug>/mascot/: <id>.py and the rendered movements/<move>/ frames): 404 for a brand without one.
   const characterOf = (b: ReturnType<Scope>) => {
     if (!b.brand.character.enabled) throw new HttpError(404, "This brand has no character.");
-    return b.brand.character;
+    return { ...b.brand.character, mascotDir: b.paths.mascotDir };
   };
 
-  app.get("/character", async (req) => { const c = characterOf(scope(req)); return listMoves(d.config.root, c.id); });
+  app.get("/character", async (req) => { const c = characterOf(scope(req)); return listMoves(d.config.root, c.mascotDir, c.id); });
 
   app.get<{ Params: { move: string; file: string } }>("/character/:move/frame/:file", async (req, reply) => {
-    characterOf(scope(req));
+    const c = characterOf(scope(req));
     const { move, file } = req.params;
-    const path = join(moveDir(d.config.root, move), file);
+    const path = join(moveDir(c.mascotDir, move), file);
     if (!validMoveName(move) || !/^[fo]-\d{4}\.png$/.test(file) || !existsSync(path)) return reply.code(404).send({ error: "Frame not found." });
     return reply.type("image/png").header("Cache-Control", "private, max-age=60").send(createReadStream(path));
   });
 
   app.get<{ Params: { move: string } }>("/character/:move", async (req, reply) => {
-    characterOf(scope(req));
+    const c = characterOf(scope(req));
     if (!validMoveName(req.params.move)) return reply.code(400).send({ error: "Invalid move name." });
-    return { images: countPngs(moveDir(d.config.root, req.params.move)) };
+    return { images: countPngs(moveDir(c.mascotDir, req.params.move)) };
   });
 
   app.get("/factory/questions", async (req) => { const b = scope(req); return listFactoryQuestions(d.config.root, b.slug, b.paths.dataDir, d.settings.get(b.slug), d.store.list()); });

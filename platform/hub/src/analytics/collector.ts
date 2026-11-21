@@ -98,7 +98,7 @@ export async function collectInto(run: ToolRunner, o: CollectOpts): Promise<Coll
   log(`${raw.length} posts found, ${reelsRaw.length} reels`);
 
   const refs = loadReelRefs(o.root, o.dataDir, o.brand);
-  const questions = new Map(readBrandQuestions(o.root, o.brand).filter((q) => q.folder).map((q) => [`${q.brand}/${q.folder}`, q.question]));
+  const questions = new Map(readBrandQuestions(o.dataDir, o.brand).filter((q) => q.folder).map((q) => [`${q.brand}/${q.folder}`, q.question]));
   const warnings: string[] = [];
   const insights = new Map<string, Insights>();
   let limited = false;

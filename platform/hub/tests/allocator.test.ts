@@ -8,8 +8,8 @@ let root: string, locks: string;
 beforeEach(() => {
   root = mkdtempSync(join(tmpdir(), "hub-alloc-"));
   locks = join(root, "locks");
-  mkdirSync(join(root, "reels/acme/3-old"), { recursive: true });
-  mkdirSync(join(root, "reels/acme/21-newer"), { recursive: true });
+  mkdirSync(join(root, "brand/acme/reels/3-old"), { recursive: true });
+  mkdirSync(join(root, "brand/acme/reels/21-newer"), { recursive: true });
 });
 afterEach(() => rmSync(root, { recursive: true, force: true }));
 

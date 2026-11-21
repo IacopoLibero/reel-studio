@@ -18,7 +18,7 @@ Brand: {{BRAND_NAME}} ({{WEBSITE}}). Colours and fonts match the website.
 - It runs in the background with no window: `scripts/ensure-voice.sh` starts VoiceStudio's own server detached when `GET /health` does not answer, and selects `voxcpm2`. `scripts/voice.mjs` calls it first. Never ask the person to open the app and never launch the app window.
 - Speak with `POST /generate` (multipart: `text`, `language`, `instruct`, optional `ref_audio` + `ref_text`, `guidance_scale=1.6`).
 - To keep the same voice in every sentence and every reel, clone from a saved sample: pass the sample as `ref_audio` and its spoken text as `ref_text`.
-- Chosen voice: **{{VOICE_NAME}}**, cloned from `brand/{{BRAND}}/voice.wav` (its words are in `voice.txt` next to it, optional settings in `voice.json`). See `voice-sample.md` in this folder for how to record it.
+- Chosen voice: **{{VOICE_NAME}}**, cloned from `{{VOICE_BASE}}.wav` (its words are in `{{VOICE_BASE}}.txt`, optional settings in `{{VOICE_BASE}}.json`). See `.claude/skills/reel/voice-sample.md` for how to record it.
 - Word times: Remotion Whisper (`whisper.cpp/`, model medium, installed by `scripts/setup-whisper.mjs`).
 - Write scripts in a chatty, spoken style: short sentences, "so", "and", no formal wording.
 - If the engine stops with an out-of-memory error, retry once.
@@ -27,7 +27,7 @@ Brand: {{BRAND_NAME}} ({{WEBSITE}}). Colours and fonts match the website.
 - {{MASCOT_DESCRIPTION}} (delete this section if the brand has no mascot.)
 
 ## Closing hook (every reel)
-- Brand: {{BRAND_NAME}}, `{{WEBSITE}}`. Logo: `brand/{{BRAND}}/logo.png`.
+- Brand: {{BRAND_NAME}}, `{{WEBSITE}}`. Logo: `{{LOGO_PATH}}`.
 - The last spoken sentence is a call to action, 12 words at most. Two options; the person picks one at the start of every reel:
   - **A: {{OFFER_NAME}}.** Names the website. Default line: "{{CLOSING_A_LINE}}"
   - **B: Follow for tips.** Line: "{{CLOSING_B_LINE}}" The website is not spoken but still shows on screen.

@@ -15,8 +15,8 @@ const stateSchema = z.object({
 });
 export type StudioState = z.infer<typeof stateSchema>;
 
-/** characters/<slug>/: the reference sheet, the plan, the builder script and the previews of a character made from a picture. Git-ignored. */
-export const studioDir = (root: string, slug: string): string => join(root, "characters", slug);
+/** brand/<slug>/mascot/studio/: the reference sheet, the plan, the builder script and the previews of a character made from a picture. */
+export const studioDir = (root: string, slug: string): string => join(root, "brand", slug, "mascot", "studio");
 
 export function readState(root: string, slug: string): StudioState {
   try { return stateSchema.parse(JSON.parse(readFileSync(join(studioDir(root, slug), "state.json"), "utf8"))); } catch { return stateSchema.parse({}); }

@@ -20,15 +20,15 @@ afterEach(() => { delete process.env.FAKE_MODE; rmSync(env.tmp, { recursive: tru
 const run = (params: Record<string, unknown> = {}) => characterBuild(job("character.build", "acme", params), env.ctx(job("character.build", "acme", params)));
 
 describe("the character studio files", () => {
-  it("keeps the sheet, the state and the previews under characters/<slug>", () => {
+  it("keeps the sheet, the state and the previews under brand/<slug>/mascot/studio", () => {
     expect(sheetFile(env.root, "acme")).toBeNull();
     expect(saveSheet(env.root, "acme", PNG)).toBe("reference-sheet.png");
-    expect(existsSync(join(env.root, "characters/acme/reference-sheet.png"))).toBe(true);
+    expect(existsSync(join(env.root, "brand/acme/mascot/studio/reference-sheet.png"))).toBe(true);
     expect(() => saveSheet(env.root, "acme", Buffer.from("nope"))).toThrow(/PNG or a JPG/);
     expect(readState(env.root, "acme").status).toBe("draft");
     expect(patchState(env.root, "acme", { name: "Bun" }).name).toBe("Bun");
     expect(listPreviews(env.root, "acme")).toEqual([]);
-    writeFileSync(join(env.root, "characters/acme/state.json"), "{broken");
+    writeFileSync(join(env.root, "brand/acme/mascot/studio/state.json"), "{broken");
     expect(readState(env.root, "acme").name).toBe("");
   });
 });
@@ -38,7 +38,7 @@ describe("character.build with a fake claude", () => {
   it("writes a plan and builder and ends with a preview for approval", async () => {
     const r = await run();
     expect(r).toMatchObject({ previews: ["front.png"], experimental: true, plan: { parts: 1 } });
-    expect(JSON.parse(readFileSync(join(env.root, "characters/acme/plan.json"), "utf8")).character).toBe("Bun");
+    expect(JSON.parse(readFileSync(join(env.root, "brand/acme/mascot/studio/plan.json"), "utf8")).character).toBe("Bun");
     expect(readState(env.root, "acme")).toMatchObject({ status: "preview", builds: 1 });
     expect(env.patches.map((p) => p.step).filter(Boolean)).toEqual(["Read the sheet", "Plan", "Write the builder", "Render previews", "Done"]);
   });
@@ -50,13 +50,13 @@ describe("character.build with a fake claude", () => {
     expect(readState(env.root, "acme").builds).toBe(2);
   });
   it("fails clearly when there is no sheet, no plan, no preview, or Claude errors", async () => {
-    rmSync(join(env.root, "characters/acme/reference-sheet.png"));
+    rmSync(join(env.root, "brand/acme/mascot/studio/reference-sheet.png"));
     await expect(run()).rejects.toThrow(/no reference sheet/);
     saveSheet(env.root, "acme", PNG);
     process.env.FAKE_MODE = "noplan";
     await expect(run()).rejects.toThrow(/plan\.json/);
     process.env.FAKE_MODE = "nopreview";
-    rmSync(join(env.root, "characters/acme/previews"), { recursive: true, force: true });
+    rmSync(join(env.root, "brand/acme/mascot/studio/previews"), { recursive: true, force: true });
     await expect(run()).rejects.toThrow(/no new preview/);
     process.env.FAKE_MODE = "error";
     await expect(run()).rejects.toThrow(/boom/);
@@ -70,7 +70,7 @@ describe("character.build with a fake claude", () => {
 describe("character.build safety and job creation", () => {
   it("can only write inside the brand's character folder and cannot read credentials", () => {
     const t = characterTools("acme");
-    expect(t.allowed).toContain("Write(characters/acme/**)");
+    expect(t.allowed).toContain("Write(brand/acme/mascot/studio/**)");
     expect(t.allowed).not.toMatch(/Bash\(\*|,Bash,|WebFetch/);
     expect(t.allowed).toContain("Bash(bash scripts/slot.sh blender 1 --:*)");
     expect(t.denied).toContain("Read(**/.env)");
@@ -78,7 +78,7 @@ describe("character.build safety and job creation", () => {
   });
   it("tells Claude about the sheet, the colours, the notes, the Blender queue and that it is experimental", () => {
     const p = buildCharacterPrompt({ root: "/p", brand: testBrand("acme", { name: "Acme" }), sheet: "reference-sheet.png", notes: ["shorter arms"], fields: { what: "a bun", personality: "kind", extra: "" }, mascotExample: "mascot/x.py" });
-    for (const t of ["EXPERIMENTAL", "characters/acme/reference-sheet.png", "#2f6fed", "shorter arms", "bash scripts/slot.sh blender 1 --", "BLENDER_WORKBENCH", "mascot/x.py", "write only inside characters/acme/", "a bun"]) expect(p).toContain(t);
+    for (const t of ["EXPERIMENTAL", "brand/acme/mascot/studio/reference-sheet.png", "#2f6fed", "shorter arms", "bash scripts/slot.sh blender 1 --", "BLENDER_WORKBENCH", "mascot/x.py", "write only inside brand/acme/mascot/studio/", "a bun"]) expect(p).toContain(t);
     expect(buildCharacterPrompt({ root: "/p", brand: testBrand("acme"), sheet: "s.png", notes: [], fields: { what: "", personality: "", extra: "" }, mascotExample: null })).not.toContain("For the method only");
   });
   it("uses the blender-run wrapper when it is on the path, the flatpak otherwise", () => {

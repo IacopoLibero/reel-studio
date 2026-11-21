@@ -10,7 +10,7 @@ import { validMoveName } from "../character/moves-parser.js";
 import { CHARACTER_STEPS } from "../creator/character-job.js";
 import { sheetFile } from "../creator/studio.js";
 import { minutesAhead, MIN_LEAD_MINUTES } from "../slots.js";
-import { readScheduled, resolveReelFile, scanReels } from "../reels/scanner.js";
+import { readScheduled, reelDirOf, resolveReelFile, scanReels } from "../reels/scanner.js";
 import type { Job, Settings } from "../shared/types.js";
 import type { JobSpec } from "./store.js";
 import { basename, join } from "node:path";
@@ -41,7 +41,7 @@ export interface Deps { root: string; brand: BrandCtx; settings: Settings; jobs:
 export const MAKE_JOB_STEPS = ["Script", "Voice", "Plan", "Build", "Render", "Checks", "Caption", "Cover", "Done"];
 
 function makeSpec(p: { questionId: string; closing?: "A" | "B"; rerun?: { folder: string; note: string } }, d: Deps): JobSpec {
-  const q = readBrandQuestions(d.root, d.brand.slug).find((x) => x.id === p.questionId);
+  const q = readBrandQuestions(d.brand.paths.dataDir, d.brand.slug).find((x) => x.id === p.questionId);
   if (!q) throw new JobRequestError("That question is not in the list any more.");
   if (q.done && !p.rerun) throw new JobRequestError("A reel for this question is already made.");
   if (activeMakeJobs(d.jobs).some((j) => j.params.questionId === q.id)) throw new JobRequestError("This question is already in the factory.");
@@ -54,7 +54,7 @@ function makeSpec(p: { questionId: string; closing?: "A" | "B"; rerun?: { folder
 }
 
 function ideasSpec(p: { count: number }, d: Deps): JobSpec {
-  if (!brandExists(d.root, d.brand.slug)) throw new JobRequestError("That brand has no reel-questions.md.");
+  if (!brandExists(d.brand.paths.dataDir)) throw new JobRequestError("That brand has no reel-questions.md.");
   if (d.jobs.some((j) => j.type === "reel.ideas" && j.brand === d.brand.slug && (j.status === "queued" || j.status === "running"))) throw new JobRequestError("Ideas are already being generated.");
   return { type: "reel.ideas", brand: d.brand.slug, title: `Find ${p.count} new ideas`, steps: IDEAS_STEPS, params: { count: p.count, brand: d.brand.slug } };
 }
@@ -64,7 +64,7 @@ export function buildSpec(body: CreateBody, d: Deps): JobSpec {
   if (body.type === "daily.run") throw new JobRequestError("The daily run is started from the Daily page.");
   if (body.type === "reel.ideas") return ideasSpec(body.params, d);
   if (body.type === "analytics.collect" || body.type === "reel.insights" || body.type === "series.plan" || body.type === "schedule.suggest") {
-    try { return analyticsSpec(body, { root: d.root, jobs: d.jobs, brand: d.brand.slug }); } catch (e) { throw e instanceof AnalyticsJobError ? new JobRequestError(e.message) : e; }
+    try { return analyticsSpec(body, { root: d.root, dataDir: d.brand.paths.dataDir, jobs: d.jobs, brand: d.brand.slug }); } catch (e) { throw e instanceof AnalyticsJobError ? new JobRequestError(e.message) : e; }
   }
   if (body.type === "character.build") {
     if (!sheetFile(d.root, d.brand.slug)) throw new JobRequestError("Upload the reference sheet first.");
@@ -97,6 +97,6 @@ function scheduleSpec(p: { reel: string; date: string; time: string }, d: Deps):
   const day = new Date(`${p.date}T12:00:00Z`).toLocaleDateString("en-GB", { weekday: "short", day: "numeric", timeZone: "UTC" });
   return {
     type: "instagram.schedule", brand: d.brand.slug, title: `Reel ${reel.n} · ${day} ${p.time}`, steps: SCHEDULE_STEPS,
-    params: { reel: p.reel, date: p.date, time: p.time, slot: `${p.date}T${p.time}`, reelDir: join(d.root, "reels", p.reel), video: basename(file("mp4")), timezone: tz },
+    params: { reel: p.reel, date: p.date, time: p.time, slot: `${p.date}T${p.time}`, reelDir: reelDirOf(d.root, ...(p.reel.split("/") as [string, string])), video: basename(file("mp4")), timezone: tz },
   };
 }

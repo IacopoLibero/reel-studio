@@ -1,13 +1,13 @@
 import { describe, it, expect } from "vitest";
 import { buildIdeasPrompt, IDEAS_ALLOWED_TOOLS } from "../src/ideas/prompt.js";
 
-const base = { root: "/r", brand: "acme", count: 10, blogDir: "/er/app/blog/posts", slugs: ["post-a", "post-b"], hasCsv: false, hasComments: false, hasResults: false };
+const base = { root: "/r", brand: "acme", dataDir: "/d/brands/acme", count: 10, blogDir: "/er/app/blog/posts", slugs: ["post-a", "post-b"], hasCsv: false, hasComments: false, hasResults: false };
 
 describe("buildIdeasPrompt", () => {
   const p = buildIdeasPrompt(base);
   it("lists the files to read", () => {
-    expect(p).toContain("brand/acme/style.md");
-    expect(p).toContain("brand/acme/reel-questions.md");
+    expect(p).toContain("brand/acme/identity/style.md");
+    expect(p).toContain("/d/brands/acme/reel-questions.md");
     expect(p).toMatch(/done ones/i);
     expect(p).toContain("/er/app/blog/posts");
     expect(p).toContain("post-a");

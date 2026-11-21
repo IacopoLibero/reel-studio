@@ -1,5 +1,7 @@
 import { existsSync, readdirSync, readFileSync, writeFileSync, renameSync, rmSync } from "node:fs";
 import { join } from "node:path";
+import { questionsFile } from "../brands/paths.js";
+import { reelDirOf } from "../reels/scanner.js";
 import { jobEnv } from "../env.js";
 import { parseStreamLine } from "../character/claude-stream.js";
 import type { Handler } from "../jobs/handlers.js";
@@ -9,13 +11,10 @@ import { MAKE_ALLOWED_TOOLS, MAKE_DENIED_TOOLS, buildReelPrompt } from "./make-p
 import { MAKE_MARKS, MAKE_STEPS, initialMakeState, missingOutputs, reduceMake, type MakeState } from "./make-stream.js";
 import { parseQuestions, tickQuestion, type SourceKind } from "./questions.js";
 
-const questionsFile = (root: string, brand: string) => join(root, "brand", brand, "reel-questions.md");
-
 const listFiles = (dir: string): string[] => { try { return readdirSync(dir); } catch { return []; } };
 
 /** Ticks the question in reel-questions.md under a lock, since the file is also edited by hand and by the reel skill. */
-export async function tickInFile(root: string, lockDir: string, brand: string, question: string, folder: string, closing: "A" | "B"): Promise<boolean> {
-  const file = questionsFile(root, brand);
+export async function tickInFile(file: string, lockDir: string, brand: string, question: string, folder: string, closing: "A" | "B"): Promise<boolean> {
   return withFileLock(join(lockDir, `questions-${brand}.lock`), async () => {
     const before = readFileSync(file, "utf8");
     const after = tickQuestion(before, question, folder, closing);
@@ -30,12 +29,12 @@ export const reelMake: Handler = async (job, ctx) => {
   const p = job.params as { brand: string; question: string; closing: "A" | "B"; source: string | null; sourceKind: SourceKind };
   const lockDir = join(ctx.dataDir, "locks");
   const redo = typeof job.params.rerunFolder === "string" && /^\d+-[a-z0-9-]+$/.test(job.params.rerunFolder) ? job.params.rerunFolder : null;
-  const alloc = redo ? { folder: redo, path: join(ctx.root, "reels", p.brand, redo) } : await allocateReelFolder(ctx.root, p.brand, p.question, lockDir);
+  const alloc = redo ? { folder: redo, path: reelDirOf(ctx.root, p.brand, redo) } : await allocateReelFolder(ctx.root, p.brand, p.question, lockDir);
   if (redo) {
     if (!existsSync(alloc.path)) throw new Error(`Folder ${redo} to redo does not exist.`);
     for (const f of listFiles(alloc.path)) if (/\.mp4$/i.test(f) || f === "cover.png" || f === "caption.md") rmSync(join(alloc.path, f), { force: true });
   }
-  ctx.update({ log: `Folder reels/${p.brand}/${alloc.folder}, closing ${p.closing}`, step: MAKE_STEPS[0], progress: MAKE_MARKS[0] });
+  ctx.update({ log: `Folder brand/${p.brand}/reels/${alloc.folder}, closing ${p.closing}`, step: MAKE_STEPS[0], progress: MAKE_MARKS[0] });
   const prompt = buildReelPrompt({ root: ctx.root, brand: p.brand, question: p.question, closing: p.closing, source: p.source, sourceKind: p.sourceKind, folder: alloc.folder, blogDir: ctx.blogDir, ...(ctx.brand ? { brandInfo: ctx.brand.brand } : {}), ...(typeof job.params.note === "string" ? { note: job.params.note } : {}) });
   const args = ["-p", "--output-format", "stream-json", "--verbose", "--permission-mode", "acceptEdits", "--allowedTools", MAKE_ALLOWED_TOOLS, "--disallowedTools", MAKE_DENIED_TOOLS];
   if (ctx.settings.claudeModel) args.push("--model", ctx.settings.claudeModel);
@@ -73,7 +72,7 @@ export const reelMake: Handler = async (job, ctx) => {
     }
   } finally { clearInterval(poll); }
   if (!skills.includes("reel-hooks")) ctx.update({ log: "Warning: reel-hooks was not called for the opening question." });
-  const ticked = await tickInFile(ctx.root, lockDir, p.brand, p.question, alloc.folder, p.closing).catch((e: Error) => { ctx.update({ log: `Could not tick the question: ${e.message}` }); return false; });
+  const ticked = await tickInFile(questionsFile(ctx.dataDir), lockDir, p.brand, p.question, alloc.folder, p.closing).catch((e: Error) => { ctx.update({ log: `Could not tick the question: ${e.message}` }); return false; });
   apply({ kind: "files", present: listFiles(alloc.path) });
   return { folder: alloc.folder, key: `${p.brand}/${alloc.folder}`, closing: p.closing, summary: state.summary, ticked, exists: existsSync(alloc.path), skillsUsed: skills };
 };
