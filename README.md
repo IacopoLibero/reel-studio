@@ -281,7 +281,7 @@ An installation made before brands existed may still carry `BRAND`, `IG_USER_ID`
   login. If you start Claude by hand in the container, use `claude-hub`.
 - **Instagram "Reels" notice or the month picker blocks the scheduler.** Instagram shows a one-time notice about reels and a month picker
   for the date. The scheduler handles both (see the scheduler section of [platform/docs/DESIGN.md](platform/docs/DESIGN.md)). If a job fails,
-  look at the screenshot of the failed step in `<studio folder>/data/brands/<slug>/shots/`, dismiss the notice once in the browser window of the Instagram page,
+  read its error in Jobs, dismiss the notice once in the browser window of the Instagram page,
   and run the job again. A `login_required` failure means: log in again on the Instagram page.
 - **Instagram scheduling limits.** About 30 days ahead, at least 20 minutes of lead time, 9:16 only.
 - **Out of GPU memory (8 GB).** Only one VoiceStudio can use the GPU: do not run another copy on the host. Voice jobs wait in a queue
