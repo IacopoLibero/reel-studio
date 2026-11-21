@@ -1,4 +1,4 @@
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
@@ -144,7 +144,29 @@ describe("moving a workspace", () => {
     const r = run(true);
     expect(r.verified).toBe(false);
     expect(r.problems.join(" ")).toContain("logo");
+    expect(r.problems.join(" ")).toContain("delete it and run this again");
     expect(read("brand/acme/identity/logo.png")).toBe("SOMEONE-ELSE");
+    // brand.json is written last and only after the copies were checked: acme is still an old brand, so the next run tries it again, and "plain" moved
+    expect(existsSync(join(ws, "brand/acme/identity/brand.json"))).toBe(false);
+    expect(findOldBrands(ws)).toEqual(["acme"]);
+    expect(existsSync(join(ws, "brand/plain/identity/brand.json"))).toBe(true);
+    rmSync(join(ws, "brand/acme/identity/logo.png"));
+    expect(run(true)).toMatchObject({ status: "applied", verified: true });
+    expect(read("brand/acme/identity/logo.png")).toBe("LOGO");
+  });
+  it("keeps the brands of an earlier run in the record when a later run moves more", () => {
+    put("brand/late/brand.json", JSON.stringify(testBrand("late", { name: "Late" }))); put("brand/late/logo.png", "LATE-LOGO"); put("brand/late/identity/logo.png", "OTHER");
+    expect(run(true).verified).toBe(false); // late fails, acme and plain move
+    expect(JSON.parse(read(".reel-studio/brand-folders.json")).brands).toEqual(["acme", "plain"]);
+    rmSync(join(ws, "brand/late/identity/logo.png"));
+    run(true);
+    expect(JSON.parse(read(".reel-studio/brand-folders.json")).brands).toEqual(["acme", "late", "plain"]);
+  });
+  it("refuses a voice path that leaves the brand folder", () => {
+    put("brand/sneaky/brand.json", JSON.stringify(testBrand("sneaky", { voice: { engine: "voxcpm2", sample: "../../secret.wav", sampleText: "voice/s.txt" } })));
+    const r = run(true);
+    expect(r.status).toBe("blocked");
+    expect(r.problems.join(" ")).toContain("must stay inside the brand folder");
   });
 });
 
@@ -157,22 +179,25 @@ describe("taking away the old copies", () => {
   });
   const rel = (list: string[]) => list.map((p) => p.replace(`${ws}/`, "")).sort();
   const GONE = [
-    "brand/acme/brand.json", "brand/acme/style.md", "brand/acme/logo.png", "brand/acme/reel-questions.md", "brand/acme/voice-sample.md",
+    "brand/acme/brand.json", "brand/acme/style.md", "brand/acme/logo.png", "brand/acme/reel-questions.md",
     "brand/acme/pip-voice.wav", "brand/acme/pip-voice.txt", "brand/acme/pip-voice.json", "reels/acme", "characters/acme",
     "mascot/pip.py", "mascot/pip.blend", "mascot/pip-expressions.png", "mascot/work/head.json", "public/mascot", "public/3-first", "public/4-second", "public/a1", "brand/_template",
-    "brand/plain/brand.json", "brand/plain/style.md", "brand/plain/voice-sample.md",
+    "brand/plain/brand.json", "brand/plain/style.md",
   ];
+  const NOTES = ["brand/acme/voice-sample.md", "brand/plain/voice-sample.md"]; // may hold the owner's own notes: always left
 
   it("lists them without removing anything unless asked", () => {
     const r = removeOldFiles({ workspace: ws, data, remove: false, programRoot: program });
-    expect(r.kept).toEqual([]);
+    expect(rel(r.kept.map((k) => k.path))).toEqual([...NOTES].sort());
+    expect(r.kept[0]?.why).toContain("may hold your own notes");
     expect(rel(r.removed)).toEqual([...GONE].sort());
     for (const f of GONE) expect(existsSync(join(ws, f)), f).toBe(true);
   });
   it("removes them, the empty folders they leave, and nothing that is not part of the move", () => {
     const r = removeOldFiles({ workspace: ws, data, remove: true, programRoot: program });
-    expect(r.kept).toEqual([]);
+    expect(rel(r.kept.map((k) => k.path))).toEqual([...NOTES].sort());
     for (const f of GONE) expect(existsSync(join(ws, f)), f).toBe(false);
+    for (const f of NOTES) expect(existsSync(join(ws, f)), f).toBe(true);
     for (const d of ["public", "mascot", "reels", "characters"]) expect(existsSync(join(ws, d)), d).toBe(false);
     expect(existsSync(join(ws, "brand/acme/hooks.csv"))).toBe(true); // not part of the move
     expect(existsSync(join(ws, "brand/acme/identity/brand.json"))).toBe(true);
@@ -201,6 +226,71 @@ describe("taking away the old copies", () => {
     expect(existsSync(join(ws, "public/a1/odd.wav"))).toBe(true);
     const without = removeOldFiles({ workspace: ws, data, remove: false });
     expect(without.removed.some((p) => p.endsWith("brand/_template"))).toBe(false); // no program folder given: the template is not touched
+  });
+  it("never removes the voice folder as a whole: other takes in it stay, and the folder goes only when nothing is left", () => {
+    const b = testBrand("solo", { name: "Solo", voice: { engine: "voxcpm2", sample: "voice/voice.wav", sampleText: "voice/voice.txt" } });
+    put("brand/solo/brand.json", JSON.stringify(b)); put("brand/solo/voice/voice.wav", "W"); put("brand/solo/voice/voice.txt", "t"); put("brand/solo/voice/other-take.wav", "MY OTHER TAKE");
+    run(true);
+    removeOldFiles({ workspace: ws, data, remove: true, programRoot: program });
+    expect(read("brand/solo/voice/other-take.wav")).toBe("MY OTHER TAKE");
+    expect(existsSync(join(ws, "brand/solo/voice/voice.wav"))).toBe(false);
+    expect(read("brand/solo/identity/voice.wav")).toBe("W");
+    rmSync(join(ws, "brand/solo/voice/other-take.wav"));
+    const again = removeOldFiles({ workspace: ws, data, remove: true, programRoot: program });
+    expect(existsSync(join(ws, "brand/solo/voice"))).toBe(false);
+    expect(again.kept.some((k) => k.path.endsWith("brand/solo/voice"))).toBe(false);
+  });
+  it("keeps the voice sample and its folder when the copy is not identical", () => {
+    const b = testBrand("solo", { name: "Solo", voice: { engine: "voxcpm2", sample: "voice/voice.wav", sampleText: "voice/voice.txt" } });
+    put("brand/solo/brand.json", JSON.stringify(b)); put("brand/solo/voice/voice.wav", "W"); put("brand/solo/voice/voice.txt", "t");
+    run(true);
+    writeFileSync(join(ws, "brand/solo/identity/voice.wav"), "CHANGED");
+    removeOldFiles({ workspace: ws, data, remove: true, programRoot: program });
+    expect(read("brand/solo/voice/voice.wav")).toBe("W");
+    expect(existsSync(join(ws, "brand/solo/voice"))).toBe(true);
+  });
+  it("keeps an old brand.json or style.md that was edited after the move, and one whose new file was edited", () => {
+    writeFileSync(join(ws, "brand/acme/style.md"), `${STYLE}\n- a line the owner added to the OLD file after the move`);
+    writeFileSync(join(ws, "brand/plain/identity/style.md"), "# plain, edited in the new place");
+    const r = removeOldFiles({ workspace: ws, data, remove: true, programRoot: program });
+    expect(r.kept.find((k) => k.path.endsWith("brand/acme/style.md"))?.why).toContain("changed after the move");
+    expect(r.kept.find((k) => k.path.endsWith("brand/plain/style.md"))?.why).toContain("changed after the move");
+    expect(read("brand/acme/style.md")).toContain("a line the owner added");
+    expect(existsSync(join(ws, "brand/acme/brand.json"))).toBe(false); // unchanged: removed
+  });
+  it("keeps a folder with a symbolic link inside, and never touches the link's target", () => {
+    const outside = join(tmp, "outside"); mkdirSync(outside); writeFileSync(join(outside, "precious.txt"), "precious");
+    symlinkSync(outside, join(ws, "characters/acme/linked"));
+    const r = removeOldFiles({ workspace: ws, data, remove: true, programRoot: program });
+    expect(r.kept.find((k) => k.path.endsWith("characters/acme"))?.why).toContain("symbolic link");
+    expect(existsSync(join(ws, "characters/acme/state.json"))).toBe(true);
+    expect(readFileSync(join(outside, "precious.txt"), "utf8")).toBe("precious");
+  });
+  it("does not remove a public/ or reels/ folder that is only a link, or holds only links", () => {
+    removeOldFiles({ workspace: ws, data, remove: true, programRoot: program }); // leaves public/ empty and removes it
+    const outside = join(tmp, "outside2"); mkdirSync(outside); writeFileSync(join(outside, "keep.txt"), "keep");
+    mkdirSync(join(ws, "public")); symlinkSync(outside, join(ws, "public/linked"));
+    removeOldFiles({ workspace: ws, data, remove: true, programRoot: program });
+    expect(existsSync(join(ws, "public/linked"))).toBe(true);
+    expect(readFileSync(join(outside, "keep.txt"), "utf8")).toBe("keep");
+  });
+  it("keeps the old sounds when they hold a sub-folder, without failing", () => {
+    put("public/a1/sub/x.wav", "x");
+    const r = removeOldFiles({ workspace: ws, data, remove: true, programRoot: program });
+    expect(r.kept.find((k) => k.path.endsWith("public/a1"))).toBeTruthy();
+    expect(existsSync(join(ws, "public/a1/sub/x.wav"))).toBe(true);
+  });
+  it("leaves the template and the sounds alone when the program folder is the workspace itself", () => {
+    const r = removeOldFiles({ workspace: ws, data, remove: true, programRoot: ws });
+    expect(existsSync(join(ws, "brand/_template/brand.json"))).toBe(true);
+    expect(r.removed.some((p) => p.endsWith("brand/_template"))).toBe(false);
+  });
+  it("refuses to work from a record it cannot read, and does not throw", () => {
+    writeFileSync(join(ws, ".reel-studio/brand-folders.json"), "{ not json");
+    expect(removeOldFiles({ workspace: ws, data, remove: true }).removed).toEqual([]);
+    writeFileSync(join(ws, ".reel-studio/brand-folders.json"), JSON.stringify({ brands: ["../../etc"] }));
+    expect(removeOldFiles({ workspace: ws, data, remove: true }).removed).toEqual([]);
+    expect(existsSync(join(ws, "reels/acme"))).toBe(true);
   });
   it("does nothing without the record of a verified move", () => {
     rmSync(join(ws, ".reel-studio"), { recursive: true, force: true });

@@ -13,7 +13,7 @@ beforeEach(() => { tmp = mkdtempSync(join(tmpdir(), "assist-")); });
 afterEach(() => { for (const k of ["FAKE_MODE", "FAKE_ARGS_FILE", "FAKE_STATE"]) delete process.env[k]; rmSync(tmp, { recursive: true, force: true }); });
 
 const base = (over: Partial<AssistantRun> = {}): AssistantRun => ({
-  config: { kind: "claude", command: "" }, claudeBin: CLAUDE, model: "", prompt: "hello there prompt", root: "/project", scratch: join(tmp, "scratch"), env: { ...process.env, HUB_TOKEN: "SECRET-TOKEN" }, extraEnv: Object.fromEntries(Object.entries(process.env).filter(([k]) => k.startsWith("FAKE_"))), ...over,
+  config: { kind: "claude", command: "" }, claudeBin: CLAUDE, model: "", prompt: "hello there prompt", root: "/project", dataDir: "/hubdata", scratch: join(tmp, "scratch"), env: { ...process.env, HUB_TOKEN: "SECRET-TOKEN" }, extraEnv: Object.fromEntries(Object.entries(process.env).filter(([k]) => k.startsWith("FAKE_"))), ...over,
 });
 
 describe("splitCommand", () => {
@@ -36,7 +36,7 @@ describe("the claude adapter", () => {
     expect(rec.args).toContain("-p");
     expect(arg("--allowedTools")).toBe(ASSISTANT_ALLOWED_TOOLS);
     expect(arg("--allowedTools")).not.toMatch(/Bash|Write|Edit/);
-    for (const d of ["Bash", "Write", "Edit", "Read(**/.env)", "Read(/project/brand/**)", "Read(/project/platform/data/**)"]) expect(arg("--disallowedTools").split(",")).toContain(d);
+    for (const d of ["Bash", "Write", "Edit", "Read(**/.env)", "Read(/project/brand/**)", "Read(/project/platform/data/**)", "Read(/project/reels/**)", "Read(/project/characters/**)", "Read(/project/mascot/**)", "Read(/hubdata/brands/**)", "Read(/hubdata/jobs.json)"]) expect(arg("--disallowedTools").split(",")).toContain(d);
     expect(arg("--model")).toBe("sonnet");
     expect(rec.cwd.endsWith("scratch")).toBe(true);
     expect(rec.prompt).toBe("hello there prompt");

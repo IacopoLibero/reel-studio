@@ -1,8 +1,8 @@
-import { copyFileSync, constants as fsConstants, cpSync, existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
-import { dirname, join, relative } from "node:path";
+import { constants as fsConstants, cpSync, existsSync, lstatSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { dirname, join, relative, resolve, sep } from "node:path";
 import { brandPaths, characterFiles, voiceTarget, type BrandPaths } from "../brands/paths.js";
 import { isValidSlug, validateBrand, type Brand } from "../brands/schema.js";
-import { compareTrees, listFiles, sha256 } from "./fs-tools.js";
+import { compareTrees, findSymlinks, listFiles, sha256 } from "./fs-tools.js";
 
 /**
  * Moves a workspace from the first brand layout to the one-folder-per-brand layout, by copying and checking (nothing is deleted here):
@@ -62,39 +62,69 @@ export function updateStyleGuide(md: string, slug: string, brand: Pick<Brand, "c
   return out;
 }
 
-const sameContent = (a: string, b: string): boolean => existsSync(a) && existsSync(b) && sha256(a) === sha256(b);
+const regularFile = (p: string): boolean => { try { return lstatSync(p).isFile(); } catch { return false; } };
+const sameContent = (a: string, b: string): boolean => regularFile(a) && regularFile(b) && sha256(a) === sha256(b);
+/** A path inside a brand folder as brand.json writes it: relative, never leaving the folder. */
+const safeRel = (p: string | null): p is string => !!p && !p.startsWith("/") && !p.split("/").includes("..") && !/[\u0000-\u001f\\]/.test(p);
+
+const pathsOf = (workspace: string, data: string, slug: string): BrandPaths => brandPaths(slug, { root: workspace, dataDir: data, chromeRoot: null });
+
+/** What is missing or different in the copy. Extra files in the destination are not a problem (the final audio of public/ is added to the reels). */
+const lacking = (from: string, to: string): string[] => compareTrees(from, to).filter((x) => !x.startsWith("unexpected:"));
+
+interface VoiceMove { copies: Copy[]; voice: { oldWav: string | null; oldTxt: string | null; newWav: string | null; newTxt: string | null }; newVoice: { sample: string | null; sampleText: string | null }; notes: string[]; problems: string[] }
+
+/** Where the voice files of an old brand go: next to the character's files when the brand has a character, else in identity/. */
+function voiceMove(old: string, brand: Brand, p: BrandPaths): VoiceMove {
+  const m: VoiceMove = { copies: [], voice: { oldWav: null, oldTxt: null, newWav: null, newTxt: null }, newVoice: { sample: null, sampleText: null }, notes: [], problems: [] };
+  const { sample, sampleText } = brand.voice;
+  if (!sample) return m;
+  if (!safeRel(sample) || (sampleText !== null && !safeRel(sampleText))) { m.problems.push(`the voice paths in brand.json ("${sample}") must stay inside the brand folder`); return m; }
+  const oldWav = join(old, sample);
+  if (!existsSync(oldWav)) { m.notes.push(`the voice sample "${sample}" named in brand.json is not there: the voice is set to decide later`); return m; }
+  const target = voiceTarget(p, brand.character);
+  const oldTxt = sampleText ? join(old, sampleText) : null;
+  m.copies.push({ from: oldWav, to: target.wav, what: "voice sample" });
+  if (oldTxt && existsSync(oldTxt)) m.copies.push({ from: oldTxt, to: target.txt, what: "words of the voice sample" });
+  const settings = oldWav.replace(/\.wav$/, ".json");
+  if (existsSync(settings)) m.copies.push({ from: settings, to: target.settings, what: "voice settings" });
+  const hasTxt = !!oldTxt && existsSync(oldTxt);
+  m.voice = { oldWav: sample, oldTxt: sampleText, newWav: target.relWav, newTxt: hasTxt ? target.relTxt : null };
+  m.newVoice = { sample: target.relWav, sampleText: m.voice.newTxt };
+  return m;
+}
+
+/** The two files the move writes instead of copying: the style guide (paths updated) first, brand.json last (it is what makes a brand "moved"). */
+function identityWrites(old: string, slug: string, brand: Brand, p: BrandPaths, vm: VoiceMove): { writes: Write[]; notes: string[] } {
+  const writes: Write[] = [], notes: string[] = [];
+  const style = join(old, "style.md");
+  if (existsSync(style)) writes.push({ to: p.styleMd, what: "style.md (paths updated)", content: updateStyleGuide(read(style), slug, brand, vm.voice) });
+  else notes.push("there is no style.md");
+  const newBrand: Brand = { ...brand, voice: { ...brand.voice, ...vm.newVoice } };
+  writes.push({ to: p.brandJson, what: "brand.json", content: `${JSON.stringify(newBrand, null, 2)}\n` });
+  return { writes, notes };
+}
+
+function readOldBrand(old: string): { brand: Brand } | { error: string } {
+  let raw: unknown;
+  try { raw = JSON.parse(read(join(old, "brand.json"))); } catch { return { error: "is not valid JSON" }; }
+  const v = validateBrand(raw);
+  return v.ok ? { brand: v.brand } : { error: v.errors.join("; ") };
+}
 
 function planBrand(workspace: string, data: string, slug: string): BrandPlan {
   const plan: BrandPlan = { slug, copies: [], writes: [], notes: [], problems: [] };
   const old = join(workspace, "brand", slug);
-  let raw: unknown;
-  try { raw = JSON.parse(read(join(old, "brand.json"))); } catch { plan.problems.push(`brand/${slug}/brand.json is not valid JSON`); return plan; }
-  const v = validateBrand(raw);
-  if (!v.ok) { plan.problems.push(`brand/${slug}/brand.json: ${v.errors.join("; ")}`); return plan; }
-  const brand = v.brand;
+  const parsed = readOldBrand(old);
+  if ("error" in parsed) { plan.problems.push(`brand/${slug}/brand.json ${parsed.error}`); return plan; }
+  const brand = parsed.brand;
   const p = pathsOf(workspace, data, slug);
   const copy = (from: string, to: string, what: string) => plan.copies.push({ from, to, what });
 
-  // Voice: next to the character's files when the brand has a character, else in identity/.
-  const target = voiceTarget(p, brand.character);
-  let voice = { oldWav: null as string | null, oldTxt: null as string | null, newWav: null as string | null, newTxt: null as string | null };
-  let newVoice = { sample: null as string | null, sampleText: null as string | null };
-  const oldWav = brand.voice.sample ? join(old, brand.voice.sample) : null;
-  if (brand.voice.sample && oldWav && existsSync(oldWav)) {
-    const oldTxt = brand.voice.sampleText ? join(old, brand.voice.sampleText) : null;
-    copy(oldWav, target.wav, "voice sample");
-    if (oldTxt && existsSync(oldTxt)) copy(oldTxt, target.txt, "words of the voice sample");
-    const settings = oldWav.replace(/\.wav$/, ".json");
-    if (existsSync(settings)) copy(settings, target.settings, "voice settings");
-    voice = { oldWav: brand.voice.sample, oldTxt: brand.voice.sampleText, newWav: target.relWav, newTxt: oldTxt && existsSync(oldTxt) ? target.relTxt : null };
-    newVoice = { sample: target.relWav, sampleText: voice.newTxt };
-  } else if (brand.voice.sample) plan.notes.push(`the voice sample "${brand.voice.sample}" named in brand.json is not there: the voice is set to decide later`);
-
-  const newBrand: Brand = { ...brand, voice: { ...brand.voice, ...newVoice } };
-  plan.writes.push({ to: p.brandJson, what: "brand.json", content: `${JSON.stringify(newBrand, null, 2)}\n` });
-  const style = join(old, "style.md");
-  if (existsSync(style)) plan.writes.push({ to: p.styleMd, what: "style.md (paths updated)", content: updateStyleGuide(read(style), slug, brand, voice) });
-  else plan.notes.push("there is no style.md");
+  const vm = voiceMove(old, brand, p);
+  plan.copies.push(...vm.copies); plan.notes.push(...vm.notes); plan.problems.push(...vm.problems);
+  const w = identityWrites(old, slug, brand, p, vm);
+  plan.writes.push(...w.writes); plan.notes.push(...w.notes);
   if (existsSync(join(old, "logo.png"))) copy(join(old, "logo.png"), p.logo, "logo");
   const questions = join(old, "reel-questions.md");
   if (existsSync(questions)) copy(questions, p.questionsMd, "question list");
@@ -133,11 +163,6 @@ function planBrand(workspace: string, data: string, slug: string): BrandPlan {
   return plan;
 }
 
-const pathsOf = (workspace: string, data: string, slug: string): BrandPaths => brandPaths(slug, { root: workspace, dataDir: data, chromeRoot: null });
-
-/** What is missing or different in the copy. Extra files in the destination are not a problem (the final audio of public/ is added to the reels). */
-const lacking = (from: string, to: string): string[] => compareTrees(from, to).filter((x) => !x.startsWith("unexpected:"));
-
 function applyCopy(c: Copy): void {
   mkdirSync(dirname(c.to), { recursive: true });
   // Trees are cloned where the file system can (the character's 500 MB of frames cost nothing then), else copied.
@@ -148,7 +173,17 @@ function verifyCopy(c: Copy): string[] {
   return lacking(c.from, c.to).map((x) => `${c.what}: ${x} (${relative(dirname(c.to), c.to) || c.to})`);
 }
 
-/** Plans the move of every brand folder in the first layout and, with `apply`, copies and checks it. Safe to run again: a brand already moved is skipped. */
+const readMarker = (workspace: string): { brands: string[] } | null => {
+  try {
+    const m = JSON.parse(read(join(workspace, MARKER))) as { brands?: unknown };
+    return Array.isArray(m.brands) && m.brands.every((b) => typeof b === "string" && isValidSlug(b)) ? { brands: m.brands as string[] } : null;
+  } catch { return null; }
+};
+
+/**
+ * Plans the move of every brand folder in the first layout and, with `apply`, copies and checks it. Safe to run again: a brand already moved is skipped,
+ * and a brand whose copy could not be checked keeps its old layout (its brand.json is written last), so the next run tries it again.
+ */
 export function migrateBrandFolders(o: BrandFoldersOptions): BrandFoldersResult {
   const log = o.log ?? (() => undefined);
   const old = findOldBrands(o.workspace);
@@ -163,20 +198,29 @@ export function migrateBrandFolders(o: BrandFoldersOptions): BrandFoldersResult 
   if (problems.length) return { status: "blocked", brands, problems, verified: false, leftovers };
 
   const mistakes: string[] = [];
+  const moved: string[] = [];
   for (const b of brands) {
     log(`${b.slug}: ${b.copies.length} copies, ${b.writes.length} files rewritten`);
+    const own: string[] = [];
     for (const c of b.copies) {
-      if (existsSync(c.to) && listFiles(c.to).length && lacking(c.from, c.to).length) { mistakes.push(`${c.what}: ${c.to} already exists and differs from ${c.from}`); continue; }
+      if (existsSync(c.to) && listFiles(c.to).length && lacking(c.from, c.to).length) {
+        own.push(`${c.what}: ${c.to} already exists and differs from ${c.from}. If it is a leftover of an interrupted copy, delete it and run this again`);
+        continue;
+      }
       applyCopy(c);
     }
-    for (const w of b.writes) { mkdirSync(dirname(w.to), { recursive: true }); writeFileSync(w.to, w.content); }
-    for (const c of b.copies) mistakes.push(...verifyCopy(c));
-    for (const w of b.writes) if (!existsSync(w.to) || read(w.to) !== w.content) mistakes.push(`${w.what}: ${w.to} was not written as planned`);
+    for (const c of b.copies) own.push(...verifyCopy(c));
+    if (own.length === 0) {
+      for (const w of b.writes) { mkdirSync(dirname(w.to), { recursive: true }); writeFileSync(w.to, w.content); } // brand.json is the last of them
+      for (const w of b.writes) if (!existsSync(w.to) || read(w.to) !== w.content) own.push(`${w.what}: ${w.to} was not written as planned`);
+    }
+    if (own.length === 0) moved.push(b.slug); else mistakes.push(...own.map((m) => `${b.slug}: ${m}`));
   }
   const verified = mistakes.length === 0;
-  const note = { at: new Date().toISOString(), verified, brands: brands.map((b) => b.slug), problems: mistakes };
   mkdirSync(join(o.workspace, ".reel-studio"), { recursive: true });
-  writeFileSync(join(o.workspace, verified ? MARKER : ".reel-studio/brand-folders-failed.json"), `${JSON.stringify(note, null, 2)}\n`);
+  const earlier = readMarker(o.workspace)?.brands ?? [];
+  const note = { at: new Date().toISOString(), verified, brands: [...new Set([...earlier, ...moved])].sort(), problems: mistakes };
+  writeFileSync(join(o.workspace, moved.length ? MARKER : ".reel-studio/brand-folders-failed.json"), `${JSON.stringify(note, null, 2)}\n`);
   return { status: "applied", brands, problems: mistakes, verified, leftovers };
 }
 
@@ -186,9 +230,8 @@ function oldFiles(workspace: string, brands: readonly BrandPlan[]): string[] {
   const add = (p: string) => { if (existsSync(p)) out.push(p); };
   for (const b of brands) {
     const old = join(workspace, "brand", b.slug);
-    for (const f of ["brand.json", "style.md", "logo.png", "reel-questions.md", "voice-sample.md"]) add(join(old, f));
+    for (const f of ["brand.json", "style.md", "logo.png", "reel-questions.md"]) add(join(old, f));
     for (const c of b.copies) if (c.from.startsWith(old) && !out.includes(c.from)) add(c.from);
-    add(join(old, "voice"));
     add(join(workspace, "reels", b.slug));
     add(join(workspace, "characters", b.slug));
   }
@@ -205,49 +248,76 @@ export interface RemoveOptions {
 }
 export interface RemoveResult { removed: string[]; kept: { path: string; why: string }[] }
 
+/** A folder that holds only empty folders (no file, no link, nothing else). */
+function onlyEmptyDirs(dir: string): boolean {
+  try {
+    return readdirSync(dir, { withFileTypes: true }).every((e) => e.isDirectory() && !lstatSync(join(dir, e.name)).isSymbolicLink() && onlyEmptyDirs(join(dir, e.name)));
+  } catch { return false; }
+}
+
 /**
  * Takes away the old copies after a verified move. A leftover goes only when what replaced it exists and, where the content was copied as it was,
- * is identical (checked again now); never before the record of a verified move exists. Returns what it removed and what it kept, with the reason.
+ * is identical (checked again now); the two files that were rewritten (brand.json, style.md) only when the new file is exactly what the move would
+ * make of the old one, so nothing typed into the old file after the move is lost. Never before the record of a verified move exists, never a folder with a
+ * link inside, never a file nobody copied. Returns what it removed and what it kept, with the reason.
  */
 export function removeOldFiles(o: RemoveOptions): RemoveResult {
   const removed: string[] = [], kept: { path: string; why: string }[] = [];
   const marker = join(o.workspace, MARKER);
-  if (!existsSync(marker)) return { removed, kept: [{ path: marker, why: "no verified move of the brand folders was recorded" }] };
-  const slugs = (JSON.parse(read(marker)) as { brands?: string[] }).brands ?? [];
+  const record = readMarker(o.workspace);
+  if (!record) return { removed, kept: [{ path: marker, why: "no verified move of the brand folders was recorded (or the record cannot be read)" }] };
+  const gone: string[] = []; // what this run has removed or would remove, so a folder can be judged "empty after that"
+  const isGone = (p: string): boolean => gone.some((g) => p === g || p.startsWith(`${g}${sep}`));
 
-  /** `rewritten`: the new file was written from the old one with changes, so it only has to exist. `to` null: nothing replaces it (the file moved out of the brand). */
-  const take = (from: string, to: string | null, rewritten = false): void => {
+  const finish = (path: string): void => { if (o.remove) rmSync(path, { recursive: true, force: true }); removed.push(path); gone.push(path); };
+  const keep = (path: string, why: string): void => { kept.push({ path, why }); };
+  /** `to` is the verified copy. */
+  const take = (from: string, to: string): void => {
     if (!existsSync(from)) return;
-    if (to !== null) {
-      if (!existsSync(to)) { kept.push({ path: from, why: `${to} does not exist` }); return; }
-      const problems = rewritten ? [] : lacking(from, to);
-      if (problems.length) { kept.push({ path: from, why: `the copy in ${to} is not identical: ${problems[0]}` }); return; }
-    }
-    if (o.remove) rmSync(from, { recursive: true, force: true });
-    removed.push(from);
+    if (findSymlinks(from).length) return keep(from, "it holds a symbolic link, which the move does not copy");
+    if (!existsSync(to)) return keep(from, `${to} does not exist`);
+    const problems = lacking(from, to);
+    if (problems.length) return keep(from, `the copy in ${to} is not identical: ${problems[0]}`);
+    finish(from);
+  };
+  /** A rewritten file goes when the new one is what the move would make of the old one. */
+  const takeRewritten = (from: string, to: string, expected: string | null): void => {
+    if (!existsSync(from)) return;
+    if (expected === null) return keep(from, "the move cannot be recomputed for it");
+    if (!existsSync(to)) return keep(from, `${to} does not exist`);
+    if (read(to) !== expected) return keep(from, `${to} is not what the move makes of this file: one of the two was changed after the move`);
+    finish(from);
+  };
+  /** A folder goes when every file in it has already been removed (its contents were copied one by one). */
+  const takeIfEmptied = (dir: string): void => {
+    if (!existsSync(dir)) return;
+    if (findSymlinks(dir).length) return keep(dir, "it holds a symbolic link");
+    const left = listFiles(dir).filter((f) => !isGone(f));
+    if (left.length) return keep(dir, `it also holds ${relative(dir, left[0] as string)}, which is not part of the move`);
+    finish(dir);
   };
 
   const migrated: { slug: string; brand: Brand | null; paths: BrandPaths }[] = [];
-  for (const slug of slugs) {
+  for (const slug of record.brands) {
     const p = pathsOf(o.workspace, o.data, slug);
     const old = join(o.workspace, "brand", slug);
-    let brand: Brand | null = null;
-    try { const v = validateBrand(JSON.parse(read(join(old, "brand.json")))); brand = v.ok ? v.brand : null; } catch { /* the old brand.json is gone already */ }
+    const parsed = existsSync(join(old, "brand.json")) ? readOldBrand(old) : null;
+    let brand: Brand | null = parsed && "brand" in parsed ? parsed.brand : null;
+    // What the move makes of the old brand.json and style.md, worked out before anything of this brand is removed.
+    let expected: { brand: string | null; style: string | null } = { brand: null, style: null };
+    let vm: VoiceMove | null = null;
+    if (brand) {
+      vm = voiceMove(old, brand, p);
+      const w = identityWrites(old, slug, brand, p, vm);
+      expected = { style: w.writes.find((x) => x.to === p.styleMd)?.content ?? null, brand: w.writes.find((x) => x.to === p.brandJson)?.content ?? null };
+    }
     if (!brand) brand = readNew(p);
     migrated.push({ slug, brand, paths: p });
-    take(join(old, "brand.json"), p.brandJson, true);
-    take(join(old, "style.md"), p.styleMd, true);
+
     take(join(old, "logo.png"), p.logo);
     take(join(old, "reel-questions.md"), p.questionsMd);
-    take(join(old, "voice-sample.md"), null);
-    if (brand?.voice.sample) {
-      const t = voiceTarget(p, brand.character);
-      const wav = join(old, brand.voice.sample);
-      take(wav, t.wav);
-      if (brand.voice.sampleText) take(join(old, brand.voice.sampleText), t.txt);
-      take(wav.replace(/\.wav$/, ".json"), t.settings);
-      if (/^voice\//.test(brand.voice.sample)) take(join(old, "voice"), null);
-    }
+    if (vm) for (const c of vm.copies) take(c.from, c.to);
+    takeIfEmptied(join(old, "voice")); // the first layout kept the sample in voice/; it goes when every file in it was copied and removed
     take(join(o.workspace, "reels", slug), p.reelsDir);
     take(join(o.workspace, "characters", slug), join(p.mascotDir, "studio"));
     if (brand?.character.enabled) {
@@ -257,6 +327,9 @@ export function removeOldFiles(o: RemoveOptions): RemoveResult {
       take(join(o.workspace, "mascot", `${id}-expressions.png`), cf.sheet);
       take(join(o.workspace, "mascot", "work", "head.json"), cf.head);
     }
+    takeRewritten(join(old, "brand.json"), p.brandJson, expected.brand);
+    takeRewritten(join(old, "style.md"), p.styleMd, expected.style);
+    if (existsSync(join(old, "voice-sample.md"))) keep(join(old, "voice-sample.md"), "the voice guide is now .claude/skills/reel/voice-sample.md; this copy may hold your own notes, so it is left for you to remove");
   }
 
   // What was shared by all brands in the first layout.
@@ -266,30 +339,37 @@ export function removeOldFiles(o: RemoveOptions): RemoveResult {
     for (const folder of dirs(m.paths.reelsDir)) {
       const pub = join(o.workspace, "public", folder);
       if (!existsSync(pub)) continue;
-      const wavs = readdirSync(pub);
-      const unknown = wavs.filter((f) => !/^[A-Za-z0-9_]+\.wav$/.test(f));
-      if (unknown.length) { kept.push({ path: pub, why: `it also holds ${unknown[0]}, which is not a final audio file` }); continue; }
-      const odd = wavs.find((f) => !sameContent(join(pub, f), join(m.paths.reelsDir, folder, "audio", f)));
-      if (odd) { kept.push({ path: pub, why: `${odd} is not identical to the audio in the reel's folder` }); continue; }
-      take(pub, null);
+      if (findSymlinks(pub).length) { keep(pub, "it holds a symbolic link"); continue; }
+      const entries = readdirSync(pub);
+      const unknown = entries.filter((f) => !/^[A-Za-z0-9_]+\.wav$/.test(f) || !regularFile(join(pub, f)));
+      if (unknown.length) { keep(pub, `it also holds ${unknown[0]}, which is not a final audio file`); continue; }
+      const odd = entries.find((f) => !sameContent(join(pub, f), join(m.paths.reelsDir, folder, "audio", f)));
+      if (odd) { keep(pub, `${odd} is not identical to the audio in the reel's folder`); continue; }
+      finish(pub);
     }
   }
   const publicLogo = join(o.workspace, "public", "logo.png");
   if (existsSync(publicLogo)) {
-    if (migrated.some((m) => sameContent(publicLogo, m.paths.logo))) take(publicLogo, null);
-    else kept.push({ path: publicLogo, why: "it is not the logo of a moved brand" });
+    if (migrated.some((m) => sameContent(publicLogo, m.paths.logo))) finish(publicLogo);
+    else keep(publicLogo, "it is not the logo of a moved brand");
   }
-  if (o.programRoot) {
+  // The program's own copies are compared with the program's: when the workspace IS the program folder there is no second copy, so nothing is touched.
+  if (o.programRoot && resolve(o.programRoot) !== resolve(o.workspace)) {
     const sounds = join(o.programRoot, "sfx"), oldSounds = join(o.workspace, "public", "a1");
     if (existsSync(oldSounds)) {
-      const missing = readdirSync(oldSounds).filter((f) => !sameContent(join(oldSounds, f), join(sounds, f)));
-      if (missing.length) kept.push({ path: oldSounds, why: `${missing.join(", ")} is not in the program's sfx/ folder (or differs)` });
-      else take(oldSounds, null);
+      if (findSymlinks(oldSounds).length) keep(oldSounds, "it holds a symbolic link");
+      else {
+        const entries = readdirSync(oldSounds);
+        const odd = entries.filter((f) => !regularFile(join(oldSounds, f)) || !sameContent(join(oldSounds, f), join(sounds, f)));
+        if (odd.length) keep(oldSounds, `${odd.join(", ")} is not in the program's sfx/ folder (or differs)`);
+        else finish(oldSounds);
+      }
     }
     const tpl = join(o.workspace, "brand", "_template");
     if (existsSync(tpl)) {
-      if (lacking(tpl, join(o.programRoot, "brand", "_template")).length) kept.push({ path: tpl, why: "it differs from the template of the program" });
-      else take(tpl, null);
+      if (findSymlinks(tpl).length) keep(tpl, "it holds a symbolic link");
+      else if (lacking(tpl, join(o.programRoot, "brand", "_template")).length) keep(tpl, "it differs from the template of the program");
+      else finish(tpl);
     }
   }
   if (o.remove) for (const d of ["public", "mascot", "reels", "characters"]) pruneIfEmpty(join(o.workspace, d));
@@ -301,8 +381,7 @@ function readNew(p: BrandPaths): Brand | null {
   try { const v = validateBrand(JSON.parse(read(p.brandJson))); return v.ok ? v.brand : null; } catch { return null; }
 }
 
-/** Removes a folder that holds nothing but empty folders. */
+/** Removes a folder that holds nothing but empty folders (a folder with a file or a link in it stays). */
 function pruneIfEmpty(dir: string): void {
-  if (!existsSync(dir)) return;
-  if (listFiles(dir).length === 0) rmSync(dir, { recursive: true, force: true });
+  if (existsSync(dir) && onlyEmptyDirs(dir)) rmSync(dir, { recursive: true, force: true });
 }

@@ -35,10 +35,16 @@ const dirs = (p: string): string[] => {
 
 export const identityJson = (workspace: string, slug: string): string => join(workspace, "brand", slug, "identity", "brand.json");
 
-/** The brand a render is for: REEL_BRAND (the hub sets it for every job), else the first brand folder that has an identity/brand.json. Null when there is none. */
+/**
+ * The brand a render is for: REEL_BRAND (the hub sets it for every job), else the first brand folder that has an identity/brand.json. Null when there is none.
+ * A REEL_BRAND that names no brand is an error, never a reason to render with another brand's logo, colours and character.
+ */
 export function pickBrand(workspace: string, env: NodeJS.ProcessEnv = process.env): string | null {
   const named = env.REEL_BRAND?.trim();
-  if (named && SLUG.test(named) && existsSync(identityJson(workspace, named))) return named;
+  if (named) {
+    if (!SLUG.test(named) || !existsSync(identityJson(workspace, named))) throw new Error(`REEL_BRAND is "${named}", but there is no brand/${named}/identity/brand.json in ${workspace}.`);
+    return named;
+  }
   return dirs(join(workspace, "brand")).filter((n) => SLUG.test(n) && existsSync(identityJson(workspace, n))).sort()[0] ?? null;
 }
 
@@ -56,16 +62,21 @@ function linkTree(src: string, dst: string, keep: (name: string) => boolean = ()
   mkdirSync(dst, { recursive: true });
   for (const e of readdirSync(src, { withFileTypes: true })) {
     const from = join(src, e.name), to = join(dst, e.name);
-    if (e.isDirectory()) linkTree(from, to);
+    if (e.isDirectory()) linkTree(from, to, keep);
     else if (e.isFile() && keep(e.name)) linkFile(from, to);
   }
 }
 
 function linkFile(from: string, to: string): void {
-  try { linkSync(from, to); } catch { copyFileSync(from, to); }
+  try { linkSync(from, to); } catch {
+    // Another file system (or one without hard links): a copy works but costs the size of the file for as long as the run lasts.
+    console.warn(`[brand-public] could not link ${from}: copying it instead`);
+    copyFileSync(from, to);
+  }
 }
 
-export const stageRoot = (workspace: string): string => join(workspace, ".reel-studio", "public");
+/** One folder per Unix user (public-1000, public-0): a run as root (docker exec) and the hub's jobs (as the owner) never meet in a folder the other cannot write. */
+export const stageRoot = (workspace: string): string => join(workspace, ".reel-studio", `public-${process.getuid?.() ?? "user"}`);
 
 /**
  * Builds the public folder of one brand and returns its path. Each run gets its own folder (named with the process id),
@@ -92,10 +103,21 @@ export function stagePublic(workspace: string, slug: string | null, id: string |
 
 export const removeStage = (dir: string): void => { try { rmSync(dir, { recursive: true, force: true }); } catch { /* best effort */ } };
 
-/** Removes the folders of runs that were killed before they could clean up (older than `maxAgeMs`). */
-export function removeStaleStages(workspace: string, maxAgeMs = 12 * 3600_000, now = Date.now()): void {
+/** True when a process with this id is running (a signal 0 is only a check). */
+const alive = (pid: number): boolean => { try { process.kill(pid, 0); return true; } catch (e) { return (e as NodeJS.ErrnoException).code === "EPERM"; } };
+
+/**
+ * Removes the folders of runs that were killed before they could clean up: older than `maxAgeMs` and whose process (the number at the end of the
+ * folder name) is no longer running. A `remotion studio` left open for days keeps its folder.
+ */
+export function removeStaleStages(workspace: string, maxAgeMs = 12 * 3600_000, now = Date.now(), isAlive: (pid: number) => boolean = alive): void {
   const root = stageRoot(workspace);
   for (const name of dirs(root)) {
-    try { if (now - statSync(join(root, name)).mtimeMs > maxAgeMs) removeStage(join(root, name)); } catch { /* gone already */ }
+    try {
+      if (now - statSync(join(root, name)).mtimeMs <= maxAgeMs) continue;
+      const pid = /-(\d+)$/.exec(name)?.[1];
+      if (pid && isAlive(Number(pid))) continue;
+      removeStage(join(root, name));
+    } catch { /* gone already */ }
   }
 }

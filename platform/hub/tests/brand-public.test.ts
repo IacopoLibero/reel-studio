@@ -14,9 +14,14 @@ describe("which brand a render is for", () => {
   it("takes REEL_BRAND when that brand exists, else the first brand by name", () => {
     brand("zeta"); brand("alpha");
     expect(pickBrand(ws, { REEL_BRAND: "zeta" })).toBe("zeta");
-    expect(pickBrand(ws, { REEL_BRAND: "ghost" })).toBe("alpha");
     expect(pickBrand(ws, {})).toBe("alpha");
-    expect(pickBrand(ws, { REEL_BRAND: "../x" })).toBe("alpha");
+    expect(pickBrand(ws, { REEL_BRAND: "  " })).toBe("alpha");
+  });
+  it("fails for a REEL_BRAND that names no brand, instead of rendering with another brand's look", () => {
+    brand("alpha");
+    expect(() => pickBrand(ws, { REEL_BRAND: "ghost" })).toThrow(/REEL_BRAND is "ghost"/);
+    expect(() => pickBrand(ws, { REEL_BRAND: "../x" })).toThrow(/REEL_BRAND/);
+    expect(() => pickBrand(ws, { REEL_BRAND: "Alpha" })).toThrow(/REEL_BRAND/);
   });
   it("ignores folders without an identity/brand.json and the old flat layout", () => {
     put("brand/old/brand.json"); put("brand/_template/identity/brand.json"); put("brand/.hidden/identity/brand.json");
@@ -77,6 +82,10 @@ describe("the public folder of a brand", () => {
   it("makes a folder per run, so renders at the same time do not share one", () => {
     expect(stagePublic(ws, "acme", "a")).not.toBe(stagePublic(ws, "acme", "b"));
   });
+  it("keeps the folder of each Unix user apart, so a run as root cannot block the owner's jobs", () => {
+    expect(stageRoot(ws)).toBe(join(ws, ".reel-studio", `public-${process.getuid?.()}`));
+    expect(stagePublic(ws, "acme", "u1").startsWith(join(ws, ".reel-studio", "public-"))).toBe(true);
+  });
   it("works with no brand at all: just the sounds", () => {
     const dir = stagePublic(ws, null, "t5");
     expect(read(dir, "sfx/tick.wav")).toBe("tick");
@@ -85,10 +94,23 @@ describe("the public folder of a brand", () => {
   it("removes its folder, and the folders of runs that were killed long ago", () => {
     const dir = stagePublic(ws, "acme", "t6"); removeStage(dir);
     expect(existsSync(dir)).toBe(false);
-    const old = stagePublic(ws, "acme", "old"), fresh = stagePublic(ws, "acme", "fresh");
+    const old = stagePublic(ws, "acme", "111"), fresh = stagePublic(ws, "acme", "222");
     const past = new Date(Date.now() - 13 * 3600_000); utimesSync(old, past, past);
-    removeStaleStages(ws);
+    removeStaleStages(ws, undefined, undefined, () => false);
     expect(existsSync(old)).toBe(false);
     expect(existsSync(fresh)).toBe(true);
+  });
+  it("keeps an old folder whose process is still running (a studio left open overnight)", () => {
+    const open = stagePublic(ws, "acme", "333"), gone = stagePublic(ws, "acme", "444");
+    const past = new Date(Date.now() - 30 * 3600_000); utimesSync(open, past, past); utimesSync(gone, past, past);
+    removeStaleStages(ws, undefined, undefined, (pid) => pid === 333);
+    expect(existsSync(open)).toBe(true);
+    expect(existsSync(gone)).toBe(false);
+  });
+  it("links only the final audio of a reel, also inside sub-folders of audio/", () => {
+    put("brand/acme/reels/5-deep/audio/more/narrator.wav", "DEEP"); put("brand/acme/reels/5-deep/audio/more/narrator-1.wav", "piece");
+    const dir = stagePublic(ws, "acme", "t7");
+    expect(existsSync(join(dir, "5-deep/more/narrator.wav"))).toBe(true);
+    expect(existsSync(join(dir, "5-deep/more/narrator-1.wav"))).toBe(false);
   });
 });

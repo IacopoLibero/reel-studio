@@ -19,6 +19,8 @@ const slug = pickBrand(workspace);
 removeStaleStages(workspace);
 const publicDir = stagePublic(workspace, slug);
 process.on("exit", () => removeStage(publicDir));
+// A job that is stopped (SIGTERM) or interrupted (Ctrl+C) leaves no folder behind.
+for (const signal of ["SIGINT", "SIGTERM"] as const) process.on(signal, () => { removeStage(publicDir); process.exit(signal === "SIGINT" ? 130 : 143); });
 
 Config.setRspack(true);
 Config.setVideoImageFormat("jpeg");

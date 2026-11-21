@@ -110,7 +110,7 @@ export const voiceGenerate: Handler = async (job, ctx) => {
   await checkServer(server);
 
   const prompt = buildVoicePrompt(p);
-  const run = (q: string) => runAssistant({ config: ctx.settings.assistant, claudeBin: ctx.claudeBin, model: ctx.settings.claudeModel, prompt: q, root: ctx.root, scratch: scratchDir(ctx.dataDir), env: process.env, signal: ctx.signal });
+  const run = (q: string) => runAssistant({ config: ctx.settings.assistant, claudeBin: ctx.claudeBin, model: ctx.settings.claudeModel, prompt: q, root: ctx.root, scratch: scratchDir(ctx.dataDir), dataDir: svc.dataDir, env: process.env, signal: ctx.signal });
   let proposal: VoiceProposal[];
   try { proposal = parseVoiceProposal(await run(prompt), p.count); } catch (e) {
     if (ctx.signal.aborted) throw e;

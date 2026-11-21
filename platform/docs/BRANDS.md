@@ -60,7 +60,7 @@ Everything in the hub is scoped to the current brand: Jobs, Daily, Calendar, Fac
 ## 4. Where a render finds a brand's files (built)
 Remotion reads the logo, the sounds, the character's frames and each reel's audio with `staticFile()` from one `public` folder. Because each brand keeps
 them in its own folder, `remotion.config.ts` builds that folder for the brand of the run (`REEL_BRAND`, set by the hub for every job, else the first brand)
-out of hard links, in `workspace/.reel-studio/public/<brand>-<pid>/`, and removes it at the end (`scripts/brand-public.ts`):
+out of hard links, in `workspace/.reel-studio/public-<uid>/<brand>-<pid>/`, and removes it at the end (`scripts/brand-public.ts`):
 `logo.png` from `identity/`, `mascot/<move>/` from `mascot/movements/`, `sfx/` from the workspace, `<n>-<name>/<voice>.wav` from each reel's `audio/`.
 A brand with no logo has no `logo.png`, so another brand's logo is never drawn, and the cover leaves out the logo frame (`"logo": false` in `cover.json`).
 

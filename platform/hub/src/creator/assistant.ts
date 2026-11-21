@@ -11,7 +11,8 @@ export const ASSISTANT_ALLOWED_TOOLS = joinTools(["Read", "Glob", "Grep", "WebFe
 /** brand/ holds every brand (identity, character, reels); the hub data folder holds their questions, results and logins. */
 export const assistantDenied = (root: string, dataDir?: string): string => joinTools(
   ["Bash", "Write", "Edit", "NotebookEdit"], DESTRUCTIVE_BASH_DENIES, SECRET_READ_DENIES,
-  ["brand", "platform/data", "platform/.env"].map((d) => `Read(${root}/${d}/**)`),
+  // reels, characters and mascot are the folders of the first layout: until a workspace is moved (and its old copies removed) they still hold brand data.
+  ["brand", "reels", "characters", "mascot", "platform/data", "platform/.env"].map((d) => `Read(${root}/${d}/**)`),
   dataDir ? [`Read(${dataDir}/brands/**)`, `Read(${dataDir}/jobs.json)`, `Read(${dataDir}/settings.json)`] : [],
 );
 
@@ -51,8 +52,8 @@ export interface AssistantRun {
   root: string;
   /** An empty scratch folder to run in. */
   scratch: string;
-  /** The hub data folder: its brands/ folders (questions, results, logins) are kept unreadable for the assistant. */
-  dataDir?: string;
+  /** The hub data folder: its brands/ folders (questions, results, logins) are kept unreadable for the assistant. Required, so a caller cannot leave the deny list short. */
+  dataDir: string;
   env: NodeJS.ProcessEnv;
   /** Added after the filter (a test sets its stand-in command's switches here). */
   extraEnv?: NodeJS.ProcessEnv;
