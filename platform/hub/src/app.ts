@@ -21,6 +21,15 @@ import { analyticsRoutes } from "./routes/analytics.js";
 import { skillRoutes } from "./routes/skills.js";
 import { creatorRoutes } from "./routes/creator.js";
 import { studioRoutes } from "./routes/studio.js";
+import { setupRoutes } from "./routes/setup.js";
+import { SetupInstaller } from "./setup/installer.js";
+import { blender, workspacePackages } from "./setup/steps.js";
+import { installVoiceStudio } from "./setup/voice-install.js";
+import { readSetup } from "./setup/state.js";
+import { voiceMode } from "./setup/voice-modes.js";
+import { detectGpu, findOnPath } from "./setup/which.js";
+import { toolsDir, type CheckContext } from "./setup/checks.js";
+import { defaultProgramRoot } from "./paths.js";
 import { UploadStore } from "./creator/uploads.js";
 import type { CreatorServices } from "./creator/services.js";
 import { SettingsStore } from "./settings.js";
@@ -90,6 +99,19 @@ export async function buildApp(config: Config): Promise<{ app: FastifyInstance; 
       }, { prefix });
     }
     skillRoutes(api, config.root);
+    const stepContext = { workspace: config.root, dataDir: config.dataDir, programRoot: defaultProgramRoot() };
+    const installer = new SetupInstaller(config.dataDir, { "workspace-packages": workspacePackages(stepContext), blender: blender(stepContext),
+      voicestudio: async (log) => {
+        const mode = voiceMode(readSetup(config.dataDir).voiceMode);
+        if (!mode) throw new Error("Choose a voice mode first.");
+        await installVoiceStudio({ dataDir: config.dataDir, port: Number(process.env.VOICE_PORT ?? 3900) }, mode, log);
+      },
+    });
+    const checkContext = (): CheckContext => ({
+      which: (n) => findOnPath(n, [process.env.PATH ?? "", toolsDir(config.dataDir, "blender")].join(":")),
+      workspace: config.root, dataDir: config.dataDir, nodeVersion: process.versions.node, gpu: detectGpu(),
+    });
+    setupRoutes(api, deps, installer, checkContext);
     const terminal = new Terminal(config);
     api.get("/ws/terminal", { websocket: true }, (socket, req) => {
       if (!sameOrigin(req)) { socket.close(1008, "origin"); return; }
