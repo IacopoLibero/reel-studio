@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=Reel Studio
+Comment=Make and schedule short videos for your brands
+Exec=reel-studio
+Icon=reel-studio
+Terminal=false
+Categories=AudioVideo;Video;
+StartupWMClass=reel-studio

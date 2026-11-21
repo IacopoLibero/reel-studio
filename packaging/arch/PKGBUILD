@@ -1,0 +1,51 @@
+# Maintainer: the Reel Studio authors
+# Builds from the repository this file lives in (packaging/arch). For a release, replace `_srcdir` with a source tarball of a tag.
+pkgname=reel-studio
+pkgver=0.1.0
+pkgrel=1
+pkgdesc='Make and schedule short videos for your brands (Remotion, Blender character, VoiceStudio, Instagram)'
+arch=('x86_64')
+url='https://github.com/'
+license=('MIT')
+depends=('nodejs>=22.13' 'npm' 'git' 'ffmpeg' 'chromium' 'uv' 'curl')
+makedepends=('python' 'make' 'gcc')
+optdepends=('blender: use the system Blender instead of the one the app downloads'
+            'nvidia-utils: GPU voices (VoxCPM2 on the graphics card)')
+options=('!strip')
+_srcdir="$(cd "$startdir/../.." && pwd)"
+source=('reel-studio' 'reel-studio.service' 'reel-studio.desktop' 'reel-studio.svg')
+sha256sums=('SKIP' 'SKIP' 'SKIP' 'SKIP')
+
+prepare() {
+  rm -rf "$srcdir/app" && mkdir -p "$srcdir/app"
+  git -C "$_srcdir" archive HEAD | tar -x -C "$srcdir/app"
+}
+
+build() {
+  cd "$srcdir/app/platform/hub"
+  npm ci --no-audit --no-fund
+  npm run build
+  npm prune --omit=dev --no-audit --no-fund
+}
+
+package() {
+  local lib="$pkgdir/usr/lib/reel-studio"
+  install -d "$lib/platform"
+  cd "$srcdir/app"
+  # The program: the hub (built, with its runtime packages), the skills, the sounds, the Remotion project the workspace is filled from.
+  cp -a platform/hub "$lib/platform/hub"
+  rm -rf "$lib/platform/hub/src" "$lib/platform/hub/web" "$lib/platform/hub/tests" "$lib/platform/hub/coverage"
+  # Leftovers of the build that point at the build folder, and test fixtures with names that are not plain ASCII.
+  rm -rf "$lib/platform/hub/node_modules/@fastify/send/test"
+  find "$lib/platform/hub/node_modules/node-pty/build" -mindepth 1 -maxdepth 1 ! -name Release -exec rm -rf {} +
+  cp -a platform/skills "$lib/platform/skills"
+  cp -a sfx scripts src brand .claude package.json package-lock.json tsconfig.json remotion.config.ts "$lib/"
+  install -Dm644 LICENSE "$pkgdir/usr/share/licenses/$pkgname/LICENSE"
+  install -Dm644 THIRD_PARTY_NOTICES.md "$pkgdir/usr/share/licenses/$pkgname/THIRD_PARTY_NOTICES.md"
+
+  cd "$srcdir"
+  install -Dm755 reel-studio "$pkgdir/usr/bin/reel-studio"
+  install -Dm644 reel-studio.service "$pkgdir/usr/lib/systemd/user/reel-studio.service"
+  install -Dm644 reel-studio.desktop "$pkgdir/usr/share/applications/reel-studio.desktop"
+  install -Dm644 reel-studio.svg "$pkgdir/usr/share/icons/hicolor/scalable/apps/reel-studio.svg"
+}

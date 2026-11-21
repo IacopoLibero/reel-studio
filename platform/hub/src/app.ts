@@ -21,6 +21,7 @@ import { analyticsRoutes } from "./routes/analytics.js";
 import { skillRoutes } from "./routes/skills.js";
 import { creatorRoutes } from "./routes/creator.js";
 import { studioRoutes } from "./routes/studio.js";
+import { EntryNonces } from "./enter.js";
 import { setupRoutes } from "./routes/setup.js";
 import { SetupInstaller } from "./setup/installer.js";
 import { blender, workspacePackages } from "./setup/steps.js";
@@ -76,6 +77,16 @@ export async function buildApp(config: Config): Promise<{ app: FastifyInstance; 
     reply.setCookie(COOKIE, body.data.token, { httpOnly: true, sameSite: "strict", path: "/", maxAge: 60 * 60 * 24 * 30 });
     return { ok: true };
   });
+  const nonces = new EntryNonces();
+  // The app window signs in with a one-time pass (see enter.ts). Only for a request addressed to this machine, so a web page cannot use it through DNS rebinding.
+  app.get<{ Querystring: { n?: string } }>("/api/enter", async (req, reply) => {
+    const host = (req.headers.host ?? "").replace(/:\d+$/, "");
+    if (!["127.0.0.1", "localhost", "[::1]"].includes(host)) return reply.code(403).send({ error: "Forbidden." });
+    if (!nonces.consume(req.query.n)) return reply.code(401).send({ error: "That link has expired. Open Reel Studio again." });
+    reply.setCookie(COOKIE, config.token, { httpOnly: true, sameSite: "strict", path: "/", maxAge: 60 * 60 * 24 * 30 });
+    return reply.redirect("/");
+  });
+  app.post("/api/enter-nonce", { preHandler: auth }, async () => ({ nonce: nonces.issue() }));
   app.post("/api/logout", async (_req, reply) => { reply.clearCookie(COOKIE, { path: "/" }); return { ok: true }; });
   app.get("/api/health", async () => ({ ok: true }));
 

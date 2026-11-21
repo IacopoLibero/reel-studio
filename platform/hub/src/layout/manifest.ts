@@ -24,7 +24,7 @@ export const PROGRAM_ENTRIES: readonly string[] = [
 
 /** Tracked files of the repository that are not part of the workspace (the hub, Docker files, documentation, CI). */
 export const REPO_ONLY_PREFIXES: readonly string[] = [
-  "platform/", "docs/", ".github/", "brand/_template/", "sfx/", ".gitignore", ".gitattributes", ".dockerignore", ".editorconfig", ".prettierrc", ".env.example",
+  "platform/", "packaging/", "docs/", ".github/", "brand/_template/", "sfx/", ".gitignore", ".gitattributes", ".dockerignore", ".editorconfig", ".prettierrc", ".env.example",
   "eslint.config.mjs", "install.sh", "update.sh", "uninstall.sh",
   "README.md", "LICENSE", "SECURITY.md", "CODE_OF_CONDUCT.md", "CONTRIBUTING.md", "THIRD_PARTY_NOTICES.md", "TODO.md",
 ];
