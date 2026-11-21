@@ -97,7 +97,7 @@ Playwright (Chromium, headed on the Xvfb display, persistent profile per brand) 
 7. **Verify** on the calendar page: reload and find the post at that day and time (caption start matches). Fail the job if it is missing or duplicated.
    A reel is never scheduled twice (state per brand in `scheduled.json`).
 
-Rules: 9:16 always; one reel at a time; a failed step stops the job and saves a screenshot in `<data>/brands/<slug>/shots/`;
+Rules: 9:16 always; one reel at a time; a failed step stops the job with the step named in the error;
 credentials are never entered: if the login form shows, the job fails with `login_required`. Instagram accepts posts about 30 days ahead.
 
 The posting pattern is a setting per brand (`slotPattern` in the brand's `settings.json`, edited on the Settings page). The default is Sunday,
@@ -125,7 +125,7 @@ folders and `scheduled.json`. The Factory page selects to-do questions and creat
 ## Brands
 
 Everything brand-specific is scoped to one brand: `brand/<slug>/brand.json` (zod-validated), `<data>/brands/<slug>/` (settings, daily plans,
-analytics, ideas, series, `scheduled.json`, locks, notifications, screenshots) and the Instagram browser profile
+analytics, ideas, series, `scheduled.json`, locks, notifications) and the Instagram browser profile
 (`<data>/brands/<slug>/profile/`, or the folder named by `instagram.profileDir`). Global settings (Blender device, Claude model, brand assistant)
 stay in `<data>/settings.json`. The job queue is shared (one browser flow at a time); each job carries `brand`.
 First start after the multi-brand release: `platform/hub/src/brands/migrate.ts` makes a backup (`platform/data/backup-pre-brands-<time>/`) and

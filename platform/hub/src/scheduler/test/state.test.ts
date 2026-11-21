@@ -3,7 +3,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
 import {
-  hubDataDir, isReelScheduled, isSlotTaken, readState, recordScheduled, reelKey, scheduledFile, shotsDir, usedSlots,
+  hubDataDir, isReelScheduled, isSlotTaken, readState, recordScheduled, reelKey, scheduledFile, usedSlots,
   withEntry, writeState,
 } from '../state.js';
 
@@ -20,7 +20,6 @@ describe('state', () => {
     process.env.HUB_DATA = '/tmp/hd';
     expect(hubDataDir()).toBe('/tmp/hd');
     expect(scheduledFile()).toBe('/tmp/hd/scheduled.json');
-    expect(shotsDir()).toBe('/tmp/hd/shots');
     delete process.env.HUB_DATA;
     expect(hubDataDir()).toContain('platform/data');
   });

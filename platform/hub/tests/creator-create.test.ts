@@ -25,7 +25,7 @@ describe("brand.create from the form", () => {
     expect(b?.instagram.profileDir).toBeNull();
     for (const d of ["brand/acme-bakery", "brand/acme-bakery/voice", "reels/acme-bakery"]) expect(existsSync(join(env.root, d)), d).toBe(true);
     const p = env.reg.paths("acme-bakery");
-    for (const d of [p.dataDir, p.dailyDir, p.analyticsDir, p.ideasDir, p.locksDir, p.shotsDir, p.profileDir]) expect(existsSync(d), d).toBe(true);
+    for (const d of [p.dataDir, p.dailyDir, p.analyticsDir, p.ideasDir, p.locksDir, p.profileDir]) expect(existsSync(d), d).toBe(true);
     expect(read("brand/acme-bakery/style.md")).toContain("Acme Bakery");
     expect(read("brand/acme-bakery/style.md")).toContain("## About the brand");
     expect(read("brand/acme-bakery/style.md")).not.toContain("## Mascot");

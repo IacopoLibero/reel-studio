@@ -11,7 +11,7 @@ export interface SchedulerTarget {
   slug: string;
   /** Chrome user-data folder holding this brand's Instagram login. */
   profileDir: string;
-  /** The brand's data folder: scheduled.json and the screenshots of failed steps. */
+  /** The brand's data folder: scheduled.json. */
   dataDir: string;
   /** The brand's offer rule: after its last day the offer line is left out of the caption. */
   offer?: { lastDay: string | null; pattern: RegExp | null };

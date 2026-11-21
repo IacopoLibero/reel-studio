@@ -41,7 +41,6 @@ export interface BrandPaths {
   seriesFile: string;
   locksDir: string;
   notificationsFile: string;
-  shotsDir: string;
   /** The Instagram browser profile of this brand (its login). */
   profileDir: string;
 }
@@ -67,7 +66,6 @@ export function brandPaths(slug: string, o: BrandPathOptions = {}): BrandPaths {
     dataDir: data, settingsFile: join(data, "settings.json"), scheduledFile: join(data, "scheduled.json"),
     dailyDir: join(data, "daily"), analyticsDir: join(data, "analytics"), ideasDir: join(data, "ideas"),
     seriesFile: join(data, "series.json"), locksDir: join(data, "locks"), notificationsFile: join(data, "notifications.json"),
-    shotsDir: join(data, "shots"),
     profileDir: o.profileDir ? resolve(o.profileDir) : o.chromeRoot ? join(o.chromeRoot, slug) : defaultProfile(join(data, "profile"), slug, env),
   };
 }

@@ -1,3 +1,4 @@
+import { existsSync } from 'node:fs';
 import { mkdir, mkdtemp, readFile, readdir, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join, dirname } from 'node:path';
@@ -111,14 +112,14 @@ describe('flow against the local mock', () => {
     expect(typeof (await getSessionStatus()).loggedIn).toBe('boolean');
   });
 
-  it('saves a screenshot on step failure', async () => {
+  it('fails a broken page with step_failed and writes no screenshot', async () => {
     const { runScheduleJob } = await import('../index.js');
     const bad = join(work, 'broken.html');
     await writeFile(bad, '<button>Schedule content</button>');
     const other = await makeReel('12-broken');
     await expect(runScheduleJob({ id: 'j6', params: { reelDir: other, slot: '2026-12-06T17:30' } }, ctx(),
       { now: new Date('2026-11-19T10:00:00Z'), url: pathToFileURL(bad).href })).rejects.toMatchObject({ code: 'step_failed' });
-    expect((await readdir(join(work, 'data', 'shots'))).some((f) => f.startsWith('j6-'))).toBe(true);
+    expect(existsSync(join(work, 'data', 'shots'))).toBe(false);
   }, 60000);
 });
 

@@ -1,11 +1,8 @@
-import { mkdir } from 'node:fs/promises';
-import { join } from 'node:path';
 import type { Locator, Page } from 'playwright';
 import { getContext, IG_URL, requireLogin } from './browser.js';
 import { isoToWall, norm, parseWeek, parseTimeLabel, resolveWeekDates, type RawWeek } from './calendar.js';
 import { setDateTime } from './flow.js';
 import { minutesAhead, MIN_LEAD_MINUTES } from './slots.js';
-import { shotsDir } from './state.js';
 import { SchedulerError, type OpOptions, type ScheduledPost } from './types.js';
 
 const MAX_WEEKS_WALK = 60;
@@ -14,7 +11,7 @@ function check(signal?: AbortSignal) {
   if (signal?.aborted) throw new SchedulerError('cancelled', 'Cancelled');
 }
 
-/** Opens an own page in the shared context, requires a login, always closes the page, shoots on failure. */
+/** Opens an own page in the shared context, requires a login and always closes the page. */
 export async function withCalendarPage<T>(op: string, opts: OpOptions, fn: (page: Page, url: string) => Promise<T>): Promise<T> {
   const url = opts.url ?? IG_URL;
   const page = await (await getContext(opts.target?.profileDir)).newPage();
@@ -22,11 +19,6 @@ export async function withCalendarPage<T>(op: string, opts: OpOptions, fn: (page
     await requireLogin(page, url);
     return await fn(page, url);
   } catch (e) {
-    try {
-      const shots = opts.target ? join(opts.target.dataDir, 'shots') : shotsDir();
-      await mkdir(shots, { recursive: true });
-      await page.screenshot({ path: join(shots, `${op}-${Date.now()}.png`) });
-    } catch { /* best effort */ }
     if (e instanceof SchedulerError) throw e;
     throw new SchedulerError('ui_changed', `${op}: ${(e as Error).message}`);
   } finally {

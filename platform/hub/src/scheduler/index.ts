@@ -6,7 +6,7 @@ import { humanDay } from '../brands/offer.js';
 import { runFlow } from './flow.js';
 import { isValidSlotFormat, minutesAhead, MIN_LEAD_MINUTES } from './slots.js';
 import {
-  hubDataDir, isReelScheduled, isSlotTaken, readState, recordScheduled, reelKey, scheduledFile, shotsDir,
+  hubDataDir, isReelScheduled, isSlotTaken, readState, recordScheduled, reelKey, scheduledFile,
 } from './state.js';
 import { withLock } from './lock.js';
 import { deleteImpl, listScheduledImpl, rescheduleImpl } from './ops.js';
@@ -59,7 +59,7 @@ async function runScheduleJobLocked(
     const scheduledAt = new Date().toISOString();
     if (offerLines.length) ctx.update({ log: `The offer ended on ${humanDay(offer?.lastDay ?? '')}: the offer line was left out of the Instagram caption (caption.md is unchanged).` });
     await runFlow(page, {
-      url, videoPath, coverPath, caption, slot, shotsDir: shotsDir(ctx.target?.dataDir), jobId: job.id, cropTimeoutMs: opts.cropTimeoutMs,
+      url, videoPath, coverPath, caption, slot, cropTimeoutMs: opts.cropTimeoutMs,
       onScheduled: async () => { await recordScheduled(key, { slot, scheduledAt, verified: false }, file); },
     }, ctx);
     await recordScheduled(key, { slot, scheduledAt, verified: true }, file);

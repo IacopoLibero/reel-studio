@@ -98,7 +98,7 @@ describe("creating the folders of a brand", () => {
     writeFileSync(join(root, "brand/_template/logo.png"), "png");
     const r = reg().create({ ...defaultBrandValues("acme", "Acme"), website: "acme.example" });
     const p = r.paths;
-    for (const d of [p.brandDir, p.voiceDir, p.reelsDir, p.dataDir, p.dailyDir, p.analyticsDir, p.ideasDir, p.locksDir, p.shotsDir, p.profileDir]) expect(existsSync(d), d).toBe(true);
+    for (const d of [p.brandDir, p.voiceDir, p.reelsDir, p.dataDir, p.dailyDir, p.analyticsDir, p.ideasDir, p.locksDir, p.profileDir]) expect(existsSync(d), d).toBe(true);
     expect(readFileSync(p.styleMd, "utf8")).toBe("# Acme acme.example #2f6fed\n");
     expect(readFileSync(p.questionsMd, "utf8")).toContain("# Reel questions: Acme");
     // The template has a placeholder logo: a new brand must not inherit it, or every cover would show a blank frame.

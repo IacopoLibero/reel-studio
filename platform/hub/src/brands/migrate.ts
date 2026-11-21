@@ -25,7 +25,7 @@ export interface MigrateResult {
 }
 
 /** What a single-brand release kept at the top of the data folder and what moves into data/brands/<slug>/ (jobs.json stays: it is the one queue, its records get a brand). */
-const MOVES = ["scheduled.json", "daily", "analytics", "ideas", "series.json", "notifications.json", "locks", "shots"] as const;
+const MOVES = ["scheduled.json", "daily", "analytics", "ideas", "series.json", "notifications.json", "locks"] as const;
 const MARKER = ".brands-migrated.json";
 const NO_BACKUP = new Set(["brands", "chrome-profile", "tmp", "dev-token", MARKER]);
 

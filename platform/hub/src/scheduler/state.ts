@@ -13,7 +13,6 @@ export function hubDataDir(): string {
   return defaultDataDir();
 }
 export const scheduledFile = (dir = hubDataDir()) => join(dir, 'scheduled.json');
-export const shotsDir = (dir = hubDataDir()) => join(dir, 'shots');
 
 /** State key: path after "/reels/" if present, else the folder name. */
 export function reelKey(reelDir: string): string {

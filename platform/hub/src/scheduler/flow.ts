@@ -1,5 +1,3 @@
-import { mkdir } from 'node:fs/promises';
-import { join } from 'node:path';
 import type { Page } from 'playwright';
 import { checkCaption } from './caption.js';
 import { captionStartOf, wallToIso } from './calendar.js';
@@ -12,8 +10,6 @@ export interface FlowInput {
   caption: string;
   /** Rome wall time "YYYY-MM-DDTHH:mm". */
   slot: string;
-  shotsDir: string;
-  jobId: string;
   /** Called once Instagram confirmed the scheduling (before verify), to persist state. */
   onScheduled?: () => Promise<void>;
   /** How long to wait for the Crop step after the upload (default 90 s); tests shorten it. */
@@ -220,7 +216,6 @@ export async function runFlow(page: Page, input: FlowInput, ctx: JobContext): Pr
     await verifyOnCalendar(page, input, p);
     ctx.update({ progress: 1, log: 'Scheduled and verified' });
   } catch (e) {
-    await saveShot(page, input, stepIndex);
     throw e instanceof SchedulerError ? e : new SchedulerError('step_failed', `${STEPS[stepIndex]}: ${(e as Error).message}`);
   }
 }
@@ -232,11 +227,4 @@ async function verifyOnCalendar(page: Page, input: FlowInput, p: SlotParts): Pro
   if (found !== 1) {
     throw new SchedulerError('verify_failed', found === 0 ? `Scheduled post not found on the calendar at ${p.dateLabel} ${p.timeLabel}` : `Found ${found} calendar items at ${p.dateLabel} ${p.timeLabel}, expected 1`);
   }
-}
-
-export async function saveShot(page: Page, input: FlowInput, stepIndex: number): Promise<void> {
-  try {
-    await mkdir(input.shotsDir, { recursive: true });
-    await page.screenshot({ path: join(input.shotsDir, `${input.jobId}-step${stepIndex}-${Date.now()}.png`) });
-  } catch { /* best effort */ }
 }

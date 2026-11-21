@@ -37,7 +37,7 @@ function legacyLayout() {
   writeFileSync(join(data, "scheduled.json"), JSON.stringify({ "acme/1-a": { slot: "2026-11-25T08:00", scheduledAt: "x", verified: true } }));
   writeFileSync(join(data, "series.json"), "[]");
   writeFileSync(join(data, "notifications.json"), "[]");
-  for (const d of ["daily", "analytics", "ideas", "locks", "shots"]) mkdirSync(join(data, d));
+  for (const d of ["daily", "analytics", "ideas", "locks"]) mkdirSync(join(data, d));
   writeFileSync(join(data, "daily/2026-11-19.json"), "{}");
   writeFileSync(join(data, "analytics/hooks.csv"), "a,b\n1,2\n");
   writeFileSync(join(data, "ideas/b.json"), "{}");
@@ -58,11 +58,11 @@ describe("migrating the single-brand layout", () => {
     legacyLayout();
     const r = migrateLegacyData(opts({ BRAND: "acme", IG_USER_ID: "12345", IG_ACCOUNT: "acme_cafe", OFFER_LAST_DAY: "2026-11-30", OFFER_REGEX: "ACMEFREE", HUB_BLOG_DIR: "/posts" }));
     expect(r).toMatchObject({ status: "migrated", slug: "acme", jobsTagged: 3 });
-    expect(r.moved.sort()).toEqual(["analytics", "daily", "ideas", "locks", "notifications.json", "scheduled.json", "series.json", "shots"]);
+    expect(r.moved.sort()).toEqual(["analytics", "daily", "ideas", "locks", "notifications.json", "scheduled.json", "series.json"]);
 
     // backup: a full copy, without the token or the Chrome profile, with a note
     const backup = r.backup as string;
-    expect(readdirSync(backup).sort()).toEqual(["NOTE.txt", "analytics", "daily", "ideas", "jobs.json", "locks", "notifications.json", "scheduled.json", "series.json", "settings.json", "shots"]);
+    expect(readdirSync(backup).sort()).toEqual(["NOTE.txt", "analytics", "daily", "ideas", "jobs.json", "locks", "notifications.json", "scheduled.json", "series.json", "settings.json"]);
     expect(readFileSync(join(backup, "NOTE.txt"), "utf8")).toContain(chrome);
     expect(JSON.parse(readFileSync(join(backup, "settings.json"), "utf8")).accountName).toBe("acme_cafe");
 
@@ -79,7 +79,7 @@ describe("migrating the single-brand layout", () => {
     expect(JSON.parse(readFileSync(join(bdata, "scheduled.json"), "utf8"))["acme/1-a"].slot).toBe("2026-11-25T08:00");
     expect(existsSync(join(bdata, "daily/2026-11-19.json"))).toBe(true);
     expect(existsSync(join(bdata, "analytics/hooks.csv"))).toBe(true);
-    for (const n of ["scheduled.json", "daily", "analytics", "ideas", "series.json", "notifications.json", "locks", "shots"]) expect(existsSync(join(data, n)), n).toBe(false);
+    for (const n of ["scheduled.json", "daily", "analytics", "ideas", "series.json", "notifications.json", "locks"]) expect(existsSync(join(data, n)), n).toBe(false);
     expect(existsSync(join(data, "dev-token"))).toBe(true);
 
     // settings split: brand part in the brand folder, shared part stays global

@@ -98,7 +98,7 @@ export class BrandRegistry {
       }
     }
     if (!existsSync(p.questionsMd)) { writeFileSync(p.questionsMd, `# Reel questions: ${brand.name}\n\n${SKELETON}`); created.push(p.questionsMd); }
-    for (const d of [p.voiceDir, p.reelsDir, p.dataDir, p.dailyDir, p.analyticsDir, p.ideasDir, p.locksDir, p.shotsDir]) ensureDir(d);
+    for (const d of [p.voiceDir, p.reelsDir, p.dataDir, p.dailyDir, p.analyticsDir, p.ideasDir, p.locksDir]) ensureDir(d);
     try { ensureDir(p.profileDir); } catch { /* the profile root (/data/...) exists only inside the container; the scheduler creates it on first use */ }
     writeBrand(this.root, brand);
     created.push(p.brandJson);
