@@ -9,6 +9,16 @@ export interface StyleOptions {
   mascot?: string;
 }
 
+const NO_LOGO_TEXT = " No logo yet: the cover is drawn without a logo frame. When there is one, save it in this folder as logo.png.";
+const NO_LOGO_RE = / No logo yet: the cover is drawn without a logo frame\.[^\n]*/;
+const LOGO_RE = / Logo: `brand\/[^`\n]*\/logo\.png`\./;
+
+/** Keeps the logo sentence of a brand's style.md true after a logo is set or removed. A style.md without that sentence is returned unchanged. */
+export function withLogoLine(md: string, slug: string, hasLogo: boolean): string {
+  const logoText = ` Logo: \`brand/${slug}/logo.png\`.`;
+  return hasLogo ? md.replace(NO_LOGO_RE, () => logoText).replace(LOGO_RE, () => logoText) : md.replace(LOGO_RE, () => NO_LOGO_TEXT);
+}
+
 const section = (md: string, title: string): { from: number; to: number } | null => {
   const m = new RegExp(`^## ${title}\\s*$`, "m").exec(md);
   if (!m) return null;
@@ -23,7 +33,7 @@ const section = (md: string, title: string): { from: number; to: number } | null
 export function adaptStyle(filled: string, b: Brand, o: StyleOptions): string {
   let md = filled;
   if (o.logo) md = md.split(`brand/${b.slug}/logo.png`).join(`brand/${b.slug}/logo.${o.logo}`);
-  else md = md.replace(/ Logo: `brand\/[^`]*\/logo\.png`\./, " No logo yet: the cover is drawn without a logo frame. When there is one, save it in this folder as logo.png (or logo.svg).");
+  else md = md.replace(LOGO_RE, () => NO_LOGO_TEXT);
   if (o.voice) md = md.split(`brand/${b.slug}/voice.wav`).join(`brand/${b.slug}/voice/voice.wav`).replace("(its words are in `voice.txt` next to it", "(its words are in `voice/voice.txt`");
   else md = md.replace(/^- Chosen voice:.*$/m, `- No voice sample yet. Record one (see \`voice-sample.md\`), save it as \`brand/${b.slug}/voice/voice.wav\` with its words in \`voice/voice.txt\`, and set "voice" in brand.json.`);
   const mascot = section(md, "Mascot");

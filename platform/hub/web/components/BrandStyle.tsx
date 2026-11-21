@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { api, type BrandStyle, type FontList } from "../api";
-import { useLoad } from "../hooks";
+import { announceBrandsChanged, useLoad } from "../hooks";
 import { ClosingPreview, ColorField, FontField, Text } from "../creator/fields";
 import { LogoField } from "./LogoField";
 import type { BrandSummary } from "../../src/shared/types";
@@ -20,19 +20,20 @@ export function BrandStyleSection({ brand }: { brand: BrandSummary }) {
   const loaded = useLoad<BrandStyle>(api.brandStyle, [brand.slug]);
   const fonts = useLoad<FontList>(api.fonts);
   const [style, setStyle] = useState<BrandStyle | null>(null);
+  const [saved, setSaved] = useState<BrandStyle | null>(null); // what is on disk: the baseline for "unsaved changes"
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
   const [busy, setBusy] = useState(false);
-  useEffect(() => { if (loaded.data) setStyle(loaded.data); }, [loaded.data]);
+  useEffect(() => { if (loaded.data) { setStyle(loaded.data); setSaved(loaded.data); } }, [loaded.data]);
 
   if (!style) return <>{loaded.error ? <p className="error">{loaded.error}</p> : <p className="muted">Loading</p>}</>;
   const problems = styleProblems(style);
-  const dirty = JSON.stringify(style) !== JSON.stringify(loaded.data);
+  const dirty = JSON.stringify(style) !== JSON.stringify(saved);
   const c = style.colors;
   const list = fonts.data ?? { names: [], checked: false };
   const save = () => {
     setBusy(true); setMsg(null);
     api.saveBrandStyle(style)
-      .then((s) => { setStyle(s); loaded.reload(); setMsg({ ok: true, text: "Saved. New reels use it; reels already made are not redrawn." }); })
+      .then((s) => { setSaved(s); setStyle((cur) => (JSON.stringify(cur) === JSON.stringify(style) ? s : cur)); announceBrandsChanged(); setMsg({ ok: true, text: "Saved. New reels use it; reels already made are not redrawn." }); })
       .catch((e: Error) => setMsg({ ok: false, text: e.message }))
       .finally(() => setBusy(false));
   };
@@ -56,7 +57,7 @@ export function BrandStyleSection({ brand }: { brand: BrandSummary }) {
       ))}
       <div className="row">
         <button type="button" className="btn primary" disabled={!dirty || busy || Object.keys(problems).length > 0} onClick={save}>{busy ? "Saving" : "Save style"}</button>
-        {dirty && <button type="button" className="btn" disabled={busy} onClick={() => { if (loaded.data) setStyle(loaded.data); setMsg(null); }}>Discard</button>}
+        {dirty && <button type="button" className="btn" disabled={busy} onClick={() => { if (saved) setStyle(saved); setMsg(null); }}>Discard</button>}
         {msg && <span className={msg.ok ? "muted" : "error"} aria-live="polite">{msg.text}</span>}
       </div>
     </>

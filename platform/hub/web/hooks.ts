@@ -64,3 +64,7 @@ export function useRoute(pages: readonly string[]): Route {
   });
   return r;
 }
+
+/** Fired on `window` after something that the brand list shows (colours, logo) was saved: the shell reads the list again. */
+export const BRANDS_CHANGED = "reelhub:brands-changed";
+export const announceBrandsChanged = (): void => { window.dispatchEvent(new Event(BRANDS_CHANGED)); };

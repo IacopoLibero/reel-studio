@@ -32,7 +32,36 @@ const send = (method: "PUT" | "DELETE", url: string, payload?: Buffer, extra: Re
   app.inject({ method, url, headers: { ...auth, "content-type": "application/octet-stream", ...extra }, ...(payload ? { payload } : {}) });
 const logoPath = (slug: string) => join(root, "brand", slug, "logo.png");
 
+const NO_LOGO = "- Brand: Acme, `acme.example`. No logo yet: the cover is drawn without a logo frame. When there is one, save it in this folder as logo.png.\n";
+const WITH_LOGO = "- Brand: Acme, `acme.example`. Logo: `brand/acme/logo.png`.\n";
+
 describe("the brand logo", () => {
+  it("keeps the logo line of style.md true: set writes the logo path, remove goes back to 'No logo yet'", async () => {
+    const md = join(root, "brand/acme/style.md");
+    writeFileSync(md, NO_LOGO);
+    await send("PUT", "/api/brands/acme/logo", PNG);
+    expect(readFileSync(md, "utf8")).toBe(WITH_LOGO);
+    await send("PUT", "/api/brands/acme/logo", PNG);
+    expect(readFileSync(md, "utf8")).toBe(WITH_LOGO);
+    await send("DELETE", "/api/brands/acme/logo");
+    expect(readFileSync(md, "utf8")).toBe(NO_LOGO);
+  });
+  it("leaves a style.md that has no such line, or no style.md at all, alone", async () => {
+    rmSync(join(root, "brand/acme/style.md"), { force: true });
+    expect((await send("PUT", "/api/brands/acme/logo", PNG)).statusCode).toBe(200);
+    expect(existsSync(join(root, "brand/acme/style.md"))).toBe(false);
+    writeFileSync(join(root, "brand/acme/style.md"), "# My own words\n");
+    await send("DELETE", "/api/brands/acme/logo");
+    expect(readFileSync(join(root, "brand/acme/style.md"), "utf8")).toBe("# My own words\n");
+  });
+  it("removes a logo.svg together with the PNG, so a brand never ends up with two logos", async () => {
+    writeFileSync(join(root, "brand/acme/logo.svg"), "<svg/>");
+    await send("PUT", "/api/brands/acme/logo", PNG);
+    expect(existsSync(join(root, "brand/acme/logo.svg"))).toBe(false);
+    writeFileSync(join(root, "brand/acme/logo.svg"), "<svg/>");
+    await send("DELETE", "/api/brands/acme/logo");
+    expect(existsSync(join(root, "brand/acme/logo.svg"))).toBe(false);
+  });
   it("has none to start with: the brand list says so and the picture is a 404", async () => {
     expect((await get("/api/brands")).json().brands[0].hasLogo).toBe(false);
     expect((await get("/api/brands/acme/logo")).statusCode).toBe(404);

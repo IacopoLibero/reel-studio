@@ -22,7 +22,7 @@ export function NextSteps({ brand }: { brand: BrandSummary }) {
     setBusy(true); setErr(null);
     api.createJob("reel.ideas", { count: FIRST_REEL_IDEAS })
       .then(() => { window.location.hash = routeHash(brand.slug, "factory"); })
-      .catch((e: Error) => setErr(e.message))
+      .catch((e: Error) => { if (/already/i.test(e.message)) window.location.hash = routeHash(brand.slug, "factory"); else setErr(e.message); })
       .finally(() => setBusy(false));
   };
   const close = () => { try { window.sessionStorage.removeItem(KEY); } catch { /* ignore */ } setW(null); };

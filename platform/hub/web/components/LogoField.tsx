@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { api } from "../api";
+import { announceBrandsChanged } from "../hooks";
 import { Row } from "./SettingsParts";
 
 const MAX_BYTES = 1024 * 1024;
@@ -13,7 +14,7 @@ export function LogoField({ colors, initial }: { colors: { background: string; t
 
   const run = async (work: () => Promise<unknown>, done: string, after: boolean) => {
     setBusy(true); setMsg(null);
-    try { await work(); setHas(after); setVersion(Date.now()); setMsg({ ok: true, text: done }); } catch (e) { setMsg({ ok: false, text: (e as Error).message }); } finally { setBusy(false); }
+    try { await work(); setHas(after); setVersion(Date.now()); setMsg({ ok: true, text: done }); announceBrandsChanged(); } catch (e) { setMsg({ ok: false, text: (e as Error).message }); } finally { setBusy(false); }
   };
   const pick = (file: File | undefined) => {
     if (!file) return;

@@ -38,8 +38,9 @@ function useGoogleFont(name: string, enabled: boolean): FontState {
     if (!enabled) { setState("none"); return; }
     setState("loading");
     let live = true;
-    const id = `gfont-${name.trim().replace(/[^A-Za-z0-9]/g, "-")}`;
+    const id = `gfont-${encodeURIComponent(name.trim())}`;
     let link = document.getElementById(id) as HTMLLinkElement | null;
+    if (link && !link.sheet) { link.remove(); link = null; } // an earlier try failed or never finished: try again
     if (!link) { link = document.createElement("link"); link.id = id; link.rel = "stylesheet"; link.href = googleFontCss(name); document.head.appendChild(link); }
     const done = () => { void document.fonts.load(`32px "${name.trim()}"`).then((f) => live && setState(f.length ? "ready" : "failed"), () => live && setState("failed")); };
     if (link.sheet) done(); else { link.addEventListener("load", done, { once: true }); link.addEventListener("error", () => live && setState("failed"), { once: true }); }

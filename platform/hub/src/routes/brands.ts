@@ -8,6 +8,7 @@ import { readBrand, writeBrand } from "../brands/registry.js";
 import type { AppDeps } from "../app.js";
 import { makeScope } from "./scope.js";
 import { logoRoutes } from "./logo.js";
+import { checkFont, loadFontList } from "../creator/fonts.js";
 
 export const summaryOf = (b: Brand, hasLogo = false): BrandSummary => ({
   slug: b.slug, name: b.name, language: b.language, website: b.website, accent: b.colors.accent, background: b.colors.background, colors: b.colors,
@@ -30,6 +31,8 @@ export function brandRoutes(app: FastifyInstance, d: AppDeps): void {
     const b = scope(req);
     const p = styleSchema.safeParse(req.body);
     if (!p.success) return reply.code(400).send({ error: p.error.issues[0]?.message ?? "Invalid style." });
+    const fonts = await loadFontList(undefined, [d.config.root]);
+    for (const [k, name] of Object.entries(p.data.fonts)) if (!checkFont(fonts, name).ok) return reply.code(400).send({ error: `fonts.${k}: "${name}" is not a Google font that Remotion can load.` });
     const fresh = readBrand(d.config.root, b.slug);
     if (!fresh) return reply.code(404).send({ error: "That brand does not exist." });
     writeBrand(d.config.root, { ...fresh, ...p.data });

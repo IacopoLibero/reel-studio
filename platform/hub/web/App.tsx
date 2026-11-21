@@ -16,6 +16,7 @@ import { SeriesPage } from "./pages/Series";
 import { SettingsPage } from "./pages/Settings";
 import { NewBrandPage } from "./pages/NewBrand";
 import { NextSteps, markWelcome } from "./components/NextSteps";
+import { BRANDS_CHANGED } from "./hooks";
 import type { Created } from "./creator/useCreate";
 
 const PAGES = [
@@ -35,6 +36,12 @@ function Shell({ onLogout }: { onLogout: () => void }) {
   const [list, setList] = useState<BrandList | null>(null);
   const [error, setError] = useState<string | null>(null);
   useEffect(() => { api.brands().then(setList).catch((e: Error) => setError(e.message)); }, []);
+  // A page that changed what the brand list shows (colours, logo) says so, and the list is read again.
+  useEffect(() => {
+    const reload = () => { api.brands().then(setList).catch(() => undefined); };
+    window.addEventListener(BRANDS_CHANGED, reload);
+    return () => window.removeEventListener(BRANDS_CHANGED, reload);
+  }, []);
   const route = useRoute(PAGE_IDS);
   const fallbackPage = window.location.pathname === "/daily" ? "daily" : "calendar";
 
@@ -133,7 +140,7 @@ function BrandPages({ brand, page }: { brand: BrandSummary; page: string }) {
       {page === "reels" && <ReelsPage jobs={jobs} />}
       {page === "instagram" && <InstagramPage jobs={jobs} brand={brand} />}
       {page === "character" && <CharacterPage jobs={jobs} brand={brand} />}
-      {page === "settings" && <SettingsPage brand={brand} />}
+      {page === "settings" && <SettingsPage key={brand.slug} brand={brand} />}
     </>
   );
 }

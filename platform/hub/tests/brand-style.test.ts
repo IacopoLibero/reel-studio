@@ -6,6 +6,7 @@ import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from
 import { buildApp } from "../src/app.js";
 import type { Config } from "../src/config.js";
 import { readBrand } from "../src/brands/registry.js";
+import { resetFontCache } from "../src/creator/fonts.js";
 import { writeTestBrand } from "./helpers/brand.js";
 
 const TOKEN = "t0ken";
@@ -36,6 +37,21 @@ const style = {
 };
 
 describe("the brand style (colours, fonts, closing lines)", () => {
+  it("refuses a font that Remotion cannot load when the list is available, and keeps brand.json as it was", async () => {
+    resetFontCache();
+    const dir = join(root, "node_modules/@remotion/google-fonts");
+    mkdirSync(dir, { recursive: true });
+    writeFileSync(join(dir, "package.json"), JSON.stringify({ name: "@remotion/google-fonts", version: "0.0.0", main: "index.js" }));
+    writeFileSync(join(dir, "index.js"), 'exports.getAvailableFonts = () => [{ fontFamily: "Oswald" }, { fontFamily: "Inter" }];');
+    try {
+      const before = readBrand(root, "acme")!;
+      const r = await put("/api/brands/acme/style", { ...style, fonts: { headline: "Oswlad", body: "Inter" } });
+      expect(r.statusCode).toBe(400);
+      expect(r.json().error).toMatch(/fonts\.headline.*Oswlad/);
+      expect(readBrand(root, "acme")).toEqual(before);
+      expect((await put("/api/brands/acme/style", style)).statusCode).toBe(200);
+    } finally { resetFontCache(); }
+  });
   it("reads the style of one brand", async () => {
     const r = (await get("/api/brands/acme/style")).json();
     expect(r.colors.accent).toBe("#2f6fed");
