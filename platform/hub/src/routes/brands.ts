@@ -1,3 +1,4 @@
+import { existsSync } from "node:fs";
 import type { FastifyInstance } from "fastify";
 import { NotificationStore } from "../daily/notifications.js";
 import type { BrandSummary } from "../shared/types.js";
@@ -6,19 +7,22 @@ import { styleSchema } from "../brands/schema.js";
 import { readBrand, writeBrand } from "../brands/registry.js";
 import type { AppDeps } from "../app.js";
 import { makeScope } from "./scope.js";
+import { logoRoutes } from "./logo.js";
 
-export const summaryOf = (b: Brand): BrandSummary => ({
+export const summaryOf = (b: Brand, hasLogo = false): BrandSummary => ({
   slug: b.slug, name: b.name, language: b.language, website: b.website, accent: b.colors.accent, background: b.colors.background, colors: b.colors,
-  instagramAccount: b.instagram.account, hasInstagramUserId: b.instagram.userId !== "",
+  instagramAccount: b.instagram.account, hasInstagramUserId: b.instagram.userId !== "", hasLogo,
   character: { enabled: b.character.enabled, id: b.character.id, name: b.character.name },
 });
 
 /** The brand list for the switcher, one brand, and the notifications of every brand (the host notifier polls one URL). */
 export function brandRoutes(app: FastifyInstance, d: AppDeps): void {
-  app.get("/api/brands", async () => ({ brands: d.brands.list().map(summaryOf), default: d.brands.defaultSlug() }));
+  logoRoutes(app, d);
+  const hasLogo = (slug: string): boolean => existsSync(d.brands.paths(slug).logo);
+  app.get("/api/brands", async () => ({ brands: d.brands.list().map((b) => summaryOf(b, hasLogo(b.slug))), default: d.brands.defaultSlug() }));
 
   const scope = makeScope(d);
-  app.get<{ Params: { slug: string } }>("/api/brands/:slug", async (req) => summaryOf(scope(req).brand));
+  app.get<{ Params: { slug: string } }>("/api/brands/:slug", async (req) => { const c = scope(req); return summaryOf(c.brand, hasLogo(c.slug)); });
 
   app.get<{ Params: { slug: string } }>("/api/brands/:slug/style", async (req) => { const b = scope(req).brand; return { colors: b.colors, fonts: b.fonts, closing: b.closing }; });
   // Colours, fonts and closing lines can change after the brand is created; nothing else in brand.json is touched.

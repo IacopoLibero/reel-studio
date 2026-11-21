@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { api, type BrandStyle, type FontList } from "../api";
 import { useLoad } from "../hooks";
 import { ClosingPreview, ColorField, FontField, Text } from "../creator/fields";
+import { LogoField } from "./LogoField";
 import type { BrandSummary } from "../../src/shared/types";
 
 const HEX = /^#[0-9a-fA-F]{6}$/;
@@ -37,6 +38,7 @@ export function BrandStyleSection({ brand }: { brand: BrandSummary }) {
   };
   return (
     <>
+      <LogoField colors={c} initial={brand.hasLogo} />
       <ColorField label="Background" value={c.background} problem={problems["color-background"]} onChange={(v) => setStyle({ ...style, colors: { ...c, background: v } })} against={c.text} againstLabel="the text colour" />
       <ColorField label="Text" value={c.text} problem={problems["color-text"]} onChange={(v) => setStyle({ ...style, colors: { ...c, text: v } })} />
       <ColorField label="Accent" help="Use it only on what matters." value={c.accent} problem={problems["color-accent"]} onChange={(v) => setStyle({ ...style, colors: { ...c, accent: v } })} against={c.background} />

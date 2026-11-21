@@ -172,5 +172,7 @@ export interface BrandSummary {
   colors: { background: string; text: string; accent: string; secondary: string };
   instagramAccount: string;
   hasInstagramUserId: boolean;
+  /** brand/<slug>/logo.png exists. */
+  hasLogo: boolean;
   character: { enabled: boolean; id: string; name: string };
 }

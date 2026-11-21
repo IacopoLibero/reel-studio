@@ -79,7 +79,7 @@ they want to switch first.
    - **No voice:** skip it and time the words at a natural reading speed.
 4. **Plan.** Write `plan.md`: one scene per sentence, with its words, its start and end from the word times, and what
    is on screen. Check the plan against "Make it look good" before drawing anything.
-   - The last scene is the closing hook: the brand logo from `brand/<brand>/logo.png` (or `logo.svg`)
+   - The last scene is the closing hook: the brand logo from `brand/<brand>/logo.png`
      (copy it to `public/logo.png` before building: the closing scenes load it from there; a brand with no logo file has no logo:
      leave it out, never reuse another brand's `public/logo.png`), the website large in the accent colour, and the
      call to action, landing on the spoken words. It stays on screen for at least 2 seconds and keeps moving
