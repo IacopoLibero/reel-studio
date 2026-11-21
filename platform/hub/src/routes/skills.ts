@@ -1,8 +1,9 @@
 import type { FastifyInstance } from "fastify";
+import { defaultProgramRoot } from "../paths.js";
 import { countByRisk, makeChangeSchema, OttoSkills, OUR_SKILLS, visibleSkills, type OttoSkill } from "../skills/ootto.js";
 
-export function skillRoutes(app: FastifyInstance, root: string): void {
-  const skills = new OttoSkills(root);
+export function skillRoutes(app: FastifyInstance, root: string, programRoot: string = defaultProgramRoot()): void {
+  const skills = new OttoSkills(root, undefined, programRoot);
   const view = (list: OttoSkill[]) => { const shown = visibleSkills(list); return { skills: shown, counts: countByRisk(shown), ours: OUR_SKILLS }; };
   const fail = (e: unknown) => ({ error: (e as Error).message });
 

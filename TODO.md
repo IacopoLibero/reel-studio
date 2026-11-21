@@ -43,6 +43,8 @@ then the app, then the big features, which are born with the final structure and
 - **A file lost and rebuilt (2026-11-21).** `mascot/work/head.json` (the traced head of the example character, read by its Blender script when it builds the model) was deleted by mistake; the script that made it was deleted too. It was rebuilt from the rendered frames (the head outline, 1 sheet pixel = 2 frame pixels) and checked by rendering five frames of five moves: 99.5% of the silhouette matches, only anti-aliasing differs. It is stored as `mascot/<id>-head.json`. If the original character sheet turns up, trace the head again from it.
 - **Open after the move:** the old copies (`workspace/brand/<slug>/*.json|md|png`, `reels/`, `mascot/`, `characters/`, `public/`, `brand/_template`) are still on disk until `scripts/migrate-brand-folders.sh --remove-old --yes`. A character added to a brand later (there is no screen for it yet) should move the brand's own voice from `identity/` to `mascot/<id>-voice.*`.
 
+- **Ootto skills read from the program (2026-11-21).** `workspace/platform/skills` is gone: `.claude/skills/ootto-<name>` links to the program's `platform/skills/ootto/<name>` (absolute from a workspace; `scripts/ootto-skills.sh` uses `REEL_PROGRAM` or `programRoot` in `.reel-studio/program.json`), and `syncProgram` points the links at the program again at each start. Tried with a real headless Claude call that loads `ootto-hook-mining` and reads `mine_hooks.py` next to it.
+
 ### 2. The app
 
 - **Packages.** A pacman package (declares its dependencies) and a Flatpak. Models and other heavy files never go inside the package: they are downloaded on first run into the data folder.

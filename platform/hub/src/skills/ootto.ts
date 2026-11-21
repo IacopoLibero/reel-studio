@@ -38,11 +38,12 @@ export function makeChangeSchema(known: ReadonlyArray<Pick<OttoSkill, "name" | "
 /** Wrapper around scripts/ootto-skills.sh. Every call is execFile with an argument array: no shell string anywhere. */
 export class OttoSkills {
   private readonly script: string;
-  constructor(root: string, private readonly timeoutMs = 20_000) { this.script = join(root, "scripts", "ootto-skills.sh"); }
+  /** `programRoot` is where the skills library is (the program folder); without it the script finds it itself. */
+  constructor(root: string, private readonly timeoutMs = 20_000, private readonly programRoot?: string) { this.script = join(root, "scripts", "ootto-skills.sh"); }
 
   private async exec(args: string[]): Promise<string> {
     try {
-      const { stdout } = await run("bash", [this.script, ...args], { timeout: this.timeoutMs, maxBuffer: 1_000_000, env: { PATH: process.env.PATH, HOME: process.env.HOME } });
+      const { stdout } = await run("bash", [this.script, ...args], { timeout: this.timeoutMs, maxBuffer: 1_000_000, env: { PATH: process.env.PATH, HOME: process.env.HOME, ...(this.programRoot ? { REEL_PROGRAM: this.programRoot } : {}) } });
       return stdout;
     } catch (e) {
       const err = e as Error & { stderr?: string };

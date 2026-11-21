@@ -1,6 +1,6 @@
 /**
  * The files the program ships into the workspace (the Remotion project the reels are rendered from).
- * `platform/skills` is the library of Ootto skills; `.claude/skills/ootto-<name>` links to it when a skill is switched on (those links are the user's choice).
+ * The library of Ootto skills (`platform/skills`) is NOT copied: `.claude/skills/ootto-<name>` links to the program's own folder when a skill is switched on (those links are the user's choice, kept pointing at the program by syncProgram).
  * `sfx` is the common folder of sound effects every reel can use. Everything else in the workspace belongs to the user: brand/ (each brand's identity, character and reels), the reels' own code in src/, and so on. The brand template (brand/_template) is read from the program folder and is not copied.
  * Paths are relative to the program folder; a folder entry stands for every file inside it.
  */
@@ -20,7 +20,6 @@ export const PROGRAM_ENTRIES: readonly string[] = [
   ".claude/skills/reel-insights",
   ".claude/skills/reel-research",
   ".claude/skills/reel-threads",
-  "platform/skills",
   "sfx",
 ];
 

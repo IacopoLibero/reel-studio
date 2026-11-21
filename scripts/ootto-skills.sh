@@ -1,13 +1,20 @@
 #!/usr/bin/env bash
 # Turn the vendored Ootto content skills on or off for Claude Code in this project.
 # usage: scripts/ootto-skills.sh list | defaults | enable <name...> | disable <name...>
-# A skill is "on" when .claude/skills/ootto-<name> is a symlink to platform/skills/ootto/<name>.
+# A skill is "on" when .claude/skills/ootto-<name> is a symlink to platform/skills/ootto/<name> of the PROGRAM (the repository), not of this workspace:
+# the skills are read where the program keeps them, so an update of the program is an update of the skills and nothing is copied.
+# The program folder is REEL_PROGRAM, else the one written in .reel-studio/program.json, else this folder (a checkout used as its own workspace).
 # Hidden skills (manifest "hidden": true) are never enabled and their links are removed. Our own skills
 # (reel, reel-hooks, ...) live in .claude/skills/ directly, are not symlinks and are not touched here.
 # The links are local state (ignored by git); the skills and manifest.json are in the repo.
 set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-SRC="$ROOT/platform/skills/ootto"
+PROGRAM="${REEL_PROGRAM:-}"
+if [ -z "$PROGRAM" ] && [ -f "$ROOT/.reel-studio/program.json" ]; then
+  PROGRAM="$(python3 -I -c 'import json,sys; print(json.load(open(sys.argv[1])).get("programRoot",""))' "$ROOT/.reel-studio/program.json" 2>/dev/null || true)"
+fi
+PROGRAM="${PROGRAM:-$ROOT}"
+SRC="$PROGRAM/platform/skills/ootto"
 DST="$ROOT/.claude/skills"
 MANIFEST="$SRC/manifest.json"
 mkdir -p "$DST"
@@ -19,7 +26,9 @@ import json, sys
 sys.exit(0 if any(s["name"] == sys.argv[2] and s.get("hidden") for s in json.load(open(sys.argv[1]))["skills"]) else 1)
 PY
 }
-enable()  { valid "$1"; if is_hidden "$1"; then echo "hidden skill, not enabled: $1" >&2; return 0; fi; on "$1" || ln -s "../../platform/skills/ootto/$1" "$DST/ootto-$1"; }
+# Inside the program itself the link stays relative (the folder can move); from a workspace it points at the program's folder.
+target() { if [ "$PROGRAM" = "$ROOT" ]; then echo "../../platform/skills/ootto/$1"; else echo "$SRC/$1"; fi; }
+enable()  { valid "$1"; if is_hidden "$1"; then echo "hidden skill, not enabled: $1" >&2; return 0; fi; on "$1" || ln -s "$(target "$1")" "$DST/ootto-$1"; }
 disable() { valid "$1"; ! on "$1" || rm "$DST/ootto-$1"; }
 
 case "${1:-list}" in

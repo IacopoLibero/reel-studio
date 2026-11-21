@@ -21,7 +21,7 @@ beforeEach(async () => {
   writeFileSync(join(root, "platform/skills/ootto/manifest.json"), JSON.stringify({ skills: SKILLS }));
   for (const s of SKILLS) { mkdirSync(join(root, "platform/skills/ootto", s.name), { recursive: true }); writeFileSync(join(root, "platform/skills/ootto", s.name, "SKILL.md"), "x"); }
   app = fastify();
-  skillRoutes(app, root);
+  skillRoutes(app, root, root);
   await app.ready();
 });
 afterEach(async () => { await app.close(); rmSync(root, { recursive: true, force: true }); });

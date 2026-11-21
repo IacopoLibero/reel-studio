@@ -6,7 +6,7 @@ the rest of the hub in [DESIGN.md](DESIGN.md).
 
 ## Content skills
 
-All 54 Ootto skills are vendored unmodified in `platform/skills/ootto/` (MIT, see `SOURCE.md`). `manifest.json` says which are visible
+All 54 Ootto skills are vendored unmodified in `platform/skills/ootto/` of the program (MIT, see `SOURCE.md`); they are read from there, never copied into the workspace. `manifest.json` says which are visible
 (`hidden: false`), their risk and whether they are on by default. A skill is **on** when `.claude/skills/ootto-<name>` is a symlink to its folder
 (local state, ignored by git; `scripts/ootto-skills.sh list|defaults|enable|disable` or the Settings page). Our own skills live in `.claude/skills/` and are always on.
 
