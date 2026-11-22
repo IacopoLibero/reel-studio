@@ -244,7 +244,7 @@ Nothing is created before the first click and nothing is scheduled before the se
 - **What Claude jobs can read.** Jobs read untrusted web text, so `platform/hub/src/jobs/claude-safety.ts` denies them any read of `.env`,
   `~/.claude`, `~/.composio`, `~/.config` and the Instagram profile, and restricts research jobs to a few shell commands. The brand
   assistant has read-only tools and cannot see your other brands.
-- **The one broad shell.** The reel-making job (`reel.make`) needs a broad shell for voice, Blender and render. It cannot read those
+- **The one broad shell.** The reel-making and reel-editing jobs (`reel.make`, `reel.edit`: the chat on a reel's page) need a broad shell for voice, Blender and render. It cannot read those
   credential files or use `curl`, `wget`, `ssh` or `env`, but a prompt-injected model could still read other files in the project.
   Treat the project folder as the trust boundary.
 - In the app the jobs run as you, so they can reach what you can; in the Docker setup the container sees only the project folder, your Claude and Composio files, and the optional source-texts folder.
