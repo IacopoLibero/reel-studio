@@ -10,11 +10,9 @@ const plan = { repoId: "x/y", ready: true, blockers: [], planId: "a".repeat(32),
 let app: FastifyInstance, calls: string[], up: boolean;
 const api: VoiceApi = {
   catalog: async () => { if (!up) throw new Error("VoiceStudio is not running."); return [{ repoId: "x/y", label: "X", role: "TTS", sizeGb: 1, required: false, note: "", installed: false }]; },
-  providers: async () => ({ active: "off", providers: [] }),
   installStatus: async () => ({ jobs: [] }),
   prepare: async (r) => { calls.push(`prepare ${r}`); return plan; },
   commit: async (a) => { calls.push(`commit ${a.planId} ${a.documentIds.join(",")}`); return {}; },
-  setProvider: async (id, key) => { calls.push(`provider ${id} ${key ?? ""}`); },
 };
 
 beforeEach(async () => {
@@ -29,11 +27,10 @@ afterEach(async () => { await app.close(); });
 const post = (url: string, payload: unknown) => app.inject({ method: "POST", url, payload: payload as object });
 
 describe("voice setup routes", () => {
-  it("returns the models, the LLM choices and the install status when VoiceStudio runs", async () => {
+  it("returns the voice models and the install status when VoiceStudio runs", async () => {
     const r = (await app.inject({ url: "/api/setup/voice" })).json();
     expect(r.running).toBe(true);
     expect(r.models[0].repoId).toBe("x/y");
-    expect(r.llm.active).toBe("off");
   });
   it("says it is not running instead of failing", async () => {
     up = false;
@@ -60,13 +57,5 @@ describe("voice setup routes", () => {
   });
   it("refuses a malformed plan id or digest", async () => {
     expect((await post("/api/setup/voice/install", { planId: "x", planDigest: "y", documentIds: [], acknowledged: true })).statusCode).toBe(400);
-  });
-  it("sets the LLM provider, with an optional key", async () => {
-    expect((await app.inject({ method: "PUT", url: "/api/setup/voice/llm", payload: { provider: "openai", apiKey: "sk-1" } })).statusCode).toBe(200);
-    expect((await app.inject({ method: "PUT", url: "/api/setup/voice/llm", payload: { provider: "off" } })).statusCode).toBe(200);
-    expect(calls).toEqual(["provider openai sk-1", "provider off "]);
-  });
-  it("refuses an odd provider id", async () => {
-    expect((await app.inject({ method: "PUT", url: "/api/setup/voice/llm", payload: { provider: "a/../b" } })).statusCode).toBe(400);
   });
 });

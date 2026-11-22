@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { VoiceClient, summarizePlan, summarizeCatalog, summarizeProviders } from "../src/setup/voice-catalog.js";
+import { VoiceClient, summarizePlan, summarizeCatalog } from "../src/setup/voice-catalog.js";
 
 const json = (status: number, body: unknown) => ({ ok: status >= 200 && status < 300, status, json: async () => body });
 const fake = (routes: Record<string, unknown | ((init?: { body?: string }) => unknown)>) => {
@@ -18,30 +18,20 @@ describe("summarizeCatalog", () => {
   it("keeps what the screen needs and marks what is installed", () => {
     const rows = summarizeCatalog({ models: [
       { repo_id: "a/b", label: "A", role: "TTS", size_gb: 2.4, required: true, note: null, installed: false, extra: 1 },
-      { repo_id: "c/d", label: "C", role: "ASR", size_gb: 0.1, required: false, note: "n", installed: true },
+      { repo_id: "c/d", label: "C", role: "TTS", size_gb: 0.1, required: false, note: "n", installed: true },
     ] });
     expect(rows).toEqual([
       { repoId: "a/b", label: "A", role: "TTS", sizeGb: 2.4, required: true, note: "", installed: false },
-      { repoId: "c/d", label: "C", role: "ASR", sizeGb: 0.1, required: false, note: "n", installed: true },
+      { repoId: "c/d", label: "C", role: "TTS", sizeGb: 0.1, required: false, note: "n", installed: true },
     ]);
+  });
+  it("leaves out transcription (ASR) and other non-voice models", () => {
+    const rows = summarizeCatalog({ models: [{ repo_id: "w/x", label: "W", role: "ASR" }, { repo_id: "v/y", label: "V", role: "TTS" }] });
+    expect(rows.map((r) => r.repoId)).toEqual(["v/y"]);
   });
   it("tolerates a missing or odd answer", () => {
     expect(summarizeCatalog(null)).toEqual([]);
     expect(summarizeCatalog({ models: "x" })).toEqual([]);
-  });
-});
-
-describe("summarizeProviders", () => {
-  it("lists a 'none' choice first and the providers, local ones flagged", () => {
-    const r = summarizeProviders({ active: null, providers: [
-      { id: "ollama", display_name: "Ollama (local)", local: true, notes: "n", has_api_key: false, signup_url: "u", configured: true },
-      { id: "openai", display_name: "OpenAI", local: false, notes: "", has_api_key: true, signup_url: "" },
-    ] });
-    expect(r.active).toBe("off");
-    expect(r.providers[0]).toMatchObject({ id: "off", local: true });
-    expect(r.providers.map((p) => p.id)).toEqual(["off", "ollama", "openai"]);
-    expect(r.providers[2]).toMatchObject({ needsKey: true, hasKey: true });
-    expect(r.providers[1]).toMatchObject({ needsKey: false });
   });
 });
 
@@ -60,11 +50,10 @@ describe("summarizePlan", () => {
 });
 
 describe("VoiceClient", () => {
-  it("reads the catalog, the providers and the install status", async () => {
-    const { f } = fake({ "GET /setup/recommendations": { models: [] }, "GET /api/settings/llm-providers": { active: null, providers: [] }, "GET /models/install/status": { jobs: [] } });
+  it("reads the catalog and the install status", async () => {
+    const { f } = fake({ "GET /setup/recommendations": { models: [] }, "GET /models/install/status": { jobs: [] } });
     const c = new VoiceClient("http://v", f);
     expect(await c.catalog()).toEqual([]);
-    expect((await c.providers()).active).toBe("off");
     expect(await c.installStatus()).toEqual({ jobs: [] });
   });
   it("asks for an install plan for a repo", async () => {
@@ -78,16 +67,6 @@ describe("VoiceClient", () => {
     await new VoiceClient("http://v", f).commit({ planId: "a".repeat(32), planDigest: "b".repeat(64), documentIds: ["doc1"] });
     const body = JSON.parse(calls[0]!.split(" ").slice(2).join(" "));
     expect(body).toEqual({ plan_id: "a".repeat(32), plan_digest: "b".repeat(64), acknowledged_document_ids: ["doc1"], acknowledged: true, target: "local" });
-  });
-  it("saves a key and makes a provider the active one, or switches the LLM off", async () => {
-    const { f, calls } = fake({ "PUT /api/settings/llm-providers/openai": {}, "POST /api/settings/llm-providers/active": {} });
-    const c = new VoiceClient("http://v", f);
-    await c.setProvider("openai", "sk-test");
-    await c.setProvider("off");
-    expect(calls[0]).toContain('"api_key":"sk-test"');
-    expect(calls[1]).toContain('"provider":"openai"');
-    expect(calls[2]).toContain('"provider":"off"');
-    expect(calls).toHaveLength(3);
   });
   it("says clearly when VoiceStudio is not running", async () => {
     const c = new VoiceClient("http://v", async () => { throw new Error("ECONNREFUSED"); });

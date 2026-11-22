@@ -8,10 +8,8 @@ const BLOCKER_TEXT: Record<string, string> = {
   upstream_access_unverified: "its source access conditions are not verified",
 };
 
-const ROLE_TEXT: Record<string, string> = { TTS: "Voice (speaks the script)", ASR: "Listening (transcribes audio)" };
-
 /**
- * After VoiceStudio is installed: which voice models to download, and which language model (LLM) it uses.
+ * After VoiceStudio is installed: which voice models to download (only voices; transcription and language models are not used by Reel Studio).
  * Each model is reviewed first: VoiceStudio gives its licence and notices, and nothing downloads until the person ticks that they read them.
  */
 export function SetupVoice() {
@@ -38,10 +36,8 @@ export function SetupVoice() {
   return (
     <>
       {error && <p className="error">{error}</p>}
-      {["TTS", "ASR"].map((role) => (
-        <div key={role}>
-          <h3>{ROLE_TEXT[role] ?? role}</h3>
-          {data.models.filter((m) => m.role === role).map((m) => (
+      <div>
+          {data.models.map((m) => (
             <div key={m.repoId} className="card">
               <div className="row wrap">
                 <span className={`badge ${m.installed ? "done" : ""}`}>{m.installed ? "installed" : m.required ? "recommended" : "not installed"}</span>
@@ -53,13 +49,9 @@ export function SetupVoice() {
             </div>
           ))}
         </div>
-      ))}
       {downloading && <p className="muted">Downloading… this can take a while for the larger models.</p>}
       {plan && <PlanCard plan={plan} ack={ack} setAck={setAck} busy={busy} onDownload={download} onCancel={() => setPlan(null)} />}
 
-      <h3>Language model (LLM)</h3>
-      <p className="sub">VoiceStudio can use a language model to translate and dub. Reel Studio writes its reels with Claude Code, so you can leave this off.</p>
-      <LlmChoice data={data} onSave={(id, key) => run(() => api.setupVoiceLlm(id, key))} busy={busy} />
     </>
   );
 }
@@ -88,20 +80,3 @@ function PlanCard({ plan, ack, setAck, busy, onDownload, onCancel }: { plan: Voi
   );
 }
 
-function LlmChoice({ data, onSave, busy }: { data: VoiceSetup; onSave: (id: string, key?: string) => void; busy: boolean }) {
-  const [id, setId] = useState(data.llm.active);
-  const [key, setKey] = useState("");
-  const cur = data.llm.providers.find((p) => p.id === id);
-  return (
-    <div className="card">
-      <div className="row wrap">
-        <select aria-label="Language model" value={id} onChange={(e) => { setId(e.target.value); setKey(""); }}>
-          {data.llm.providers.map((p) => <option key={p.id} value={p.id}>{p.label}{p.local && p.id !== "off" ? " (on this computer)" : ""}</option>)}
-        </select>
-        {cur?.needsKey && <input type="password" autoComplete="off" placeholder={cur.hasKey ? "API key saved (type to replace)" : "API key"} value={key} onChange={(e) => setKey(e.target.value)} style={{ flex: 1, minWidth: 200 }} />}
-        <button className="btn" type="button" disabled={busy || (id === data.llm.active && !key)} onClick={() => { onSave(id, key || undefined); setKey(""); }}>Save</button>
-      </div>
-      {cur?.notes && <div className="muted" style={{ fontSize: 12, marginTop: 6 }}>{cur.notes}{cur.signupUrl && <> <a href={cur.signupUrl} target="_blank" rel="noreferrer">Get a key</a></>}</div>}
-    </div>
-  );
-}

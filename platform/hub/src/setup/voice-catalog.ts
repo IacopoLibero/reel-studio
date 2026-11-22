@@ -1,8 +1,6 @@
-/** What the setup screen shows about VoiceStudio's models and language-model (LLM) choice, read from VoiceStudio's own API. */
+/** What the setup screen shows about VoiceStudio's voice models, read from VoiceStudio's own API. Only voices: Reel Studio does not use its transcription or language-model parts. */
 
 export interface ModelRow { repoId: string; label: string; role: string; sizeGb: number; required: boolean; note: string; installed: boolean }
-export interface ProviderRow { id: string; label: string; local: boolean; notes: string; needsKey: boolean; hasKey: boolean; signupUrl: string }
-export interface ProviderList { active: string; providers: ProviderRow[] }
 export interface PlanSummary {
   repoId: string; ready: boolean; blockers: string[]; planId: string; planDigest: string;
   components: { id: string; revision: string; license: string; url: string }[];
@@ -16,22 +14,12 @@ const obj = (v: unknown): Obj => (v && typeof v === "object" ? (v as Obj) : {});
 const arr = (v: unknown): unknown[] => (Array.isArray(v) ? v : []);
 const str = (v: unknown): string => (typeof v === "string" ? v : "");
 
+/** The voice (TTS) models of the catalog. */
 export function summarizeCatalog(raw: unknown): ModelRow[] {
   return arr(obj(raw).models).map(obj).map((m) => ({
     repoId: str(m.repo_id), label: str(m.label), role: str(m.role), sizeGb: Number(m.size_gb) || 0,
     required: m.required === true, note: str(m.note), installed: m.installed === true,
-  })).filter((m) => m.repoId);
-}
-
-/** "off" first (VoiceStudio's own LLM is optional: Reel Studio makes reels with Claude Code), then every provider VoiceStudio knows. */
-export function summarizeProviders(raw: unknown): ProviderList {
-  const r = obj(raw);
-  const providers = arr(r.providers).map(obj).filter((p) => str(p.id)).map((p): ProviderRow => ({
-    id: str(p.id), label: str(p.display_name) || str(p.id), local: p.local === true, notes: str(p.notes),
-    needsKey: p.local !== true && p.transport !== "cli", hasKey: p.has_api_key === true || p.key_from_env === true, signupUrl: str(p.signup_url),
-  }));
-  const active = str(r.active) || "off";
-  return { active, providers: [{ id: "off", label: "No language model", local: true, notes: "Reel Studio writes with Claude Code. VoiceStudio's own LLM is only for translating and dubbing.", needsKey: false, hasKey: false, signupUrl: "" }, ...providers.filter((p) => p.id !== "off")] };
+  })).filter((m) => m.repoId && m.role === "TTS");
 }
 
 export function summarizePlan(raw: unknown): PlanSummary {
@@ -62,7 +50,6 @@ export class VoiceClient {
   }
 
   catalog = async (): Promise<ModelRow[]> => summarizeCatalog(await this.call("GET", "/setup/recommendations"));
-  providers = async (): Promise<ProviderList> => summarizeProviders(await this.call("GET", "/api/settings/llm-providers"));
   installStatus = (): Promise<unknown> => this.call("GET", "/models/install/status");
   prepare = async (repoId: string): Promise<PlanSummary> => summarizePlan(await this.call("POST", "/models/install/prepare", { repo_id: repoId }));
 
@@ -70,9 +57,4 @@ export class VoiceClient {
   commit = (a: { planId: string; planDigest: string; documentIds: string[] }): Promise<unknown> =>
     this.call("POST", "/models/install/commit", { plan_id: a.planId, plan_digest: a.planDigest, acknowledged_document_ids: a.documentIds, acknowledged: true, target: "local" });
 
-  /** Chooses the LLM: a key is saved first when one is given, then the provider becomes the active one. "off" switches it off. */
-  async setProvider(id: string, apiKey?: string): Promise<void> {
-    if (apiKey) await this.call("PUT", `/api/settings/llm-providers/${encodeURIComponent(id)}`, { api_key: apiKey });
-    await this.call("POST", "/api/settings/llm-providers/active", { provider: id });
-  }
 }
