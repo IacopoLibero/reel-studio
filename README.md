@@ -119,6 +119,7 @@ The daily loop ends its automatic part here and waits for you. Nothing is made b
 
 - Every folder in the brand's `reels/` folder (`data/brands/<slug>/reels/` in your studio folder) with its cover, files (MP4, caption, cover) and state: not scheduled, in queue, scheduled.
 - **Schedule** picks a free slot of your pattern and queues the Instagram job.
+- **Click a reel** to open its own page (not a dialog): the video with a player, the cover, the caption, the script, the plan and the files. Next to the video is a **conversation with Claude**: say what to change ("make the headline bigger", "shorten the closing"), and Claude changes the reel's code, renders it again and answers; ask a question first if you only want to understand something. Each message continues the same Claude session, so follow-ups make sense. Before each change the reel is saved in its folder (`.versions`, the last three), and if Claude fails the reel is put back as it was. One change runs at a time per reel; a reel that is being scheduled cannot be changed. A reel already on Instagram can be changed here, but Instagram keeps its own copy.
 
 ### New brand
 

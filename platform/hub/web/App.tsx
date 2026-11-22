@@ -9,6 +9,7 @@ import { CalendarPage } from "./pages/Calendar";
 import { FactoryPage } from "./pages/Factory";
 import { DailyPage } from "./pages/Daily";
 import { ReelsPage } from "./pages/Reels";
+import { ReelPage } from "./pages/ReelPage";
 import { CharacterPage } from "./pages/Character";
 import { AnalyticsPage } from "./pages/Analytics";
 import { SeriesPage } from "./pages/Series";
@@ -61,7 +62,7 @@ function Shell({ onLogout }: { onLogout: () => void }) {
 
   // `#/<page>` (an old link) and an empty hash go to `#/<brand>/<page>` of the remembered or default brand.
   if (route.brand !== NEW_BRAND && current && (route.brand !== current.slug || !route.page)) {
-    window.location.replace(routeHash(current.slug, route.page ?? fallbackPage));
+    window.location.replace(routeHash(current.slug, route.page ?? fallbackPage, route.item ?? undefined));
     return null;
   }
   if (current) { setBrand(current.slug); rememberBrand(current.slug); }
@@ -86,7 +87,7 @@ function Shell({ onLogout }: { onLogout: () => void }) {
       <main>
         {route.brand === NEW_BRAND && <NewBrandPage onCreated={created} />}
         {route.brand !== NEW_BRAND && !current && <NoBrand brands={list.brands} asked={route.brand} />}
-        {route.brand !== NEW_BRAND && current && <BrandPages key={current.slug} brand={current} page={route.page ?? fallbackPage} />}
+        {route.brand !== NEW_BRAND && current && <BrandPages key={current.slug} brand={current} page={route.page ?? fallbackPage} item={route.item} />}
       </main>
     </div>
   );
@@ -131,7 +132,7 @@ function NoBrand({ brands, asked }: { brands: BrandSummary[]; asked: string | nu
   );
 }
 
-function BrandPages({ brand, page }: { brand: BrandSummary; page: string }) {
+function BrandPages({ brand, page, item }: { brand: BrandSummary; page: string; item: string | null }) {
   const jobs = useJobs(brand.slug);
   const running = jobs.filter((j) => j.status === "running" || j.status === "queued").length;
   useEffect(() => { window.dispatchEvent(new CustomEvent("reelhub:running", { detail: running })); }, [running]);
@@ -145,7 +146,8 @@ function BrandPages({ brand, page }: { brand: BrandSummary; page: string }) {
       {page === "factory" && <FactoryPage jobs={jobs} />}
       {page === "analytics" && <AnalyticsPage jobs={jobs} />}
       {page === "series" && <SeriesPage jobs={jobs} />}
-      {page === "reels" && <ReelsPage jobs={jobs} />}
+      {page === "reels" && !item && <ReelsPage jobs={jobs} />}
+      {page === "reels" && item && <ReelPage key={item} folder={item} jobs={jobs} />}
       {page === "character" && <CharacterPage jobs={jobs} brand={brand} />}
       {page === "settings" && <SettingsPage key={brand.slug} brand={brand} />}
     </>

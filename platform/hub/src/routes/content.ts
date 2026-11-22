@@ -1,9 +1,12 @@
-import { createReadStream, existsSync } from "node:fs";
+import { createReadStream, existsSync, statSync } from "node:fs";
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
 import { join } from "node:path";
 import { countPngs, listMoves, moveDir } from "../character/gallery.js";
-import { folderOfKey, readScheduled, resolveReelFile, scanReels } from "../reels/scanner.js";
+import { folderOfKey, readScheduled, reelDirOf, resolveReelFile, scanReels } from "../reels/scanner.js";
+import { readReelDetail } from "../reels/detail.js";
+import { readChat } from "../reels/chat.js";
+import { parseRange } from "./range.js";
 import { nextSlots } from "../slots.js";
 import { settingsSchema } from "../settings.js";
 import { validMoveName } from "../character/moves-parser.js";
@@ -24,7 +27,23 @@ export function contentRoutes(app: FastifyInstance, d: AppDeps, scope: Scope): v
     // The key is <brand>/<folder>: another brand's files are never served through this brand's route.
     const file = q.success && q.data.key.startsWith(`${b.slug}/`) ? resolveReelFile(b.paths.reelsDir, folderOfKey(q.data.key), q.data.kind) : null;
     if (!q.success || !file) return reply.code(404).send({ error: "File not found." });
-    return reply.type(q.data.kind === "cover" ? "image/png" : "video/mp4").send(createReadStream(file));
+    const size = statSync(file).size;
+    const type = q.data.kind === "cover" ? "image/png" : "video/mp4";
+    reply.type(type).header("Accept-Ranges", "bytes").header("Cache-Control", "private, no-cache");
+    // A video player seeks with Range requests: answer them with just the bytes asked for.
+    const range = q.data.kind === "mp4" ? parseRange(req.headers.range, size) : null;
+    if (range === "unsatisfiable") return reply.code(416).header("Content-Range", `bytes */${size}`).send();
+    if (range) return reply.code(206).header("Content-Range", `bytes ${range.start}-${range.end}/${size}`).header("Content-Length", range.end - range.start + 1).send(createReadStream(file, { start: range.start, end: range.end }));
+    return reply.header("Content-Length", size).send(createReadStream(file));
+  });
+
+  // One reel with everything its page shows: files, caption, script, plan, the conversation about it, and whether a change is running.
+  app.get<{ Params: { folder: string } }>("/reels/:folder", async (req, reply) => {
+    const b = scope(req);
+    const reel = readReelDetail(b.paths.reelsDir, req.params.folder, b.slug, readScheduled(b.paths.scheduledFile));
+    if (!reel) return reply.code(404).send({ error: "Reel not found." });
+    const busy = d.store.list().some((j) => j.type === "reel.edit" && j.brand === b.slug && j.params.folder === req.params.folder && (j.status === "queued" || j.status === "running"));
+    return { reel, chat: readChat(reelDirOf(b.paths.reelsDir, req.params.folder)), busy };
   });
 
   app.get<{ Querystring: { count?: string } }>("/slots", async (req) => {

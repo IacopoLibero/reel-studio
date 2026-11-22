@@ -39,18 +39,20 @@ export function useLoad<T>(fn: () => Promise<T>, deps: unknown[] = []): { data: 
 export const NEW_BRAND = "new";
 const LAST_BRAND_KEY = "reelhub.brand";
 
-export interface Route { brand: string | null; page: string | null }
+export interface Route { brand: string | null; page: string | null; /** The thing a page shows alone: a reel folder on the Reels page. */ item: string | null }
 
-/** `#/<brand>/<page>`. `#/<page>` (an old link) has no brand; `#/new` is the creator. */
+/** `#/<brand>/<page>` or `#/<brand>/<page>/<item>`. `#/<page>` (an old link) has no brand; `#/new` is the creator. */
 export function parseRoute(hash: string, pages: readonly string[]): Route {
   const parts = hash.replace(/^#\/?/, "").split("/").filter(Boolean);
-  const [a, b] = parts;
-  if (a === NEW_BRAND) return { brand: NEW_BRAND, page: null };
-  if (a && !b && pages.includes(a)) return { brand: null, page: a };
-  return { brand: a ?? null, page: b ?? null };
+  const [a, b, c] = parts;
+  if (a === NEW_BRAND) return { brand: NEW_BRAND, page: null, item: null };
+  if (a && !b && pages.includes(a)) return { brand: null, page: a, item: null };
+  let item: string | null = null;
+  if (c) { try { item = decodeURIComponent(c); } catch { item = c; } }
+  return { brand: a ?? null, page: b ?? null, item };
 }
 
-export const routeHash = (brand: string, page: string): string => `#/${brand}/${page}`;
+export const routeHash = (brand: string, page: string, item?: string): string => `#/${brand}/${page}${item ? `/${encodeURIComponent(item)}` : ""}`;
 export const rememberedBrand = (): string | null => { try { return window.localStorage.getItem(LAST_BRAND_KEY); } catch { return null; } };
 export const rememberBrand = (slug: string): void => { try { window.localStorage.setItem(LAST_BRAND_KEY, slug); } catch { /* private mode */ } };
 

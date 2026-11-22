@@ -1,4 +1,4 @@
-export type JobType = "daily.run" | "reel.make" | "reel.ideas" | "instagram.reschedule" | "instagram.delete" | "instagram.schedule" | "blender.render" | "claude.task" | "voice.generate" | "analytics.collect" | "reel.insights" | "series.plan" | "schedule.suggest" | "brand.create" | "character.build";
+export type JobType = "daily.run" | "reel.make" | "reel.edit" | "reel.ideas" | "instagram.reschedule" | "instagram.delete" | "instagram.schedule" | "blender.render" | "claude.task" | "voice.generate" | "analytics.collect" | "reel.insights" | "series.plan" | "schedule.suggest" | "brand.create" | "character.build";
 export type JobStatus = "queued" | "running" | "done" | "failed" | "cancelled";
 
 export interface Job {

@@ -1,7 +1,7 @@
 export const STEPS = ["Reading the code", "Writing the move", "Registering it", "Rendering with Blender", "Summary"] as const;
 
 export type StreamEvent =
-  | { kind: "init"; model: string }
+  | { kind: "init"; model: string; sessionId?: string }
   | { kind: "text"; text: string }
   | { kind: "tool"; name: string; input: Record<string, unknown> }
   | { kind: "result"; ok: boolean; text: string; cost: number | null };
@@ -13,7 +13,7 @@ export function parseStreamLine(line: string): StreamEvent[] {
   let o: Record<string, any>;
   try { o = JSON.parse(t); } catch { return []; }
   if (!o || typeof o !== "object") return [];
-  if (o.type === "system" && o.subtype === "init") return [{ kind: "init", model: String(o.model ?? "") }];
+  if (o.type === "system" && o.subtype === "init") return [{ kind: "init", model: String(o.model ?? ""), ...(typeof o.session_id === "string" && o.session_id ? { sessionId: o.session_id } : {}) }];
   if (o.type === "result") {
     const ok = o.is_error !== true && (o.subtype === undefined || o.subtype === "success");
     return [{ kind: "result", ok, text: typeof o.result === "string" ? o.result : String(o.subtype ?? ""), cost: typeof o.total_cost_usd === "number" ? o.total_cost_usd : null }];

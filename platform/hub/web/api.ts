@@ -106,7 +106,17 @@ export interface VoiceEngine { id: string; available: boolean; reason: string }
 export interface VoicePlan { repoId: string; ready: boolean; blockers: string[]; planId: string; planDigest: string; components: { id: string; revision: string; license: string; url: string }[]; documents: { id: string; title: string; url: string }[]; acknowledgement: string }
 export interface VoiceSetup { running: boolean; message?: string; models: VoiceModelRow[]; status: unknown; active: string; engines: VoiceEngine[] }
 
+export interface ReelFile { name: string; size: number; dir: boolean }
+export interface ReelDetail {
+  key: string; brand: string; folder: string; n: number; name: string; mp4: string | null; version: string;
+  caption: string; script: string[]; plan: string; hasCover: boolean; hasCode: boolean; files: ReelFile[]; schedule: ScheduleEntry | null;
+}
+export interface ChatMessage { role: "user" | "claude"; text: string; at: string; jobId: string }
+export interface ReelPageData { reel: ReelDetail; chat: { sessionId: string | null; messages: ChatMessage[] }; busy: boolean }
+
 export const api = {
+  reelPage: (folder: string) => call<ReelPageData>("GET", scoped(`/reels/${encodeURIComponent(folder)}`)),
+  editReel: (folder: string, message: string) => call<Job>("POST", scoped("/jobs"), { type: "reel.edit", params: { folder, message } }),
   setupVoice: () => call<VoiceSetup>("GET", "/api/setup/voice"),
   setupVoiceSelect: (engine: string) => call<{ active: string }>("POST", "/api/setup/voice/select", { engine }),
   setupVoiceRemove: (repoId: string) => call<{ removed: string }>("POST", "/api/setup/voice/remove", { repoId }),

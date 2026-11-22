@@ -78,7 +78,7 @@ Every page is for the brand chosen in the switcher; the address is `#/<brand>/<p
 | **Factory** | Questions from `reel-questions.md`, make reels, find new ideas. See below. |
 | **Analytics** | Results of the reels (Composio, read-only), a chart, a table, a plain-language readout. |
 | **Series** | Recurring formats, plan a series, assign questions. |
-| **Reels** | Every reel folder with its files and Instagram state; Schedule opens a slot picker and creates an `instagram.schedule` job. |
+| **Reels** | Every reel folder with its files and Instagram state; Schedule opens a slot picker and creates an `instagram.schedule` job. A click opens the page of one reel (`#/<brand>/reels/<folder>`): video (served with `Range`, so it seeks), cover, caption, script, plan, files, and the chat that edits it (see *Editing a reel by chat*). |
 | **Character** | The moves of the brand's character (PNG sequences in `<brand>/mascot/movements/<move>/`), add a move with Claude and Blender, re-render one. For a brand without one: the experimental character-from-a-picture steps. |
 | **Settings** | Per brand: Instagram login, posting schedule, daily loop, factory rules, voice, delete brand. Global: Blender device, Claude model, brand assistant, which content skills are on. |
 | **New brand** | The brand creator (see BRANDS.md). |
@@ -156,3 +156,14 @@ A workspace from before the one-folder-per-brand layout is moved with `scripts/m
 - `platform/hub/web/` the React app (`pages`, `components`, `creator`).
 - `platform/hub/tests/` and `platform/hub/src/scheduler/test/` the tests (hub: 55 files, 498 tests; the scheduler is tested end to end against a mock page).
 - Test fixtures stand in for Claude and for the scheduler (`tests/fixtures/fake-*.mjs`); no test touches Instagram or Claude.
+
+## Editing a reel by chat
+
+The page of one reel has a conversation with Claude that changes the reel. Each message is one `reel.edit` job (`src/reels/edit-handler.ts`, lane `edit`, one at a time):
+
+- **Context.** The first turn gets the whole picture: the reel skill, the style guide, the reel's folder, the character's moves that exist, and whether the reel is already scheduled (`edit-prompt.ts`). Later turns resume the same Claude session (`--resume <id>`, the id comes from the `init` line of the stream and is kept in the reel's `chat.json`), so only the request and the rules go. A session that cannot be resumed starts a new one with the full context.
+- **Safety.** Before the run the reel (video, caption, cover, script, plan, props, `code/`) is copied to `<reel>/.versions/<time>/`, the newest three are kept (`versions.ts`). The tools are the ones of `reel.make` (voice, Blender and renders only through the slot queue; no git, no posting, no `rm -rf`), plus `--add-dir` of the brand folder. If the run fails, is stopped, or leaves the reel without MP4, caption or cover, the missing deliverables are put back from the snapshot and the chat says so.
+- **Rules of the request** (`createSchema`/`editSpec`): the reel must exist; a reel with a change queued or running, or one being scheduled on Instagram, is refused (409); the message is 1 to 4000 characters.
+- **The conversation** is `<reel>/chat.json` (the last 200 messages, written atomically); the page shows a message whose job has not started yet from the job's own params. The video address carries a version (the MP4's time and size), so a new render loads at once.
+- **Not done:** undo from the page (the versions are only files), editing the script's audio by hand, several reels in one conversation.
+

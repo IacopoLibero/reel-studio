@@ -24,6 +24,7 @@ export const createSchema = z.discriminatedUnion("type", [
     reel: z.string().max(200), date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/), time: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/),
   }) }),
   z.object({ type: z.literal("reel.make"), params: z.object({ questionId: z.string().regex(/^[0-9a-f]{12}$/), closing: z.enum(["A", "B"]).optional(), rerun: z.object({ folder: z.string().regex(/^\d+-[a-z0-9-]+$/), note: z.string().trim().min(1).max(1000) }).optional() }) }),
+  z.object({ type: z.literal("reel.edit"), params: z.object({ folder: z.string().regex(/^\d+-[A-Za-z0-9._-]+$/).max(120), message: z.string().trim().min(1, "Write what to change.").max(4000) }) }),
   z.object({ type: z.literal("daily.run"), params: z.object({ date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/) }) }),
   z.object({ type: z.literal("reel.ideas"), params: z.object({ count: countSchema }).default(() => ({ count: 10 })) }),
   z.object({ type: z.literal("claude.task"), params: z.object({ request: z.string().trim().min(5, "Describe the move in a few words.").max(4000), move }) }),
@@ -59,7 +60,20 @@ function ideasSpec(p: { count: number }, d: Deps): JobSpec {
   return { type: "reel.ideas", brand: d.brand.slug, title: `Find ${p.count} new ideas`, steps: IDEAS_STEPS, params: { count: p.count, brand: d.brand.slug } };
 }
 
+export const EDIT_JOB_STEPS = ["Reading the reel", "Changing it", "Rendering", "Checks", "Done"];
+
+function editSpec(p: { folder: string; message: string }, d: Deps): JobSpec {
+  const reel = scanReels(d.brand.paths.reelsDir, d.brand.slug, {}).find((r) => r.folder === p.folder);
+  if (!reel) throw new JobRequestError("That reel was not found.");
+  const mine = d.jobs.filter((j) => j.brand === d.brand.slug && (j.status === "queued" || j.status === "running"));
+  if (mine.some((j) => j.type === "reel.edit" && j.params.folder === p.folder)) throw new JobRequestError("A change to this reel is already running. Wait for it to finish.");
+  if (mine.some((j) => j.type === "instagram.schedule" && j.params.reel === `${d.brand.slug}/${p.folder}`)) throw new JobRequestError("This reel is being scheduled on Instagram right now. Try again when that is done.");
+  const short = p.message.length > 60 ? `${p.message.slice(0, 60)}…` : p.message;
+  return { type: "reel.edit", brand: d.brand.slug, title: `Reel ${reel.n}: ${short}`, steps: EDIT_JOB_STEPS, params: { folder: p.folder, message: p.message } };
+}
+
 export function buildSpec(body: CreateBody, d: Deps): JobSpec {
+  if (body.type === "reel.edit") return editSpec(body.params, d);
   if (body.type === "reel.make") return makeSpec(body.params, d);
   if (body.type === "daily.run") throw new JobRequestError("The daily run is started from the Daily page.");
   if (body.type === "reel.ideas") return ideasSpec(body.params, d);

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import type { Job, Reel } from "../../src/shared/types";
 import { api, getBrand, scoped } from "../api";
-import { useLoad } from "../hooks";
+import { routeHash, useLoad } from "../hooks";
 import { SlotPicker } from "../components/SlotPicker";
 import { EmptyState } from "../components/EmptyState";
 
@@ -14,7 +14,7 @@ export function ReelsPage({ jobs }: { jobs: Job[] }) {
   return (
     <>
       <h1>Reels</h1>
-      <p className="sub">Every reel folder, its files and its Instagram schedule.</p>
+      <p className="sub">Every reel folder, its files and its Instagram schedule. Click a reel to watch it and change it by talking to Claude.</p>
       {error && <p className="error">{error}</p>}
       {data && reels.length === 0 && (
         <EmptyState title="No reels yet" action={<a className="btn primary" href={`#/${getBrand()}/factory`}>Go to the Factory</a>}>
@@ -24,10 +24,10 @@ export function ReelsPage({ jobs }: { jobs: Job[] }) {
       {reels.map((r) => {
         const ready = !!r.mp4 && r.hasCaption && r.hasCover;
         return (
-          <div className="card row" key={r.key}>
+          <div className="card row reel-row" key={r.key} onClick={(e) => { if (!(e.target as HTMLElement).closest("button, a")) window.location.hash = routeHash(getBrand(), "reels", r.folder); }}>
             {r.hasCover ? <img className="thumb" loading="lazy" src={scoped(`/reels/file?key=${encodeURIComponent(r.key)}&kind=cover`)} alt="" /> : <div className="thumb" />}
             <div className="grow">
-              <div><strong>{r.n} · {r.name}</strong> <span className="muted">· {r.brand}</span></div>
+              <div><a href={routeHash(getBrand(), "reels", r.folder)}><strong>{r.n} · {r.name}</strong></a> <span className="muted">· {r.brand}</span></div>
               <div className="muted" style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{r.captionStart || "No caption"}</div>
               <div className="chips" style={{ marginTop: 6 }}>
                 <span className="badge">{r.mp4 ? "MP4" : "no MP4"}</span>
