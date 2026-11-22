@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { launchMode, canReuse } from "../src/scheduler/launch-mode.js";
+import { launchMode, canReuse, needsWindow } from "../src/scheduler/launch-mode.js";
 
 describe("launchMode", () => {
   it("is headless for a read (status, calendar), so no window appears on the desktop", () => {
@@ -30,5 +30,13 @@ describe("canReuse", () => {
   });
   it("does not reuse the browser of another profile", () => {
     expect(canReuse({ profile: "p", visible: true }, "q", false)).toBe(false);
+  });
+});
+
+describe("needsWindow", () => {
+  it("is true only when a window is asked for and headless is not forced", () => {
+    expect(needsWindow({}, {})).toBe(false);
+    expect(needsWindow({ visible: true }, {})).toBe(true);
+    expect(needsWindow({ visible: true }, { SCHED_HEADLESS: "1" })).toBe(false);
   });
 });

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { api, type SetupData, type SetupItem } from "../api";
 import { SetupVoice } from "./SetupVoice";
 
@@ -82,7 +82,14 @@ function ItemRow({ item, step, voiceChosen, onInstall }: { item: SetupItem; step
         {step && step.state !== "idle" && <span className={`badge ${step.state === "done" ? "done" : step.state === "failed" ? "failed" : "running"}`}>{stateText[step.state]}</span>}
       </div>
       {step?.error && <p className="error" style={{ whiteSpace: "pre-wrap" }}>{step.error}</p>}
-      {showLog && <pre className="muted" style={{ maxHeight: 140, overflow: "auto", fontSize: 12, margin: "8px 0 0" }}>{step.lines.slice(-12).join("\n")}</pre>}
+      {showLog && <LogTail lines={step.lines.slice(-30)} />}
     </div>
   );
+}
+
+/** The last lines of an install step, scrolled to the newest one (the box is short, so without this the person sees the oldest of them). */
+function LogTail({ lines }: { lines: string[] }) {
+  const box = useRef<HTMLPreElement>(null);
+  useEffect(() => { const el = box.current; if (el) el.scrollTop = el.scrollHeight; }, [lines.length, lines[lines.length - 1]]);
+  return <pre ref={box} className="muted" role="log" aria-live="off" style={{ maxHeight: 140, overflow: "auto", fontSize: 12, margin: "8px 0 0" }}>{lines.join("\n")}</pre>;
 }

@@ -1,6 +1,6 @@
 import { chromium, type BrowserContext, type Page } from 'playwright';
 import { systemChrome } from './chrome-path.js';
-import { canReuse, launchMode, type ContextOptions } from './launch-mode.js';
+import { canReuse, launchMode, needsWindow, type ContextOptions } from './launch-mode.js';
 import { SchedulerError } from './types.js';
 
 export const IG_URL = process.env.IG_SCHEDULE_URL ?? 'https://www.instagram.com/scheduled_content/';
@@ -18,11 +18,11 @@ export const DEFAULT_PROFILE = process.env.CHROME_PROFILE ?? '/tmp/reel-studio-c
  * at a time across all brands): asking for another profile closes the current one first.
  */
 export async function getContext(profileDir: string = DEFAULT_PROFILE, opts: ContextOptions = {}): Promise<BrowserContext> {
-  const needsWindow = opts.visible === true;
+  const wantWindow = needsWindow(opts);
   if (context) {
     try {
       context.pages(); // throws if closed
-      if (contextProfile !== null && canReuse({ profile: contextProfile, visible: contextVisible }, profileDir, needsWindow)) return context;
+      if (contextProfile !== null && canReuse({ profile: contextProfile, visible: contextVisible }, profileDir, wantWindow)) return context;
       await closeBrowser();
     } catch { context = null; contextProfile = null; contextVisible = false; }
   }

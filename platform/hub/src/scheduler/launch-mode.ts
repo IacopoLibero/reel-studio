@@ -20,3 +20,6 @@ export function launchMode(opts: ContextOptions = {}, env: NodeJS.ProcessEnv = p
 export function canReuse(open: { profile: string; visible: boolean }, profile: string, needsWindow: boolean): boolean {
   return open.profile === profile && (open.visible || !needsWindow);
 }
+
+/** True when this request needs a browser with a window (so a headless browser already open cannot serve it). */
+export const needsWindow = (opts: ContextOptions = {}, env: NodeJS.ProcessEnv = process.env): boolean => !launchMode(opts, env).headless;
