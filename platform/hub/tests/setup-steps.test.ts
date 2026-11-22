@@ -33,3 +33,22 @@ describe("sha256File", () => {
     expect(await sha256File(f)).toBe("ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad");
   });
 });
+
+import { mkdirSync as mk, existsSync as ex } from "node:fs";
+import { clearEmptyMountPoint } from "../src/setup/steps.js";
+
+describe("clearEmptyMountPoint", () => {
+  it("removes an empty node_modules folder (a leftover mount point) and reports it", () => {
+    mk(join(tmp, "node_modules"));
+    expect(clearEmptyMountPoint(join(tmp, "node_modules"))).toBe(true);
+    expect(ex(join(tmp, "node_modules"))).toBe(false);
+  });
+  it("leaves a folder that has files in it", () => {
+    mk(join(tmp, "node_modules", "remotion"), { recursive: true });
+    expect(clearEmptyMountPoint(join(tmp, "node_modules"))).toBe(false);
+    expect(ex(join(tmp, "node_modules", "remotion"))).toBe(true);
+  });
+  it("does nothing when the folder does not exist", () => {
+    expect(clearEmptyMountPoint(join(tmp, "nope"))).toBe(false);
+  });
+});

@@ -1,4 +1,4 @@
-import { createWriteStream, existsSync, mkdirSync, readdirSync, renameSync, rmSync } from "node:fs";
+import { createWriteStream, existsSync, mkdirSync, readdirSync, renameSync, rmSync, rmdirSync } from "node:fs";
 import { join } from "node:path";
 import { Readable } from "node:stream";
 import { pipeline } from "node:stream/promises";
@@ -30,11 +30,24 @@ async function download(url: string, to: string, log: (l: string) => void): Prom
   await pipeline(body, createWriteStream(to));
 }
 
+/**
+ * An empty folder left by an earlier Docker setup (it was the mount point of a volume, so it belongs to root and npm cannot write in it).
+ * An empty folder holds nothing, so it is removed and npm makes a new one. Returns true when it was removed.
+ */
+export function clearEmptyMountPoint(dir: string): boolean {
+  try {
+    if (readdirSync(dir).length > 0) return false;
+    rmdirSync(dir);
+    return true;
+  } catch { return false; }
+}
+
 /** Puts the program's files in the workspace and installs its Node packages (Remotion). */
 export const workspacePackages = (c: StepContext): StepFn => async (log) => {
   mkdirSync(c.workspace, { recursive: true });
   const code = runPrepare({ write: (t) => t.split("\n").filter(Boolean).forEach(log) }, { REEL_ROOT: c.workspace, PROGRAM_ROOT: c.programRoot });
   if (code !== 0) throw new Error("Could not fill the workspace with the program's files.");
+  if (clearEmptyMountPoint(join(c.workspace, "node_modules"))) log("removed an empty node_modules folder left by the old Docker setup");
   log("installing the workspace packages (about 600 MB, a few minutes)");
   await runCommand("npm", ["ci"], { cwd: c.workspace }, log).catch(() => runCommand("npm", ["install"], { cwd: c.workspace }, log));
 };
