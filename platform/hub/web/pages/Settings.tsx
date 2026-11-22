@@ -3,6 +3,7 @@ import type { BrandSummary, Settings } from "../../src/shared/types";
 import { api } from "../api";
 import { useLoad } from "../hooks";
 import { SkillsSection } from "../components/SkillsSection";
+import { SetupVoice } from "./SetupVoice";
 import { DeleteBrand } from "../components/DeleteBrand";
 import { BrandStyleSection } from "../components/BrandStyle";
 import { Chips, CopyTimes, Row, Section, TimesEditor } from "../components/SettingsParts";
@@ -126,6 +127,10 @@ export function SettingsPage({ brand }: { brand: BrandSummary }) {
           </Section>
 
           <div id="set-skills" className="set-skills"><SkillsSection /></div>
+
+          <Section id="set-voice" title="Voice" intro="The voice models VoiceStudio uses for the narration of every brand. Download one, choose the one to use, or remove the ones you do not need to free the disk.">
+            <SetupVoice />
+          </Section>
 
           <Section id="set-assistant" title="Brand assistant" intro="Used by New brand > Discuss it with an AI, for every brand. One turn per message, with the whole conversation as input.">
             <Row label="Assistant" htmlFor="s-asst" help="Only claude is tested. codex and a custom command are written to the same interface (the prompt on stdin, the answer as text on stdout) but have not been tried.">

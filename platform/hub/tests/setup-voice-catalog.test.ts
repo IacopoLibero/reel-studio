@@ -75,4 +75,19 @@ describe("VoiceClient", () => {
     const c = new VoiceClient("http://v", async () => json(500, { detail: "boom" }));
     await expect(c.catalog()).rejects.toThrow(/boom|500/);
   });
+
+  it("reads the engines, selects one, removes a model and cancels a download", async () => {
+    const { f, calls } = fake({
+      "GET /engines/tts": { active: "voxcpm2", backends: [{ id: "voxcpm2", available: true }] },
+      "POST /engines/select": {}, "DELETE /models/openbmb/VoxCPM2": {}, "POST /models/install/cancel": {},
+    });
+    const c = new VoiceClient("http://v", f);
+    expect((await c.engines()).active).toBe("voxcpm2");
+    await c.selectEngine("kittentts");
+    await c.remove("openbmb/VoxCPM2");
+    await c.cancel("lj1995/GPT-SoVITS");
+    expect(calls[1]).toBe('POST /engines/select {"family":"tts","backend_id":"kittentts"}');
+    expect(calls[2]).toBe("DELETE /models/openbmb/VoxCPM2");
+    expect(calls[3]).toBe('POST /models/install/cancel {"repo_id":"lj1995/GPT-SoVITS"}');
+  });
 });

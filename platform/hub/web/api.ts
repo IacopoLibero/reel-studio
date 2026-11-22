@@ -101,12 +101,16 @@ export interface VoiceModeInfo { id: string; label: string; description: string;
 export interface StepStatus { state: "idle" | "running" | "done" | "failed"; lines: string[]; error: string | null }
 export interface SetupData { state: { completed: boolean; voiceMode: string | null }; items: SetupItem[]; modes: VoiceModeInfo[]; recommended: string; steps: Record<string, StepStatus> }
 
-export interface VoiceModelRow { repoId: string; label: string; role: string; sizeGb: number; required: boolean; note: string; installed: boolean }
+export interface VoiceModelRow { repoId: string; label: string; role: string; sizeGb: number; required: boolean; note: string; installed: boolean; engine: string | null }
+export interface VoiceEngine { id: string; available: boolean; reason: string }
 export interface VoicePlan { repoId: string; ready: boolean; blockers: string[]; planId: string; planDigest: string; components: { id: string; revision: string; license: string; url: string }[]; documents: { id: string; title: string; url: string }[]; acknowledgement: string }
-export interface VoiceSetup { running: boolean; message?: string; models: VoiceModelRow[]; status: { jobs?: { state?: string; repo_id?: string; progress?: number }[] } | null }
+export interface VoiceSetup { running: boolean; message?: string; models: VoiceModelRow[]; status: unknown; active: string; engines: VoiceEngine[] }
 
 export const api = {
   setupVoice: () => call<VoiceSetup>("GET", "/api/setup/voice"),
+  setupVoiceSelect: (engine: string) => call<{ active: string }>("POST", "/api/setup/voice/select", { engine }),
+  setupVoiceRemove: (repoId: string) => call<{ removed: string }>("POST", "/api/setup/voice/remove", { repoId }),
+  setupVoiceCancel: (repoId: string) => call<{ cancelled: string }>("POST", "/api/setup/voice/cancel", { repoId }),
   setupVoicePlan: (repoId: string) => call<VoicePlan>("POST", "/api/setup/voice/plan", { repoId }),
   setupVoiceInstall: (repoId: string, acknowledged: boolean) => call<{ started: boolean }>("POST", "/api/setup/voice/install", { repoId, acknowledged }),
   setup: () => call<SetupData>("GET", "/api/setup"),

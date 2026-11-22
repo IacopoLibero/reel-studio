@@ -33,6 +33,8 @@ export function summarizePlan(raw: unknown): PlanSummary {
   };
 }
 
+import { summarizeEngines, type EngineList } from "./voice-engines.js";
+
 type FetchLike = (url: string, init?: { method?: string; headers?: Record<string, string>; body?: string }) => Promise<{ ok: boolean; status: number; json: () => Promise<unknown> }>;
 
 /** A small client of the VoiceStudio server. Nothing is installed here without the plan the person reviewed and their acknowledgement. */
@@ -54,6 +56,12 @@ export class VoiceClient {
   prepare = async (repoId: string): Promise<PlanSummary> => summarizePlan(await this.call("POST", "/models/install/prepare", { repo_id: repoId }));
 
   /** Downloads a model with VoiceStudio's own install call (the one its settings screen uses). The licence review (`prepare`) is shown to the person first. */
+  engines = async (): Promise<EngineList> => summarizeEngines(await this.call("GET", "/engines/tts"));
+  /** Makes an engine the voice VoiceStudio uses. */
+  selectEngine = async (id: string): Promise<void> => { await this.call("POST", "/engines/select", { family: "tts", backend_id: id }); };
+  /** Deletes a downloaded model from VoiceStudio's cache. */
+  remove = async (repoId: string): Promise<void> => { await this.call("DELETE", `/models/${repoId.split("/").map(encodeURIComponent).join("/")}`); };
+  cancel = async (repoId: string): Promise<void> => { await this.call("POST", "/models/install/cancel", { repo_id: repoId }); };
   install = (repoId: string): Promise<unknown> => this.call("POST", "/models/install", { repo_id: repoId });
 
 }
