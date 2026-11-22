@@ -2,7 +2,7 @@ import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, 
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { snapshotReel, VERSIONS_DIR } from "../src/reels/versions.js";
+import { dropSnapshotIfUnchanged, snapshotReel, VERSIONS_DIR } from "../src/reels/versions.js";
 
 let dir: string;
 beforeEach(() => {
@@ -37,5 +37,19 @@ describe("snapshotReel", () => {
   it("works for a reel with no code folder", () => {
     rmSync(join(dir, "code"), { recursive: true });
     expect(() => snapshotReel(dir)).not.toThrow();
+  });
+
+  it("drops a snapshot when nothing changed since (a question, a failed run), and keeps it when something did", () => {
+    const same = snapshotReel(dir, new Date("2026-11-22T01:00:00Z"));
+    expect(dropSnapshotIfUnchanged(dir, same)).toBe(true);
+    expect(existsSync(join(dir, VERSIONS_DIR, same))).toBe(false);
+    for (const change of [() => writeFileSync(join(dir, "a.mp4"), "video-2"), () => writeFileSync(join(dir, "code", "Scenes.tsx"), "new"), () => writeFileSync(join(dir, "code", "New.tsx"), "n"), () => rmSync(join(dir, "cover.png"))]) {
+      const name = snapshotReel(dir, new Date("2026-11-22T02:00:00Z"));
+      change();
+      expect(dropSnapshotIfUnchanged(dir, name)).toBe(false);
+      expect(existsSync(join(dir, VERSIONS_DIR, name))).toBe(true);
+      rmSync(join(dir, VERSIONS_DIR), { recursive: true, force: true });
+      writeFileSync(join(dir, "a.mp4"), "video-1"); writeFileSync(join(dir, "code", "Scenes.tsx"), "scenes"); rmSync(join(dir, "code", "New.tsx"), { force: true }); writeFileSync(join(dir, "cover.png"), "png");
+    }
   });
 });

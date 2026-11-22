@@ -10,7 +10,7 @@ import { runProcess } from "../jobs/process.js";
 import { appendMessage, readChat, setSession } from "./chat.js";
 import { buildEditPrompt } from "./edit-prompt.js";
 import { readScheduled, reelDirOf } from "./scanner.js";
-import { snapshotReel, VERSIONS_DIR } from "./versions.js";
+import { dropSnapshotIfUnchanged, snapshotReel, VERSIONS_DIR } from "./versions.js";
 
 export const EDIT_STEPS = ["Reading the reel", "Changing it", "Rendering", "Checks", "Done"] as const;
 const MARKS = [0.05, 0.25, 0.6, 0.85, 1];
@@ -88,6 +88,7 @@ export const reelEdit: Handler = async (job, ctx) => {
 
   const fail = (why: string): never => {
     const back = restoreMissing(dir, snapshot);
+    dropSnapshotIfUnchanged(dir, snapshot);
     appendMessage(dir, { role: "claude", text: `I could not finish this change: ${why}${back.length ? ` (put back: ${back.join(", ")})` : ""}`, jobId: job.id });
     throw new Error(why);
   };
@@ -96,9 +97,10 @@ export const reelEdit: Handler = async (job, ctx) => {
   const missing = missingOutputs(listFiles(dir));
   if (missing.length) fail(`the reel is missing ${missing.join(", ")} after the change`);
 
+  const kept = !dropSnapshotIfUnchanged(dir, snapshot);
   if (run.sessionId) setSession(dir, run.sessionId);
   const summary = run.summary.trim() || "Done.";
   appendMessage(dir, { role: "claude", text: summary, jobId: job.id });
   ctx.update({ step: EDIT_STEPS[4], stepIndex: 4, progress: 1 });
-  return { folder: p.folder, summary, sessionId: run.sessionId, snapshot };
+  return { folder: p.folder, summary, sessionId: run.sessionId, changed: kept, ...(kept ? { snapshot } : {}) };
 };

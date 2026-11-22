@@ -74,6 +74,8 @@ then the app, then the big features, which are born with the final structure and
 
 - **Fresh install from zero (before the big features):** build the package, install it on a clean system or user (a new `REEL_STUDIO_HOME`, a user without the tools), and go through the setup to a first reel. Checks the dependency list, the setup steps and the first-run text. Not done yet.
 
+- **Reel page and chat (2026-11-22):** a click on a reel in Reels opens `#/<brand>/reels/<folder>`: video (ranged, seeks), cover, caption, script, plan, files, and a chat that edits the reel (`reel.edit`, same Claude session across messages, the reel saved in `.versions` before each change and put back if the run fails, a run that changed nothing leaves no version). Tried for real on Acme Bakery reel 6: a request to make the headline 15% bigger changed the code (100 to 115 px), re-rendered the MP4 and answered; a follow-up question in the same conversation knew the earlier values and changed nothing. Not done: undo from the page, a chat from the Daily review, the page was seen in a browser only as a screenshot (no click through of the chat in the window). The reel-making API took `rerun: {folder, note}`, not `rerunFolder` as two earlier reruns of mine used (that is why they made a new folder).
+
 ### 3. After the app (big, born with the final structure)
 
 - **Character from a picture** (`character.build`): built as an experiment (plan, Blender script, flat previews with approval and notes) and only run with a

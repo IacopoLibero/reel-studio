@@ -29,6 +29,7 @@ describe("reel.edit", () => {
     expect(r.summary).toBe("Made the hook 20% bigger.");
     expect(readFileSync(join(reel, "half.mp4"), "utf8")).toBe("edited video");
     const snap = readdirSync(join(reel, VERSIONS_DIR));
+    expect(r.changed).toBe(true);
     expect(snap).toHaveLength(1);
     expect(readFileSync(join(reel, VERSIONS_DIR, snap[0]!, "half.mp4"), "utf8")).toBe("original video");
     const chat = readChat(reel);
@@ -65,6 +66,9 @@ describe("reel.edit", () => {
     const r = await edit("job-1", "How tall is the hook?");
     expect(r.summary).toBe("The hook is 120 px tall.");
     expect(readFileSync(join(reel, "half.mp4"), "utf8")).toBe("original video");
+    expect(existsSync(join(reel, VERSIONS_DIR))).toBe(true);
+    expect(readdirSync(join(reel, VERSIONS_DIR))).toEqual([]);
+    expect(r.changed).toBe(false);
   });
   it("when Claude fails, the reel is as it was, the chat says so, and the job fails", async () => {
     process.env.FAKE_MODE = "error";
