@@ -1,6 +1,13 @@
 import { useEffect, useState } from "react";
 import { api, type VoicePlan, type VoiceSetup } from "../api";
 
+const BLOCKER_TEXT: Record<string, string> = {
+  artifact_manifest_unverified: "its file list is not verified",
+  component_closure_incomplete: "parts it depends on are not all listed",
+  terms_unverified: "its terms of use are not verified",
+  upstream_access_unverified: "its source access conditions are not verified",
+};
+
 const ROLE_TEXT: Record<string, string> = { TTS: "Voice (speaks the script)", ASR: "Listening (transcribes audio)" };
 
 /**
@@ -63,7 +70,13 @@ function PlanCard({ plan, ack, setAck, busy, onDownload, onCancel }: { plan: Voi
       <strong>{plan.repoId}</strong>
       {plan.components.map((c) => <div key={c.id} className="muted">{c.id} · licence: {c.license || "not stated"}{c.url && <> · <a href={c.url} target="_blank" rel="noreferrer">evidence</a></>}</div>)}
       {plan.documents.map((d) => <div key={d.id} className="muted">Notice: {d.url ? <a href={d.url} target="_blank" rel="noreferrer">{d.title}</a> : d.title}</div>)}
-      {!plan.ready && <p className="error">VoiceStudio does not let this model be installed from here yet ({plan.blockers.join(", ") || "not reviewed"}). Install it from VoiceStudio's own settings if you need it.</p>}
+      {!plan.ready && (
+        <p className="error">
+          VoiceStudio has not verified this model yet, so it will not download it: {plan.blockers.map((b) => BLOCKER_TEXT[b] ?? b).join("; ") || "it was not reviewed"}.
+          This is VoiceStudio's own check of licences and sources, and it is not something you can fix here. Check the licence above before you look for another way to get it
+          (some licences, such as CC-BY-NC, do not allow commercial use). Reel Studio does not need this model if another voice above is installed.
+        </p>
+      )}
       {plan.ready && (
         <>
           <label style={{ display: "block", margin: "10px 0" }}><input type="checkbox" checked={ack} onChange={(e) => setAck(e.target.checked)} /> {plan.acknowledgement || "I read the notices for this model."}</label>
