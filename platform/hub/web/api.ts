@@ -108,7 +108,7 @@ export interface VoiceSetup { running: boolean; message?: string; models: VoiceM
 export const api = {
   setupVoice: () => call<VoiceSetup>("GET", "/api/setup/voice"),
   setupVoicePlan: (repoId: string) => call<VoicePlan>("POST", "/api/setup/voice/plan", { repoId }),
-  setupVoiceInstall: (p: VoicePlan, acknowledged: boolean) => call<{ started: boolean }>("POST", "/api/setup/voice/install", { planId: p.planId, planDigest: p.planDigest, documentIds: p.documents.map((d) => d.id), acknowledged }),
+  setupVoiceInstall: (repoId: string, acknowledged: boolean) => call<{ started: boolean }>("POST", "/api/setup/voice/install", { repoId, acknowledged }),
   setup: () => call<SetupData>("GET", "/api/setup"),
   setupVoiceMode: (id: string) => call<{ voiceMode: string }>("PUT", "/api/setup/voice-mode", { id }),
   setupStep: (id: string) => call<{ started: boolean; status: StepStatus }>("POST", `/api/setup/steps/${encodeURIComponent(id)}`),

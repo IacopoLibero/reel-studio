@@ -12,7 +12,7 @@ const api: VoiceApi = {
   catalog: async () => { if (!up) throw new Error("VoiceStudio is not running."); return [{ repoId: "x/y", label: "X", role: "TTS", sizeGb: 1, required: false, note: "", installed: false }]; },
   installStatus: async () => ({ jobs: [] }),
   prepare: async (r) => { calls.push(`prepare ${r}`); return plan; },
-  commit: async (a) => { calls.push(`commit ${a.planId} ${a.documentIds.join(",")}`); return {}; },
+  install: async (r) => { calls.push(`install ${r}`); return {}; },
 };
 
 beforeEach(async () => {
@@ -47,15 +47,14 @@ describe("voice setup routes", () => {
     expect((await post("/api/setup/voice/plan", { repoId: "../etc/passwd" })).statusCode).toBe(400);
     expect(calls).toEqual([]);
   });
-  it("downloads only after the person acknowledged the notices", async () => {
-    const body = { planId: "a".repeat(32), planDigest: "b".repeat(64), documentIds: ["d1"] };
-    expect((await post("/api/setup/voice/install", { ...body, acknowledged: false })).statusCode).toBe(400);
-    expect((await post("/api/setup/voice/install", body)).statusCode).toBe(400);
+  it("downloads only after the person acknowledged the licence", async () => {
+    expect((await post("/api/setup/voice/install", { repoId: "x/y", acknowledged: false })).statusCode).toBe(400);
+    expect((await post("/api/setup/voice/install", { repoId: "x/y" })).statusCode).toBe(400);
     expect(calls).toEqual([]);
-    expect((await post("/api/setup/voice/install", { ...body, acknowledged: true })).statusCode).toBe(200);
-    expect(calls).toEqual([`commit ${"a".repeat(32)} d1`]);
+    expect((await post("/api/setup/voice/install", { repoId: "x/y", acknowledged: true })).statusCode).toBe(200);
+    expect(calls).toEqual(["install x/y"]);
   });
-  it("refuses a malformed plan id or digest", async () => {
-    expect((await post("/api/setup/voice/install", { planId: "x", planDigest: "y", documentIds: [], acknowledged: true })).statusCode).toBe(400);
+  it("refuses a bad repo id when installing", async () => {
+    expect((await post("/api/setup/voice/install", { repoId: "../x", acknowledged: true })).statusCode).toBe(400);
   });
 });

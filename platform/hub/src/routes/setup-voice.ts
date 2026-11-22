@@ -8,16 +8,15 @@ export interface VoiceApi {
   catalog(): Promise<ModelRow[]>;
   installStatus(): Promise<unknown>;
   prepare(repoId: string): Promise<PlanSummary>;
-  commit(a: { planId: string; planDigest: string; documentIds: string[] }): Promise<unknown>;
+  install(repoId: string): Promise<unknown>;
 }
 
 const repoId = z.string().regex(/^[A-Za-z0-9][\w.-]*\/[\w.-]+$/, "That is not a model name (owner/name).").max(200);
 const planBody = z.object({ repoId });
 const installBody = z.object({
-  planId: z.string().regex(/^[a-f0-9]{32}$/), planDigest: z.string().regex(/^[a-f0-9]{64}$/),
-  documentIds: z.array(z.string().max(200)).max(100),
-  /** The person ticked "I acknowledge" on the screen. Nothing downloads without it. */
-  acknowledged: z.literal(true, { error: "Tick the box to confirm you read the notices." }),
+  repoId,
+  /** The person read the licence on the screen and ticked the box. Nothing downloads without it. */
+  acknowledged: z.literal(true, { error: "Tick the box to confirm you read the licence." }),
 });
 
 const bad = (e: z.ZodError): HttpError => new HttpError(400, e.issues[0]?.message ?? "Invalid request.");
@@ -43,7 +42,7 @@ export function setupVoiceRoutes(app: FastifyInstance, voice: () => VoiceApi): v
   app.post("/api/setup/voice/install", async (req) => {
     const p = installBody.safeParse(req.body);
     if (!p.success) throw bad(p.error);
-    await voice().commit({ planId: p.data.planId, planDigest: p.data.planDigest, documentIds: p.data.documentIds });
+    await voice().install(p.data.repoId);
     return { started: true };
   });
 

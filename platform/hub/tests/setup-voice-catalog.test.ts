@@ -62,11 +62,10 @@ describe("VoiceClient", () => {
     expect(plan.ready).toBe(true);
     expect(calls[0]).toContain('"repo_id":"x/y"');
   });
-  it("commits only with the plan the user saw and the acknowledgement the user gave", async () => {
-    const { f, calls } = fake({ "POST /models/install/commit": { ok: true } });
-    await new VoiceClient("http://v", f).commit({ planId: "a".repeat(32), planDigest: "b".repeat(64), documentIds: ["doc1"] });
-    const body = JSON.parse(calls[0]!.split(" ").slice(2).join(" "));
-    expect(body).toEqual({ plan_id: "a".repeat(32), plan_digest: "b".repeat(64), acknowledged_document_ids: ["doc1"], acknowledged: true, target: "local" });
+  it("downloads a model with VoiceStudio's install call", async () => {
+    const { f, calls } = fake({ "POST /models/install": { status: "started" } });
+    await new VoiceClient("http://v", f).install("x/y");
+    expect(calls[0]).toBe('POST /models/install {"repo_id":"x/y"}');
   });
   it("says clearly when VoiceStudio is not running", async () => {
     const c = new VoiceClient("http://v", async () => { throw new Error("ECONNREFUSED"); });

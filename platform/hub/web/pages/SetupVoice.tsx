@@ -1,13 +1,7 @@
 import { useEffect, useState } from "react";
 import { api, type VoicePlan, type VoiceSetup } from "../api";
 
-const BLOCKER_TEXT: Record<string, string> = {
-  artifact_manifest_unverified: "its file list is not verified",
-  component_closure_incomplete: "parts it depends on are not all listed",
-  terms_unverified: "its terms of use are not verified",
-  upstream_access_unverified: "its source access conditions are not verified",
-};
-
+const NON_COMMERCIAL = /\bNC\b|non-?commercial/i;
 /**
  * After VoiceStudio is installed: which voice models to download (only voices; transcription and language models are not used by Reel Studio).
  * Each model is reviewed first: VoiceStudio gives its licence and notices, and nothing downloads until the person ticks that they read them.
@@ -29,7 +23,7 @@ export function SetupVoice() {
 
   const run = (fn: () => Promise<unknown>) => { setError(null); setBusy(true); fn().then(load).catch((e: Error) => setError(e.message)).finally(() => setBusy(false)); };
   const review = (repoId: string) => run(async () => { setAck(false); setPlan(await api.setupVoicePlan(repoId)); });
-  const download = () => plan && run(async () => { await api.setupVoiceInstall(plan, ack); setPlan(null); });
+  const download = () => plan && run(async () => { await api.setupVoiceInstall(plan.repoId, ack); setPlan(null); });
 
   if (!data) return <p className="muted">{error ?? "Asking VoiceStudio…"}</p>;
   if (!data.running) return <p className="muted">{data.message ?? "VoiceStudio is not running."} The models appear here once it is.</p>;
@@ -62,19 +56,10 @@ function PlanCard({ plan, ack, setAck, busy, onDownload, onCancel }: { plan: Voi
       <strong>{plan.repoId}</strong>
       {plan.components.map((c) => <div key={c.id} className="muted">{c.id} · licence: {c.license || "not stated"}{c.url && <> · <a href={c.url} target="_blank" rel="noreferrer">evidence</a></>}</div>)}
       {plan.documents.map((d) => <div key={d.id} className="muted">Notice: {d.url ? <a href={d.url} target="_blank" rel="noreferrer">{d.title}</a> : d.title}</div>)}
-      {!plan.ready && (
-        <p className="error">
-          VoiceStudio has not verified this model yet, so it will not download it: {plan.blockers.map((b) => BLOCKER_TEXT[b] ?? b).join("; ") || "it was not reviewed"}.
-          This is VoiceStudio's own check of licences and sources, and it is not something you can fix here. Check the licence above before you look for another way to get it
-          (some licences, such as CC-BY-NC, do not allow commercial use). Reel Studio does not need this model if another voice above is installed.
-        </p>
-      )}
-      {plan.ready && (
-        <>
-          <label style={{ display: "block", margin: "10px 0" }}><input type="checkbox" checked={ack} onChange={(e) => setAck(e.target.checked)} /> {plan.acknowledgement || "I read the notices for this model."}</label>
+      {!plan.ready && <p className="muted">VoiceStudio's own licence review of this model is not finished, so the licence above is what it lists, not a verified answer.</p>}
+      {NON_COMMERCIAL.test(plan.components.map((c) => c.license).join(" ")) && <p className="error">This licence does not allow commercial use. Reels published for a business may not be covered.</p>}
+          <label style={{ display: "block", margin: "10px 0" }}><input type="checkbox" checked={ack} onChange={(e) => setAck(e.target.checked)} /> I read the licence of this model and accept it.</label>
           <button className="btn primary" type="button" disabled={!ack || busy} onClick={onDownload}>Download</button>{" "}
-        </>
-      )}
       <button className="btn" type="button" onClick={onCancel}>Cancel</button>
     </div>
   );

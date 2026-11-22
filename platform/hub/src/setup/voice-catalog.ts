@@ -53,8 +53,7 @@ export class VoiceClient {
   installStatus = (): Promise<unknown> => this.call("GET", "/models/install/status");
   prepare = async (repoId: string): Promise<PlanSummary> => summarizePlan(await this.call("POST", "/models/install/prepare", { repo_id: repoId }));
 
-  /** Starts the download of the plan the person reviewed. `documentIds` are the notices they acknowledged. */
-  commit = (a: { planId: string; planDigest: string; documentIds: string[] }): Promise<unknown> =>
-    this.call("POST", "/models/install/commit", { plan_id: a.planId, plan_digest: a.planDigest, acknowledged_document_ids: a.documentIds, acknowledged: true, target: "local" });
+  /** Downloads a model with VoiceStudio's own install call (the one its settings screen uses). The licence review (`prepare`) is shown to the person first. */
+  install = (repoId: string): Promise<unknown> => this.call("POST", "/models/install", { repo_id: repoId });
 
 }
