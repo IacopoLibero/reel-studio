@@ -41,7 +41,7 @@ A web platform that is always up (as the app, or in Docker: one container, defau
   The user is created at container start by `platform/docker/entrypoint.sh`.
 - **Claude login:** the user's own (mount of `~/.claude`), no API key. The hub runs `claude` through `platform/docker/claude-hub`
   (`--setting-sources project,local`) because the host's user hooks and plugins hang headless Claude inside the container.
-- **Instagram login:** done by the user in a noVNC window (a remote Chromium inside the container). Nobody types the password for them.
+- **Instagram login:** done by the user in a Chromium window (on the desktop in the app; a noVNC window onto a Chromium inside the container in Docker). Nobody types the password for them. The login state and the button that opens the window are in **Settings > Instagram**; there is no Instagram page. Reads (session check, calendar) run in a headless browser; the login and the schedule flow use a window.
   The browser profile persists in a Docker volume, one folder per brand.
 - **VoiceStudio** (uvicorn on 3900, with the VoxCPM2 engine) lives in named Docker volumes, filled at first start from the official sources
   (`platform/docker/voicestudio-run`: git clone of a pinned tag, `uv sync`, then VoiceStudio's own installer for the engine). Nothing is copied
@@ -79,9 +79,8 @@ Every page is for the brand chosen in the switcher; the address is `#/<brand>/<p
 | **Analytics** | Results of the reels (Composio, read-only), a chart, a table, a plain-language readout. |
 | **Series** | Recurring formats, plan a series, assign questions. |
 | **Reels** | Every reel folder with its files and Instagram state; Schedule opens a slot picker and creates an `instagram.schedule` job. |
-| **Instagram** | Session state, the noVNC login window, the queue. |
 | **Character** | The moves of the brand's character (PNG sequences in `<brand>/mascot/movements/<move>/`), add a move with Claude and Blender, re-render one. For a brand without one: the experimental character-from-a-picture steps. |
-| **Settings** | Per brand: posting schedule, daily loop, factory rules, delete brand. Global: Blender device, Claude model, brand assistant, which content skills are on. |
+| **Settings** | Per brand: Instagram login, posting schedule, daily loop, factory rules, voice, delete brand. Global: Blender device, Claude model, brand assistant, which content skills are on. |
 | **New brand** | The brand creator (see BRANDS.md). |
 
 ## Job model

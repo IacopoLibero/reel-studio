@@ -9,7 +9,6 @@ import { CalendarPage } from "./pages/Calendar";
 import { FactoryPage } from "./pages/Factory";
 import { DailyPage } from "./pages/Daily";
 import { ReelsPage } from "./pages/Reels";
-import { InstagramPage } from "./pages/Instagram";
 import { CharacterPage } from "./pages/Character";
 import { AnalyticsPage } from "./pages/Analytics";
 import { SeriesPage } from "./pages/Series";
@@ -21,7 +20,7 @@ import { BRANDS_CHANGED } from "./hooks";
 import type { Created } from "./creator/useCreate";
 
 const PAGES = [
-  ["jobs", "Jobs"], ["daily", "Daily"], ["calendar", "Calendar"], ["claude", "Claude"], ["factory", "Factory"], ["analytics", "Analytics"], ["series", "Series"], ["reels", "Reels"], ["instagram", "Instagram"], ["character", "Character"], ["settings", "Settings"],
+  ["jobs", "Jobs"], ["daily", "Daily"], ["calendar", "Calendar"], ["claude", "Claude"], ["factory", "Factory"], ["analytics", "Analytics"], ["series", "Series"], ["reels", "Reels"], ["character", "Character"], ["settings", "Settings"],
 ] as const;
 const PAGE_IDS: readonly string[] = PAGES.map(([id]) => id);
 
@@ -147,7 +146,6 @@ function BrandPages({ brand, page }: { brand: BrandSummary; page: string }) {
       {page === "analytics" && <AnalyticsPage jobs={jobs} />}
       {page === "series" && <SeriesPage jobs={jobs} />}
       {page === "reels" && <ReelsPage jobs={jobs} />}
-      {page === "instagram" && <InstagramPage jobs={jobs} brand={brand} />}
       {page === "character" && <CharacterPage jobs={jobs} brand={brand} />}
       {page === "settings" && <SettingsPage key={brand.slug} brand={brand} />}
     </>

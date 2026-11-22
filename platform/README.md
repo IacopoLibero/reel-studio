@@ -98,7 +98,7 @@ All published on `127.0.0.1` only. Change them in `.env` and run `./update.sh`.
 |---|---|---|
 | 4000 | `HUB_PORT` | The hub (web app and API). Needs the token. |
 | 3900 | `VOICE_PORT` | VoiceStudio API (health check at `/health`). |
-| 6080, 5900 | none | noVNC and VNC, inside the container only. The Instagram page reaches noVNC through the hub. |
+| 6080, 5900 | none | noVNC and VNC, inside the container only. In the Docker setup the Instagram login window is reached at `http://127.0.0.1:<HUB_PORT>/novnc/vnc.html` (sign in to the hub first). |
 
 ## Where things live
 
@@ -195,7 +195,7 @@ Set by the compose file from `.env`; useful when you run the hub yourself.
 | `CHROME_PROFILE_ROOT` | none | Old setting: a shared folder with one browser profile per brand. Without it each brand's login is in `<data>/brands/<slug>/profile`. |
 | `HUB_SCHEDULER` | on | `off` replaces the Instagram scheduler with a stub that does nothing. |
 | `HUB_SCHEDULER_MODULE` | `./scheduler/index.js` | Another module with the scheduler interface (a test fixture, for example). |
-| `HUB_NOVNC_URL` | `http://127.0.0.1:6080` | Where the Instagram page finds noVNC. |
+| `HUB_NOVNC_URL` | `http://127.0.0.1:6080` | Where the hub finds noVNC (Docker setup). |
 | `HUB_WEB_DIR` | built web app | Folder with the built web app. |
 | `HUB_TERMINAL_CMD` | `claude` in tmux | The command the Claude page runs. |
 | `HUB_LOG_LEVEL` | info | Log level. |
@@ -219,7 +219,8 @@ Set `VOICE_ENGINE_INSTALL=0` in `.env` to skip the engine and model (voices will
 
 ## Log in to Instagram
 
-Open the hub, choose the brand, open the Instagram page and press the login button: a noVNC window opens on the Chromium running in the
+**App:** open Settings > Instagram for the brand and press *Log in to Instagram*: a Chromium window opens on your desktop. Log in yourself there (the hub never types your password), then press *Check again*. Reads (the calendar, the session check) run without a window; only the login and a schedule flow open one.
+**Docker setup:** press the same button, then open `http://127.0.0.1:<HUB_PORT>/novnc/vnc.html` (signed in to the hub): a noVNC window shows the Chromium running in the
 container. Log in yourself (the hub never types your password). The profile of each brand is kept in your studio folder, in
 `data/brands/<slug>/profile/`.
 

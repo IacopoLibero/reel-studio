@@ -50,7 +50,7 @@ Everything in the hub is scoped to the current brand: Jobs, Daily, Calendar, Fac
 - Data: `<data>/brands/<slug>/` (`~/ReelStudio/data/brands/<slug>/`) holds that brand's settings (slot pattern, daily loop, factory rules, Threads toggle), jobs (job records carry
   `brand`), daily plans, analytics snapshots and hooks.csv, ideas, series, scheduled.json, locks. Global settings (Blender device, Claude model,
   assistant command, ports) stay in `<data>/settings.json`. The Instagram browser profile is per brand: `<data>/brands/<slug>/profile/` (the folder in `instagram.profileDir` when set);
-  the Instagram page logs in and shows the account of the current brand; the scheduler, collector and calendar use that brand's profile, user id and
+  Settings > Instagram logs in and shows the state of the current brand's account; the scheduler, collector and calendar use that brand's profile, user id and
   account. Only one browser flow runs at a time across all brands (existing queue).
 - API: every brand-scoped route is `/api/brands/:slug/...`; the old `/api/...` paths still answer for the first brand. The daily loop runs per brand (own switch, own earliest time); the connectivity gate and heavy-job gate are shared.
 - Notifications name the brand ("Reel Hub, acme: 3 new reel ideas").

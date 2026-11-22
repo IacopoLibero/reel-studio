@@ -139,7 +139,7 @@ The daily loop ends its automatic part here and waits for you. Nothing is made b
 - Posting schedule (the default is 3 posts on Sunday, Tuesday and Thursday, 2 on the other days), the daily loop and the factory rules.
 - Blender device, Claude model, which content skills are on, the brand assistant, and deleting a brand (it goes to a trash folder).
 
-The hub also has **Claude** (a terminal in the page running Claude Code), **Instagram** (session state and the login window) and
+The hub also has **Claude** (a terminal in the page running Claude Code), the login to Instagram (in **Settings**: its state, and a button that opens a Chromium window to log in) and
 **Character** (the moves of a brand's character).
 
 ## How it works
@@ -213,7 +213,7 @@ folder and file, and registers the brand without a restart.
 From a terminal: `./scripts/new-brand.sh my-brand --name "My Brand" --website mybrand.com` makes the same folders with neutral values.
 
 A new brand has an empty question list, the daily loop off and no character, and every page shows a first-step message. Then:
-log in to its Instagram page, add the first questions (or press **Find new ideas** in the Factory), make the first reel.
+log in to Instagram in Settings (the Instagram section opens a Chromium window; you type the password there), add the first questions (or press **Find new ideas** in the Factory), make the first reel.
 
 **Optional character.** A brand may have a character (a mascot built in Blender). The Character page gives you a ready prompt for an AI
 image tool (flat 2D vector, your colours, a sheet with views and eight expressions); you make the sheet elsewhere and upload it.
@@ -310,8 +310,8 @@ An installation made before brands existed may still carry `BRAND`, `IG_USER_ID`
   login. If you start Claude by hand in the container, use `claude-hub`.
 - **Instagram "Reels" notice or the month picker blocks the scheduler.** Instagram shows a one-time notice about reels and a month picker
   for the date. The scheduler handles both (see the scheduler section of [platform/docs/DESIGN.md](platform/docs/DESIGN.md)). If a job fails,
-  read its error in Jobs, dismiss the notice once in the browser window of the Instagram page,
-  and run the job again. A `login_required` failure means: log in again on the Instagram page.
+  read its error in Jobs, dismiss the notice once in the browser window that opens when you press *Log in again* in Settings > Instagram,
+  and run the job again. A `login_required` failure means: log in again there.
 - **Instagram scheduling limits.** About 30 days ahead, at least 20 minutes of lead time, 9:16 only.
 - **Out of GPU memory (8 GB).** Only one VoiceStudio can use the GPU: do not run another copy on the host. Voice jobs wait in a queue
   (`scripts/slot.sh voice 1 -- <command>`; renders use `render 3`). The factory does this for you.

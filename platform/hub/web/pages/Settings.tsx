@@ -4,6 +4,7 @@ import { api } from "../api";
 import { useLoad } from "../hooks";
 import { SkillsSection } from "../components/SkillsSection";
 import { SetupVoice } from "./SetupVoice";
+import { InstagramAccess } from "../components/InstagramAccess";
 import { DeleteBrand } from "../components/DeleteBrand";
 import { BrandStyleSection } from "../components/BrandStyle";
 import { Chips, CopyTimes, Row, Section, TimesEditor } from "../components/SettingsParts";
@@ -16,6 +17,8 @@ const SECTIONS = [
   ["set-daily", "Daily loop"],
   ["set-factory", "Reel factory"],
   ["set-skills", "Skills"],
+  ["set-instagram", "Instagram"],
+  ["set-voice", "Voice"],
   ["set-assistant", "Brand assistant"],
   ["set-danger", "Delete brand"],
 ] as const;
@@ -68,7 +71,7 @@ export function SettingsPage({ brand }: { brand: BrandSummary }) {
         </nav>
         <div className="set-main">
           <Section id="set-general" title="General">
-            <Row label="Instagram account" htmlFor="s-account" help="The account name of this brand. Instagram itself is logged in on the Instagram page.">
+            <Row label="Instagram account" htmlFor="s-account" help="The account name of this brand. The login is in the Instagram section below.">
               <input id="s-account" type="text" value={s.accountName} onChange={(e) => set({ accountName: e.target.value })} />
             </Row>
             <Row label="Blender device" htmlFor="s-blender" help="Auto uses the GPU when it is free. CPU is slower but never competes with the voice.">
@@ -127,6 +130,10 @@ export function SettingsPage({ brand }: { brand: BrandSummary }) {
           </Section>
 
           <div id="set-skills" className="set-skills"><SkillsSection /></div>
+
+          <Section id="set-instagram" title="Instagram" intro="Reels are scheduled in Instagram's own scheduler, through a Chromium browser that this brand logs in to once. The login stays in the brand's folder.">
+            <InstagramAccess account={s.accountName} />
+          </Section>
 
           <Section id="set-voice" title="Voice" intro="The voice models VoiceStudio uses for the narration of every brand. Download one, choose the one to use, or remove the ones you do not need to free the disk.">
             <SetupVoice />

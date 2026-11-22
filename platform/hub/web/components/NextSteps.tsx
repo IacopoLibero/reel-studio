@@ -30,7 +30,7 @@ export function NextSteps({ brand }: { brand: BrandSummary }) {
     <div className="card welcome" role="region" aria-label="Next steps">
       <div className="row"><strong className="grow">{brand.name} is ready. Next steps to your first reel:</strong><button type="button" className="btn small" onClick={close}>Dismiss</button></div>
       <ol>
-        <li>Log in to Instagram on <a href={routeHash(brand.slug, "instagram")}>this brand's Instagram page</a>, once, in the window that opens there.</li>
+        <li>Log in to Instagram, once, in <a href={routeHash(brand.slug, "settings")}>Settings</a> (the Instagram section): a Chromium window opens for it.</li>
         <li>
           Get your first questions: <button type="button" className="btn small primary" disabled={busy} onClick={firstReel}>{busy ? "Starting" : `Propose ${FIRST_REEL_IDEAS} first questions`}</button>
           {err && <span className="error"> {err}</span>}
