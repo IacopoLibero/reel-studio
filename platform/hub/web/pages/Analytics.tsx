@@ -55,7 +55,7 @@ export function AnalyticsPage({ jobs }: { jobs: Job[] }) {
       {(err || error) && <p className="error">{err ?? error}</p>}
       {failed && !running && <p className="error">{failed.title} failed: {failed.error}</p>}
       {data?.warnings.map((w) => <p key={w} className="muted">{w}</p>)}
-      {reels.length === 0 && !running && <p className="muted">No reels read yet. Log in to this brand's Instagram page first, then press Refresh from Instagram. Numbers appear after the first reel is published.</p>}
+      {reels.length === 0 && !running && <p className="muted">No reels read yet. Log in to this brand's Instagram first (Settings), then press Refresh from Instagram. Numbers appear after the first reel is published.</p>}
       {reels.length > 0 && (
         <>
           <div className="stats">

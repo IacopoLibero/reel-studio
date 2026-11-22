@@ -11,7 +11,7 @@ we will credit you in the fix unless you prefer not.
 
 The Reel Hub runs on your own computer. Its design assumes a single trusted user:
 
-- The hub listens on `127.0.0.1` only and every request needs the token from `.env` (`HUB_TOKEN`, random, mode 600).
+- The hub listens on `127.0.0.1` only and every request needs the token (`<data>/dev-token`, random, mode 600; the app's window signs in with a one-time pass).
   Do not publish the ports to the network or put the hub behind a public reverse proxy without adding your own authentication
   and TLS: the hub contains a terminal that runs Claude Code and a browser logged in to your Instagram.
 - Credentials stay on your machine: the Claude login (`~/.claude`), the Composio login (`~/.composio`, read-only mount),
@@ -21,7 +21,7 @@ The Reel Hub runs on your own computer. Its design assumes a single trusted user
   credential files and limits the shell tools of research jobs. The reel-making job keeps a broad shell (voice, Blender and
   rendering need it) but cannot read credential files or use curl, wget, ssh or `env`. A script written from scratch by a
   prompt-injected model could still read other files in the workspace; treat your studio folder as the trust boundary.
-- Do not commit `.env`, your studio folder (`~/ReelStudio`), or anything from `~/.claude`. `.gitignore` excludes `.env` and the old in-repository data folders.
+- Do not commit your studio folder (`~/ReelStudio`), or anything from `~/.claude`. `.gitignore` excludes `.env` files and the old in-repository data folders.
 
-In scope: the hub's API and web app, the scripts in this repository, the Docker setup. Out of scope: vulnerabilities in
-Docker, Claude Code, Chromium, VoiceStudio, Remotion or other upstream projects (report those upstream).
+In scope: the hub's API and web app, the scripts in this repository, the desktop app and its package. Out of scope: vulnerabilities in
+Claude Code, Electron, Chromium, VoiceStudio, Remotion or other upstream projects (report those upstream).

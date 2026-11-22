@@ -46,7 +46,7 @@ All screenshots in this document show an invented demo brand, "Acme Bakery". No 
 - Schedules reels on Instagram through a real browser that you log in to yourself, and checks the result on Instagram's own calendar.
 - Optionally runs a **daily loop**: it reads your results, writes a plain-language readout, proposes three ideas and waits for you.
 - Handles **several brands**, each with its own pages, data, settings, daily loop and Instagram login.
-- Runs as a **desktop app** (an Electron window with a tray icon) on Arch Linux: the hub is bound to `127.0.0.1` and your logins stay on your machine. A Docker setup is still there as an alternative.
+- Runs as a **desktop app** (an Electron window with a tray icon) on Arch Linux: the hub is bound to `127.0.0.1` and your logins stay on your machine.
 
 The repository holds the platform, a generic Remotion kit, the skills and a brand template. It holds **no brand**: your brands live
 on your machine and stay out of git (see [Creating a brand](#creating-a-brand)).
@@ -119,7 +119,7 @@ The daily loop ends its automatic part here and waits for you. Nothing is made b
 
 - Every folder in the brand's `reels/` folder (`data/brands/<slug>/reels/` in your studio folder) with its cover, files (MP4, caption, cover) and state: not scheduled, in queue, scheduled.
 - **Schedule** picks a free slot of your pattern and queues the Instagram job.
-- **Click a reel** to open its own page (not a dialog): the video with a player, the cover, the caption, the script, the plan and the files. Next to the video is a **conversation with Claude**: say what to change ("make the headline bigger", "shorten the closing"), and Claude changes the reel's code, renders it again and answers; ask a question first if you only want to understand something. Each message continues the same Claude session, so follow-ups make sense. Before each change the reel is saved in its folder (`.versions`, the last three), and if Claude fails the reel is put back as it was. One change runs at a time per reel; a reel that is being scheduled cannot be changed. A reel already on Instagram can be changed here, but Instagram keeps its own copy.
+- **Click a reel** to open its own page (not a dialog): the video with a player, the cover, the caption, the script, the plan and the files. Next to the video is a **conversation with Claude**: say what to change ("make the headline bigger", "shorten the closing"), and Claude changes the reel's code, renders it again and answers; ask a question first if you only want to understand something. Each message continues the same Claude session, so follow-ups make sense. Before each change the reel is saved in its folder (`.versions`, the last three); **Undo the last change** (and *Older versions*) put a saved version back, saving the current one first so the undo can be undone; and if Claude fails the reel is put back as it was. One change runs at a time per reel; a reel that is being scheduled cannot be changed. A reel already on Instagram can be changed here, but Instagram keeps its own copy.
 
 ### New brand
 
@@ -149,8 +149,7 @@ The hub also has **Claude** (a terminal in the page running Claude Code), the lo
 
 - **One app.** The Electron window starts the hub (Node 22, Fastify, React) as a separate process and shows it. The hub starts and watches
   VoiceStudio (the voice engine) and finds Blender; both are installed by the first-run setup into `data/tools/`, not packed in the app.
-  Everything runs as you, with your own files. (The Docker setup runs the same hub, VoiceStudio, Blender and a virtual screen in one container.)
-- **Claude does the thinking.** Headless Claude Code, with your own login, writes scripts, ideas and readouts. The `reel` skill
+  Everything runs as you, with your own files.
   (`.claude/skills/reel/SKILL.md`) is the recipe for a whole reel.
 - **Instagram goes through a browser, not an API.** Playwright drives a Chromium that you logged in to once. It follows a flow proven by
   hand, verifies the post on Instagram's calendar and never enters a password.
@@ -184,11 +183,11 @@ The window sits in the tray when you close it, so schedules and the daily loop k
 `reel-studio --hidden` starts it in the tray only. The package never touches your studio folder (`~/ReelStudio`): update it with a new `makepkg -si`, remove it with `sudo pacman -R reel-studio`.
 `makepkg` builds from the last commit, so commit your changes first.
 
-Docker instead of the app: [platform/README.md](platform/README.md#the-docker-setup-alternative). Day-to-day operation (backup, logs, ports) is there too.
+Day-to-day operation (start, update, logs, ports, environment) is in [platform/README.md](platform/README.md).
 
 ## Requirements
 
-- **Arch Linux** (or a derivative) with `pacman`. The package depends on `nodejs`, `npm`, `git`, `ffmpeg`, `chromium`, `uv` and `electron`. Other systems: use the Docker setup.
+- **Arch Linux** (or a derivative) with `pacman`. The package depends on `nodejs`, `npm`, `git`, `ffmpeg`, `chromium`, `uv` and `electron`. The app is made for Arch Linux; other systems are not supported.
 - **A Claude subscription** (Claude Code) for the AI parts. Log in once with `claude`.
 - **A GPU is recommended, not required.** An NVIDIA GPU with about 8 GB runs the voice engine (VoxCPM2) fast. Without it pick a processor mode in the setup:
   everything works, but making the voice of a 40 second reel can take many minutes instead of seconds. The hub, Blender (CPU rendering) and Remotion do not need a GPU.
@@ -210,8 +209,6 @@ folder and file, and registers the brand without a restart.
    credentials or other brands), `codex`, or any command that reads the prompt on stdin. **Only `claude` has been tested.**
 3. **Import** a folder or zip with a `brand.json` at the top, to move a brand between machines. Paths that climb out of the folder,
    links, oversized files and zip bombs are refused, and an existing slug is never overwritten.
-
-From a terminal: `./scripts/new-brand.sh my-brand --name "My Brand" --website mybrand.com` makes the same folders with neutral values.
 
 A new brand has an empty question list, the daily loop off and no character, and every page shows a first-step message. Then:
 log in to Instagram in Settings (the Instagram section opens a Chromium window; you type the password there), add the first questions (or press **Find new ideas** in the Factory), make the first reel.
@@ -247,7 +244,7 @@ Nothing is created before the first click and nothing is scheduled before the se
 - **The one broad shell.** The reel-making and reel-editing jobs (`reel.make`, `reel.edit`: the chat on a reel's page) need a broad shell for voice, Blender and render. It cannot read those
   credential files or use `curl`, `wget`, `ssh` or `env`, but a prompt-injected model could still read other files in the project.
   Treat the project folder as the trust boundary.
-- In the app the jobs run as you, so they can reach what you can; in the Docker setup the container sees only the project folder, your Claude and Composio files, and the optional source-texts folder.
+- The jobs run as you, so they can reach what you can: that is why the brand assistant has read-only tools and the other jobs have the deny rules above.
 
 Full policy and how to report a problem: [SECURITY.md](SECURITY.md).
 
@@ -262,39 +259,17 @@ Full policy and how to report a problem: [SECURITY.md](SECURITY.md).
 ## Configuration
 
 The app needs no configuration file. Everything about a brand is in its folder (`brand.json`, `settings.json`), not in environment variables.
-These optional variables change where the app looks (set them in the environment of the app, for example in `~/.config/environment.d/`):
+These optional variables change where the app looks (set them where your session sets its environment, for example `~/.config/environment.d/`):
 
 | Variable | Default | What it does |
 |---|---|---|
 | `REEL_STUDIO_HOME` | `~/ReelStudio` | Your studio folder: `workspace/` (the Remotion project the program fills), `data/` (brands, hub state, `tools/`). Never touched by the package. |
 | `HUB_PORT` | `4000` | Port of the hub, on `127.0.0.1` only. |
 | `VOICE_PORT` | `3900` | Port of VoiceStudio, on `127.0.0.1` only. |
-| `HUB_TOKEN` | random | Fixed token instead of the one in `data/dev-token`. |
+| `HUB_TOKEN` | random | A fixed token instead of the one in `data/dev-token`. |
+| `CHROME_PATH` | system Chromium or Chrome | The browser used for Instagram. |
 
-### Docker setup
-
-Settings of the Docker setup live in `.env` (made by `install.sh`, documented line by line in `.env.example`).
-
-| Variable | Default | What it does |
-|---|---|---|
-| `COMPOSE_PROJECT_NAME` | `reel-studio` | Prefix of the Docker volumes. Change it to run a second copy. |
-| `CONTAINER_NAME`, `IMAGE_NAME` | `reel-hub` | Container and image names. |
-| `HUB_PORT` | `4000` | Web hub, published on `127.0.0.1` only. |
-| `VOICE_PORT` | `3900` | VoiceStudio API, on `127.0.0.1` only. |
-| `HUB_TOKEN` | random | Created by the installer; the hub asks for it once. |
-| `HOST_USER`, `HOST_UID`, `HOST_GID`, `HOST_HOME` | detected | The container runs as you, so files belong to you. |
-| `REEL_ROOT` | this folder | Absolute path of this repository (the program), mounted at the same path in the container. |
-| `STUDIO_HOME` | `~/ReelStudio` | Your studio folder: `workspace/` (brands, reels, Remotion project) and `data/` (hub state, Instagram logins). Never touched by update or uninstall. |
-| `GPU` | `0` | `1` passes the NVIDIA GPU to the container. |
-| `VOICE_DEVICE` | `cpu` | `gpu` or `cpu`: where the voice engine runs. |
-| `BLENDER_DEVICE` | `cpu` | `cpu`, `gpu` or `auto`. Also a setting in the hub. |
-| `VOICE_ENGINE_INSTALL` | `1` | `0` skips the VoxCPM2 engine and model (about 15 GB less). |
-| `TZ` | `Europe/Rome` | Time zone of the posting slots. |
-| `BLOG_MOUNT` | empty | A folder of source texts mounted read-only, when a brand's source folder is outside the project. |
-
-An installation made before brands existed may still carry `BRAND`, `IG_USER_ID`, `IG_ACCOUNT`, `BLOG_DIR`, `OFFER_LAST_DAY` and
-`OFFER_REGEX`; the first start copies them once into the brand's `brand.json`. The variables of the hub process itself are in
-[platform/README.md](platform/README.md).
+The other variables of the hub are in [platform/README.md](platform/README.md).
 
 ## Troubleshooting
 
@@ -304,26 +279,15 @@ An installation made before brands existed may still carry `BRAND`, `IG_USER_ID`
   The full log of each install step is in `data/setup/<step>.log`.
 - **VoiceStudio blocks a model.** Its own licence review is not finished for most models, so the setup downloads with the same call its own settings use, after you read the licence.
   A licence such as CC-BY-NC does not allow commercial use: check it before you publish reels made with that voice.
-- **Only the Docker setup:** the points below that mention the container, `.env` or `docker`.
-
-- **Claude hangs inside the container.** Your host Claude settings (hooks, plugins, MCP servers that call host-only programs) can hang
-  headless Claude. The hub runs `claude` through `platform/docker/claude-hub`, which reads only project and local settings and keeps your
-  login. If you start Claude by hand in the container, use `claude-hub`.
 - **Instagram "Reels" notice or the month picker blocks the scheduler.** Instagram shows a one-time notice about reels and a month picker
   for the date. The scheduler handles both (see the scheduler section of [platform/docs/DESIGN.md](platform/docs/DESIGN.md)). If a job fails,
   read its error in Jobs, dismiss the notice once in the browser window that opens when you press *Log in again* in Settings > Instagram,
   and run the job again. A `login_required` failure means: log in again there.
 - **Instagram scheduling limits.** About 30 days ahead, at least 20 minutes of lead time, 9:16 only.
-- **Out of GPU memory (8 GB).** Only one VoiceStudio can use the GPU: do not run another copy on the host. Voice jobs wait in a queue
-  (`scripts/slot.sh voice 1 -- <command>`; renders use `render 3`). The factory does this for you.
-- **The first start is slow.** VoiceStudio and the engine are 10 to 15 GB. Progress:
-  `docker exec <container> cat ~/.config/VoiceStudio/reel-bootstrap.state`. A failed download retries by itself.
-- **Docker disk use.** The image is about 8 GB and each rebuild leaves old layers: run `docker image prune` now and then and
-  `docker system df` to see the total. Never `docker volume prune` while the stack is stopped: it deletes the volumes (Instagram login included).
-- **Port already in use.** Change `HUB_PORT` or `VOICE_PORT` in `.env` and run `./update.sh`.
-- **Files made by the container belong to root.** Check `HOST_UID` and `HOST_GID` in `.env`.
-- **A Remotion skill is missing.** The installer fetches them from upstream; if that was unreachable it continued without them
-  and printed how to retry (`scripts/install-remotion-skills.sh`).
+- **Out of GPU memory (8 GB).** Only one VoiceStudio can use the GPU: the app runs one, do not start another next to it. Voice jobs wait in a queue (`scripts/slot.sh voice 1 -- <command>`; renders use `render 3`). The jobs do this for you.
+- **The first setup is slow.** VoiceStudio with its Python packages and models is about 33 GB for the best voice on a GPU. The Voice models list shows a progress bar for each download, and `data/setup/voicestudio.log` the rest. A failed download continues where it stopped when you press the button again.
+- **Port already in use.** Another program uses 4000 or 3900: the app then uses what answers on 4000 instead of starting its own hub. Set `HUB_PORT` or `VOICE_PORT` to free ports.
+- **A Remotion skill is missing.** The setup fetches them from upstream; if that was unreachable, press the step again when you are online (or run `scripts/install-remotion-skills.sh` in the workspace).
 
 ## FAQ
 
@@ -333,24 +297,22 @@ An installation made before brands existed may still carry `BRAND`, `IG_USER_ID`
 
 **Do I need an Instagram API or a Facebook app?** No for scheduling (a browser you log in to). Analytics use Composio; Threads posting would need your own Meta app and is paused.
 
-**Is my Instagram password stored?** No. You type it in the browser window of the hub; only the browser profile (cookies) stays in a Docker volume.
+**Is my Instagram password stored?** No. You type it in the browser window of the hub; only the browser profile (cookies) stays in the brand's folder.
 
 **Can I run two brands?** Yes, as many as you like. Each has its own Instagram login, settings and daily loop; browser jobs run one at a time.
 
 **Can I use another AI than Claude?** The jobs run headless Claude Code. Only the brand interview can use `codex` or a custom command, and those are untested.
 
-**Where is my data?** In your studio folder, `~/ReelStudio` by default: `data/brands/<name>/` (one folder per brand: identity, character, reels, question list, Instagram login) and `workspace/` (the Remotion project the program fills; your reels' code is in the brand folders). Docker volumes hold only the voice engine, its models and caches. [platform/README.md](platform/README.md) shows how to back it up.
+**Where is my data?** In your studio folder, `~/ReelStudio` by default: `data/brands/<name>/` (one folder per brand: identity, character, reels, question list, Instagram login) and `workspace/` (the Remotion project the program fills; your reels' code is in the brand folders). The voice engine, Blender and their models are in `data/tools/` (the setup installs them again if you delete it). To back up, copy `~/ReelStudio` ([platform/README.md](platform/README.md)).
 
 ## Project layout
 
 ```text
 packaging/arch/                     PKGBUILD, launcher and desktop entry of the pacman package
 platform/desktop/                   the Electron app (window, tray, notifications, start at login)
-install.sh update.sh uninstall.sh   install, update, remove the Docker setup
-.env.example                        every setting, documented
-platform/                           compose files, Dockerfile, the hub (platform/hub), docs, vendored Ootto skills
+platform/                           the hub (platform/hub), the desktop app (platform/desktop), docs, vendored Ootto skills
 platform/docs/                      DESIGN (the hub), DAILY (skills, analytics, daily loop), BRANDS (multi-brand)
-scripts/                            voice, slot queue, new-brand, migrate-layout, migrate-brand-folders, the public folder of a render, smoke test, helpers
+scripts/                            voice, whisper, slot queue, the public folder of a render, Ootto and Remotion skills, helpers
 src/                                generic Remotion kit (src/kit) and cover (src/cover); your reels' code is in each brand's folder (`reels/<n>-<name>/code/`), outside this repository
 brand/_template/                    the template new brands are made from (read from here, not copied into the workspace)
 sfx/                                the sounds every reel can use (read from here)

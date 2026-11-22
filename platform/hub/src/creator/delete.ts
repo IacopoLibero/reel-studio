@@ -9,7 +9,7 @@ export class DeleteError extends Error {
 
 const stamp = (d: Date): string => d.toISOString().replace(/[-:]/g, "").replace(/\..*$/, "").replace("T", "-");
 
-/** Moves a folder; across devices (a Docker volume next to a bind mount) it copies and then removes. */
+/** Moves a folder; across devices it copies and then removes. */
 function move(from: string, to: string): void {
   mkdirSync(join(to, ".."), { recursive: true });
   try { renameSync(from, to); } catch (e) {

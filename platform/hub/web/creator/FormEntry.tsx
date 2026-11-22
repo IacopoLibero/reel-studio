@@ -56,7 +56,7 @@ export function BrandFields({ draft, onChange, options, fonts, problems }: { dra
         </Row>
         {draft.offerOn && <Text label="Last day" type="date" value={draft.offer.lastDay} problem={problems["offer-lastDay"]} onChange={(v) => set({ offer: { ...draft.offer, lastDay: v } })} />}
         {draft.offerOn && <Text label="Code word in captions" value={draft.offer.regex} problem={problems["offer-regex"]} help="Optional. The scheduler looks for it to remove the offer line after the last day." placeholder="BREAD10" onChange={(v) => set({ offer: { ...draft.offer, regex: v } })} />}
-        <Text label="Instagram account" value={draft.instagramAccount} problem={problems.instagram} placeholder="acme_bakery" help="Without the @. You log in on the brand's Instagram page after creating it." onChange={(v) => set({ instagramAccount: v.replace(/^@/, "") })} />
+        <Text label="Instagram account" value={draft.instagramAccount} problem={problems.instagram} placeholder="acme_bakery" help="Without the @. You log in in Settings > Instagram after creating it." onChange={(v) => set({ instagramAccount: v.replace(/^@/, "") })} />
         <Text label="Folder of source texts" value={draft.blogDir} problem={problems.blogDir} placeholder="/home/me/blog/posts" help="Optional. Blog posts or notes the idea jobs read, as a full path on this machine." onChange={(v) => set({ blogDir: v })} />
       </Card>
     </>

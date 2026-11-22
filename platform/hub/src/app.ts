@@ -3,9 +3,8 @@ import fastify, { type FastifyInstance } from "fastify";
 import cookie from "@fastify/cookie";
 import fstatic from "@fastify/static";
 import websocket from "@fastify/websocket";
-import proxy from "@fastify/http-proxy";
 import { z } from "zod";
-import { COOKIE, makeAuthHook, makeAuthHookCb, sameOrigin, tokenMatches } from "./auth.js";
+import { COOKIE, makeAuthHook, sameOrigin, tokenMatches } from "./auth.js";
 import type { Config } from "./config.js";
 import { JobRunner } from "./jobs/runner.js";
 import { JobStore } from "./jobs/store.js";
@@ -70,7 +69,6 @@ export async function buildApp(config: Config): Promise<{ app: FastifyInstance; 
   });
 
   const auth = makeAuthHook(config.token);
-  const authCb = makeAuthHookCb(config.token);
   const loginBody = z.object({ token: z.string().min(1).max(500) });
 
   app.post("/api/login", async (req, reply) => {
@@ -134,11 +132,6 @@ export async function buildApp(config: Config): Promise<{ app: FastifyInstance; 
       const q = z.object({ cols: z.coerce.number().int().min(10).max(500).default(100), rows: z.coerce.number().int().min(3).max(200).default(30) }).parse(req.query);
       terminal.attach(socket, q.cols, q.rows);
     });
-  });
-
-  await app.register(async (nv) => {
-    nv.addHook("onRequest", authCb);
-    await nv.register(proxy, { upstream: config.novncTarget, prefix: "/novnc", rewritePrefix: "/", websocket: true, http2: false });
   });
 
   await app.register(fstatic, { root: config.webDir, wildcard: false });

@@ -7,12 +7,9 @@ export interface ContextOptions {
 
 export interface LaunchMode { headless: boolean; args: string[] }
 
-/**
- * How the Instagram browser starts. On a desktop a read must not open a window every time the Calendar page is looked at, so it runs headless.
- * In Docker the browser has always run on a virtual screen nobody sees, so it stays a window there (Instagram is more at ease with it).
- */
-export function launchMode(opts: ContextOptions = {}, env: NodeJS.ProcessEnv = process.env, inDocker = false): LaunchMode {
-  const headless = env.SCHED_HEADLESS === '1' || (!inDocker && !opts.visible);
+/** How the Instagram browser starts. A read must not open a window every time the Calendar page is looked at, so it runs headless; the login and a schedule flow have a window. */
+export function launchMode(opts: ContextOptions = {}, env: NodeJS.ProcessEnv = process.env): LaunchMode {
+  const headless = env.SCHED_HEADLESS === '1' || !opts.visible;
   const args: string[] = [];
   if (env.CHROME_NO_SANDBOX === '1') args.push('--no-sandbox');
   if (!headless && opts.visible && opts.minimized) args.push('--start-minimized');

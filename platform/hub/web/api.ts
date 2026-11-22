@@ -112,10 +112,12 @@ export interface ReelDetail {
   caption: string; script: string[]; plan: string; hasCover: boolean; hasCode: boolean; files: ReelFile[]; schedule: ScheduleEntry | null;
 }
 export interface ChatMessage { role: "user" | "claude"; text: string; at: string; jobId: string }
-export interface ReelPageData { reel: ReelDetail; chat: { sessionId: string | null; messages: ChatMessage[] }; busy: boolean }
+export interface ReelVersion { name: string; at: string; hasVideo: boolean }
+export interface ReelPageData { reel: ReelDetail; chat: { sessionId: string | null; messages: ChatMessage[] }; busy: boolean; versions: ReelVersion[] }
 
 export const api = {
   reelPage: (folder: string) => call<ReelPageData>("GET", scoped(`/reels/${encodeURIComponent(folder)}`)),
+  restoreReel: (folder: string, version: string) => call<{ restored: string }>("POST", scoped(`/reels/${encodeURIComponent(folder)}/restore`), { version }),
   editReel: (folder: string, message: string) => call<Job>("POST", scoped("/jobs"), { type: "reel.edit", params: { folder, message } }),
   setupVoice: () => call<VoiceSetup>("GET", "/api/setup/voice"),
   setupVoiceSelect: (engine: string) => call<{ active: string }>("POST", "/api/setup/voice/select", { engine }),

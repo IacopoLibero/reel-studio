@@ -98,7 +98,7 @@ export function getSessionStatus(target?: SchedulerTarget): Promise<{ loggedIn: 
   });
 }
 
-/** Opens (or focuses) the Instagram window of a brand on the Xvfb display so the user can log in through noVNC. */
+/** Opens (or focuses) the Instagram login window of a brand, so the person can log in there. */
 export function openLoginWindow(target?: SchedulerTarget): Promise<void> {
   return maybeLocked(target, async () => {
     const ctx = await getContext(target?.profileDir, { visible: true });

@@ -27,7 +27,7 @@ beforeEach(async () => {
   writeTestBrand(root, "acme", { name: "Acme", instagram: { account: "acme_cafe", userId: "111", profileDir: null } }, "## To do\n\n- [ ] Is a paper menu cheaper? · hook: myth · source: needs source\n");
   writeTestBrand(root, "beta", { name: "Beta", character: { enabled: true, id: "pip", name: "Pip" } }, "## To do\n");
   reelFolder("acme", "1-first"); reelFolder("beta", "1-other");
-  const config: Config = { port: 0, host: "127.0.0.1", dataDir: data, root, token: TOKEN, webDir: join(tmp, "web"), novncTarget: "http://127.0.0.1:1", claudeBin: "/nonexistent", blogDir: join(tmp, "blog"), terminalCmd: null };
+  const config: Config = { port: 0, host: "127.0.0.1", dataDir: data, root, token: TOKEN, webDir: join(tmp, "web"), claudeBin: "/nonexistent", blogDir: join(tmp, "blog"), terminalCmd: null };
   app = (await buildApp(config)).app;
   await app.ready();
 });
@@ -87,7 +87,7 @@ describe("routes scoped to a brand", () => {
     expect((await get("/api/brands/acme/character")).statusCode).toBe(404);
     expect((await get("/api/brands/beta/character")).json()).toEqual([]);
   });
-  it("shows the Instagram account of the brand on its Instagram page", async () => {
+  it("shows the Instagram account of the brand in the Instagram section of its settings", async () => {
     const a = (await get("/api/brands/acme/instagram")).json();
     expect(a).toMatchObject({ account: "acme_cafe", brand: { slug: "acme", name: "Acme" }, stub: true });
     expect((await get("/api/brands/beta/instagram")).json().account).toBe("");

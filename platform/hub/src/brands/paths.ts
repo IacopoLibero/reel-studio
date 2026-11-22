@@ -2,10 +2,6 @@ import { join, resolve } from "node:path";
 import { defaultDataDir } from "../paths.js";
 import { isValidSlug } from "./schema.js";
 
-/** Where the old single-folder layout kept the browser profiles (only the layout migration reads it): CHROME_PROFILE_ROOT, else the legacy CHROME_PROFILE, else /data/chrome-profile (the Docker volume). Used only to migrate. */
-export const chromeProfileRoot = (env: NodeJS.ProcessEnv = process.env): string =>
-  env.CHROME_PROFILE_ROOT?.trim() || env.CHROME_PROFILE?.trim() || "/data/chrome-profile";
-
 export interface BrandPathOptions {
   dataDir?: string;
   env?: NodeJS.ProcessEnv;

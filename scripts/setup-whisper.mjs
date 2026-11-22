@@ -1,5 +1,5 @@
 // Installs whisper.cpp (1.5.5) and the "medium" model into <project>/whisper.cpp. Safe to run again: finished steps are skipped.
-// Run it where the reels are made (inside the container), because the binary is built for that system.
+// Run it on the machine where the reels are made: the binary is built for that system.
 import fs from "node:fs";
 import path from "node:path";
 import { spawnSync } from "node:child_process";
@@ -12,7 +12,7 @@ const marker = path.join(to, ".built-in-container");
 const model = path.join(to, "ggml-medium.bin");
 
 if (!fs.existsSync(path.join(to, "main"))) {
-  // installWhisperCpp refuses a folder that already exists, and in the container whisper.cpp is a Docker volume mount point
+  // installWhisperCpp refuses a folder that already exists, and an empty one can be left behind
   // (always present, empty at first). So build next to it and copy the result in.
   const tmp = `${to}.build`;
   fs.rmSync(tmp, { recursive: true, force: true });

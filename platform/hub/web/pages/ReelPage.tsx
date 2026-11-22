@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import type { Job, Reel } from "../../src/shared/types";
-import { api, getBrand, scoped, type ChatMessage, type ReelDetail } from "../api";
+import { api, getBrand, scoped, type ChatMessage, type ReelDetail, type ReelVersion } from "../api";
 import { useLoad } from "../hooks";
 import { ProgressBar } from "../components/JobCard";
 import { SlotPicker } from "../components/SlotPicker";
@@ -47,7 +47,7 @@ export function ReelPage({ folder, jobs }: { folder: string; jobs: Job[] }) {
           {reel.hasCover && <img className="reel-cover" src={fileUrl(reel.key, "cover", reel.version)} alt="Cover" />}
         </div>
         <div className="reel-side">
-          <Chat folder={folder} reel={reel} messages={data.chat.messages} running={running} jobs={mine} onSent={reload} />
+          <Chat folder={folder} reel={reel} messages={data.chat.messages} running={running} jobs={mine} versions={data.versions} onSent={reload} />
           <Details reel={reel} />
         </div>
       </div>
@@ -56,7 +56,7 @@ export function ReelPage({ folder, jobs }: { folder: string; jobs: Job[] }) {
   );
 }
 
-function Chat({ folder, reel, messages, running, jobs, onSent }: { folder: string; reel: ReelDetail; messages: ChatMessage[]; running: Job | null; jobs: Job[]; onSent: () => void }) {
+function Chat({ folder, reel, messages, running, jobs, versions, onSent }: { folder: string; reel: ReelDetail; messages: ChatMessage[]; running: Job | null; jobs: Job[]; versions: ReelVersion[]; onSent: () => void }) {
   const [text, setText] = useState("");
   const [err, setErr] = useState<string | null>(null);
   const [sending, setSending] = useState(false);
@@ -95,6 +95,7 @@ function Chat({ folder, reel, messages, running, jobs, onSent }: { folder: strin
           onChange={(e) => setText(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); } }} />
         <button type="button" className="btn primary" disabled={!text.trim() || sending || !!running} onClick={send}>Send</button>
       </div>
+      <Versions folder={folder} versions={versions} disabled={!!running || sending} onRestored={onSent} onError={setErr} />
       <p className="muted" style={{ fontSize: 12, margin: "6px 0 0" }}>
         Before each change the reel is saved (the last three versions are in its folder, <code>.versions</code>).
         {reel.schedule && " This reel is already on Instagram: a change here does not change the copy there."}
@@ -114,5 +115,38 @@ function Details({ reel }: { reel: ReelDetail }) {
         {reel.hasCode && <p className="muted" style={{ fontSize: 12 }}>The reel's code is in its <code>code/</code> folder.</p>}
       </details>
     </>
+  );
+}
+
+const when = (iso: string): string => new Date(iso).toLocaleString("en-GB", { dateStyle: "medium", timeStyle: "short" });
+
+/** The versions saved before each change. Undo puts one back (the reel as it is now is saved first, so the undo can be undone). */
+function Versions({ folder, versions, disabled, onRestored, onError }: { folder: string; versions: ReelVersion[]; disabled: boolean; onRestored: () => void; onError: (m: string | null) => void }) {
+  const [asking, setAsking] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  if (versions.length === 0) return null;
+  const restore = (name: string) => {
+    setBusy(true); onError(null);
+    api.restoreReel(folder, name).then(() => { setAsking(null); onRestored(); }).catch((e: Error) => onError(e.message)).finally(() => setBusy(false));
+  };
+  const [latest, ...older] = versions;
+  return (
+    <div className="versions">
+      <div className="row wrap" style={{ gap: 8 }}>
+        <button type="button" className="btn small" disabled={disabled || busy} onClick={() => setAsking(latest!.name)} title="Put the reel back as it was before the last change">Undo the last change</button>
+        {older.length > 0 && <details style={{ display: "inline-block" }}><summary className="muted" style={{ cursor: "pointer", fontSize: 12 }}>Older versions ({older.length})</summary>
+          <ul style={{ listStyle: "none", padding: 0, margin: "6px 0" }}>{older.map((v) => (
+            <li key={v.name} className="row" style={{ gap: 8, marginBottom: 4 }}><span className="muted" style={{ fontSize: 12 }}>{when(v.at)}</span>
+              <button type="button" className="btn small" disabled={disabled || busy} onClick={() => setAsking(v.name)}>Restore</button></li>
+          ))}</ul></details>}
+      </div>
+      {asking && (
+        <div className="card warn" style={{ marginTop: 8 }}>
+          <strong>Go back to the version of {when(versions.find((v) => v.name === asking)?.at ?? asking)}?</strong>
+          <p className="muted" style={{ margin: "6px 0" }}>The video, caption, cover and code are replaced by that version. The reel as it is now is saved first, so you can undo this too.</p>
+          <div className="row"><button type="button" className="btn primary small" disabled={busy} onClick={() => restore(asking)}>Yes, go back</button><button type="button" className="btn small" onClick={() => setAsking(null)}>Keep it as it is</button></div>
+        </div>
+      )}
+    </div>
   );
 }

@@ -30,17 +30,3 @@ export function makeAuthHook(token: string) {
     }
   };
 }
-
-/**
- * Callback-style variant for the noVNC WebSocket proxy. An async hook delays the upgrade by a tick and the
- * proxied connection then never delivers the RFB banner (noVNC stays on "connecting"), so this one must stay callback-style.
- */
-export function makeAuthHookCb(token: string) {
-  return (req: FastifyRequest, reply: FastifyReply, done: (err?: Error) => void) => {
-    if (!tokenMatches(requestToken(req), token)) {
-      void reply.code(401).send({ error: "Sign in with the hub token to continue." });
-      return;
-    }
-    done();
-  };
-}

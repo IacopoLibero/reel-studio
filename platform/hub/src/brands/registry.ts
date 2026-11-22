@@ -94,7 +94,7 @@ export class BrandRegistry {
       created.push(p.styleMd);
     }
     if (!existsSync(p.questionsMd)) { writeFileSync(p.questionsMd, `# Reel questions: ${brand.name}\n\n${SKELETON}`); created.push(p.questionsMd); }
-    try { ensureDir(p.profileDir); } catch { /* the profile root (/data/...) exists only inside the container; the scheduler creates it on first use */ }
+    try { ensureDir(p.profileDir); } catch { /* the scheduler creates it on first use */ }
     writeBrand(this.dataDir, brand);
     created.push(p.brandJson);
     return { brand, paths: p, created };

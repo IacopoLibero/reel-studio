@@ -94,6 +94,6 @@ export class JobRunner {
 }
 
 function friendly(msg: string): string {
-  if (msg.startsWith("login_required")) return `${msg}. Open the Instagram page and log in first.`;
+  if (msg.startsWith("login_required")) return `${msg}. Log in first in Settings > Instagram.`;
   return msg;
 }

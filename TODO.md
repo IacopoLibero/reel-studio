@@ -21,7 +21,7 @@ What is still open, on purpose. Move an item out of this file when it is done. L
 
 ## Roadmap
 
-**Fixed point: Reel Studio becomes a standalone app** (a pacman package; a Flatpak is probably not worth it, see below) instead of a cloned repository plus Docker. The goal is stable data: brands, reels, settings,
+**Fixed point: Reel Studio becomes a standalone app** (a pacman package; a Flatpak is probably not worth it, see below) instead of a cloned repository plus Docker (the Docker setup was removed on 2026-11-22). The goal is stable data: brands, reels, settings,
 the Instagram login, voices and analytics live in one folder outside the app, so updating or reinstalling the app never touches them. The order is: small things first (in the current Docker setup),
 then the app, then the big features, which are born with the final structure and are not moved twice. The data restructure is done.
 
@@ -67,8 +67,6 @@ then the app, then the big features, which are born with the final structure and
 - **Remotion agent skills:** a setup step fetches them (`scripts/install-remotion-skills.sh`) and the setup shows whether they are there. Not run as a step from the app (the workspace already had them); refreshing on update is by pressing the step again.
 - **Desktop (COSMIC, Wayland), tried 22 Nov:** the tray item registers with the desktop's StatusNotifier watcher; a hub notification arrives as a system notification (seen on D-Bus, app name "Reel Studio" after the fix); the "Start at login" entry is valid (`desktop-file-validate`). The installed build left the hub running when the app was killed: fixed (signals stop the hub), tried under a virtual display. Not seen by eye: the tray icon and the notification pop-up, the tray menu clicks, the window on COSMIC.
 - **Package:** `makepkg` builds from the last commit, the version is fixed at `0.1.0-1` (raise `pkgver` for a release); no `namcap` run; the dependency list (`gcc`, `make`, `uv`, ...) is not checked on a clean system.
-- **Delete brand** leaves the Instagram login when it cannot be moved cheaply (a custom `instagram.profileDir`); in the app the login is in the brand's folder, so deleting the brand removes it: check it.
-- **Docker setup:** still there and documented as the alternative; decide whether to keep it. `scripts/install-notifier.sh` and `reel-hub-notify.sh` are for it only.
 - **Lint:** `eslint src && tsc` of the repository (kit and cover) run on 22 Nov on a clean copy with the workspace's packages: no findings. The hub has no lint, only `tsc` and tests. `shellcheck` is not installed here, so the shell scripts (and the new launcher, now in the CI line) were not checked.
 - **Voice:** OmniVoice (CC-BY-NC) is not installed on purpose (non-commercial). Languages other than English and the choice of another voice per brand are not tried.
 
@@ -76,12 +74,18 @@ then the app, then the big features, which are born with the final structure and
 
 - **Reel page and chat (2026-11-22):** a click on a reel in Reels opens `#/<brand>/reels/<folder>`: video (ranged, seeks), cover, caption, script, plan, files, and a chat that edits the reel (`reel.edit`, same Claude session across messages, the reel saved in `.versions` before each change and put back if the run fails, a run that changed nothing leaves no version). Tried for real on Acme Bakery reel 6: a request to make the headline 15% bigger changed the code (100 to 115 px), re-rendered the MP4 and answered; a follow-up question in the same conversation knew the earlier values and changed nothing. Not done: undo from the page, a chat from the Daily review, the page was seen in a browser only as a screenshot (no click through of the chat in the window). The reel-making API took `rerun: {folder, note}`, not `rerunFolder` as two earlier reruns of mine used (that is why they made a new folder).
 
-**Still to do before the big part (22 Nov), in the order I would do it:**
+**Done on 22 Nov, after the list below was first written:**
 
-1. **A real schedule from the app**: a reel scheduled in Instagram's own scheduler by the schedule flow (headed, started minimized) and its verification on the calendar. Needs a real account and a future slot; the reel can be deleted from the calendar afterwards.
-2. **Install from zero**: the package on a clean user or `REEL_STUDIO_HOME`, through the whole setup screen to a first reel. It also tries the setup steps no one has pressed (whisper, Remotion skills), the dependency list of the `PKGBUILD` (`namcap`, a clean build), and the first-run text.
-3. **Small things**: delete a brand whose Instagram profile is in a custom folder; the reels 0 to 6 of easyrestaurant have no code folder of their own; the names `r7`, `a1`... in the moved code; undo of a chat change from the reel page (the versions exist as files); `shellcheck` on the scripts (CI does it, it is not installed here).
-4. **A decision**: keep the Docker setup (and `install.sh`, `update.sh`, `uninstall.sh`, `install-notifier.sh`, the compose files) as an alternative, or remove it and its docs.
+- **Docker removed.** The Dockerfile, the compose files, `install.sh`, `update.sh`, `uninstall.sh`, `scripts/stack-lib.sh`, `ensure-voice.sh`, `install-notifier.sh`, `reel-hub-notify.sh`, `smoke-test.sh`, `new-brand.sh`, the two migration scripts and their code (`src/layout/{migrate,plan,cli,brand-folders*}.ts`), the noVNC proxy, `dotenv.ts` and `.env.example` are gone; the CI job for compose is gone. `scripts/voice.mjs` now checks that VoiceStudio answers (the hub starts it) instead of calling `ensure-voice.sh`. The reel skill, the brand template and the two live brands' style guides say so. The docs (README, `platform/README.md`, DESIGN, DAILY, CONTRIBUTING, SECURITY, the architecture diagram) describe the app only. Kept on purpose: the sync of the program's files into the workspace (it removed the 8 old scripts at the first start: tried on a copy).
+- **A schedule key bug found by your test and fixed:** a reel scheduled from the app was stored as `25-day-guest-leaves-1-star` and not `easyrestaurant/25-...` (the key was derived from the old `/brand/<brand>/reels/` path, not the new `/brands/`), so the calendar showed the Instagram post and a second "local" one until a refresh. Fixed in the scheduler, with a test; the one wrong key in `easyrestaurant/scheduled.json` was renamed (a backup was kept in the session's scratch folder).
+- **The Instagram login is always in the brand's own folder** (`<brand>/profile/`). No brand had a custom folder; the option (`instagram.profileDir` in `brand.json`, `CHROME_PROFILE_ROOT`) is ignored now and the code for it is gone.
+- **Undo of a chat change** on the reel page (the last version, and older ones), with a confirmation; the reel as it is now is saved first.
+
+**Still to do before the big part, in the order I would do it:**
+
+1. **Install from zero**: the package on a clean user or `REEL_STUDIO_HOME`, through the whole setup screen to a first reel. It also tries the setup steps no one has pressed from the screen (whisper, Remotion skills), the dependency list of the `PKGBUILD` (`namcap`, a clean build), and the first-run text.
+2. **The two failing scheduler tests**: `src/scheduler/test/flow.e2e.test.ts` ("dismisses the known notice that covers the Crop step" and "does not click through an unknown dialog") fail, and failed before these changes too (checked on the previous commit). They run the schedule flow against a local mock page; find out whether the mock or the flow changed (a real schedule from the app worked on 22 Nov).
+3. **Small things**: the reels 0 to 6 of easyrestaurant have no code folder of their own; the names `r7`, `a1`... in the moved code; the old `instagram.profileDir` field can be dropped from the schema when no `brand.json` has it; `shellcheck` on the scripts (CI does it, it is not installed here).
 
 ### 3. After the app (big, born with the final structure)
 

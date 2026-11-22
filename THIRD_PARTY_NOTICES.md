@@ -11,7 +11,7 @@ summary, not legal advice: read each project's own license before you rely on it
 
 ## Downloaded from upstream at install time, not part of this repository
 
-- **Remotion agent skills** (https://github.com/remotion-dev/skills): `./install.sh` and `./update.sh` fetch them from the upstream repository
+- **Remotion agent skills** (https://github.com/remotion-dev/skills): the app's setup fetches them from the upstream repository
   through the `skills` CLI (`scripts/install-remotion-skills.sh`). They are not included in this repository and are not redistributed by it.
   The upstream repository declares no license, so check its terms yourself. If the download fails, the install continues without them.
 
@@ -25,7 +25,7 @@ summary, not legal advice: read each project's own license before you rely on it
 
 ## Downloaded at install time (not redistributed by this repository)
 
-- **VoiceStudio** (https://github.com/debpalash/VoiceStudio): AGPL-3.0. It is cloned inside the container at first start and
+- **VoiceStudio** (https://github.com/debpalash/VoiceStudio): AGPL-3.0. It is cloned by the app's setup and
   runs as a separate local service reached over HTTP. It is not copied into this repository or the image. If you modify and
   offer VoiceStudio itself to other people over a network, the AGPL has obligations for that modified VoiceStudio.
   It also installs many Python packages (PyTorch, transformers and others) with their own licenses.
@@ -41,7 +41,7 @@ summary, not legal advice: read each project's own license before you rely on it
   licenses and many third-party ones. Using Instagram through an automated browser is subject to Instagram's terms; see SECURITY.md.
 - **Claude Code** (`@anthropic-ai/claude-code`): Anthropic's commercial terms apply. The hub uses your own login.
 - **Composio CLI** (optional): its own terms apply.
-- **Ubuntu 24.04** base image, ffmpeg, Xvfb, x11vnc, noVNC, supervisor, uv and the other system packages: their own licenses.
+- **Electron**, ffmpeg, Chromium, uv and the other system packages the app depends on (installed with pacman): their own licenses.
 - Fonts named in `brand/_template/brand.json` (Oswald, Inter) are loaded from Google Fonts through `@remotion/google-fonts`: SIL Open Font License.
 
 ## Brand content

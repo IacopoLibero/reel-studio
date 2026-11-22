@@ -1,248 +1,150 @@
-# Reel Hub: operations manual
+# Reel Studio: operations manual
 
-How to run, stop, update, back up and fix the stack. What the hub is for and how to use it: the [root README](../README.md).
+How to run, update, back up and fix the app. What it is for and how to use it: the [root README](../README.md).
 How it is built: [docs/DESIGN.md](docs/DESIGN.md), [docs/DAILY.md](docs/DAILY.md), [docs/BRANDS.md](docs/BRANDS.md).
-
-This manual has two parts: **the app** (the pacman package, the normal way), and **the Docker setup** (an alternative that runs the same hub in a container). Both use the same studio folder.
-
-## The app
-
-**Start and stop.** Open "Reel Studio" from the application menu, or run `reel-studio`. Closing the window hides it in the tray and the hub keeps working
-(schedules, the daily loop). Tray menu: *Open Reel Studio*, *Start at login*, *Quit (stops the hub)*. `reel-studio --hidden` starts in the tray only.
-Only one copy runs: starting it again brings the window back. If the hub port (4000) is already taken, for example by the Docker setup, the app uses what answers there instead of starting its own:
-stop the Docker setup first (`bash -c 'cd <repo> && source scripts/stack-lib.sh && dc stop'`; the file is a bash script, so run it in bash if your shell is fish).
-
-**Where things live.** Your studio folder is `~/ReelStudio` (or `REEL_STUDIO_HOME`): `data/brands/<brand>/` (one folder per brand), `workspace/` (the Remotion project the program fills),
-and in `data/`: `tools/` (Blender and VoiceStudio, installed by the app: delete a folder there and the setup offers to install it again), `setup.json` (what the setup screen saved),
-`setup/<step>.log` (the log of each install step), `dev-token` (the hub token, readable only by you), `jobs.json`, `settings.json`.
-
-**Setup and voices.** The setup screen appears on the first start, and is always reachable from the "Setup" link at the bottom of the menu. Voices are in **Settings > Voice**:
-download a model (its licence first, then a tick, then a progress bar), choose the one to use, remove the ones you do not need. The voice in use cannot be removed.
-
-**Update.** Pull or edit the repository, commit, then `cd packaging/arch && makepkg -si`. Close the app first. Your studio folder is never touched.
-Pacman reinstalls a package of the same version without checking what changed: raise `pkgver` in `packaging/arch/PKGBUILD` for a release.
-
-**Backup and restore.** Quit the app from the tray, then copy `~/ReelStudio` (brands, reels, voices, Instagram logins, hub state). Restore by copying it back.
-`data/tools/` is about 35 GB and can be left out: the setup downloads it again.
-
-**Logs.** The app prints the hub's log to the terminal when started from one (`reel-studio`). The install steps log to `data/setup/`. VoiceStudio's output is in the same terminal, lines starting with `[voice]`.
-
-**Remove.** `sudo pacman -R reel-studio` removes the program. `~/ReelStudio` stays; delete it by hand if you want everything gone.
-
-## The Docker setup (alternative)
-
-Everything below is for the Docker setup: one container that runs the hub, VoiceStudio and Blender. Use it on a system that is not Arch, or if you prefer a container.
 
 ## Contents
 
-- [The app](#the-app)
-- [The Docker setup (alternative)](#the-docker-setup-alternative)
-- [The stack at a glance](#the-stack-at-a-glance)
-- [Everyday commands](#everyday-commands)
-- [Ports](#ports)
+- [Start and stop](#start-and-stop)
 - [Where things live](#where-things-live)
-- [Backup and restore](#backup-and-restore)
+- [Setup and voices](#setup-and-voices)
+- [Ports](#ports)
 - [Update](#update)
+- [Backup and restore](#backup-and-restore)
 - [Logs and health](#logs-and-health)
-- [Hub environment variables](#hub-environment-variables)
+- [Environment variables](#environment-variables)
 - [One GPU, one VoiceStudio](#one-gpu-one-voicestudio)
-- [First start of VoiceStudio](#first-start-of-voicestudio)
 - [Log in to Instagram](#log-in-to-instagram)
 - [Blender device](#blender-device)
-- [Running the hub without Docker](#running-the-hub-without-docker)
-- [Removing everything](#removing-everything)
+- [Running the hub without the app](#running-the-hub-without-the-app)
+- [Remove](#remove)
 
-## The stack at a glance
+## Start and stop
 
-One container, named `CONTAINER_NAME` (default `reel-hub`), restarted automatically (`restart: unless-stopped`). Inside, supervisord runs:
+Open "Reel Studio" from the application menu, or run `reel-studio`. The app starts the hub (a Node process) and shows it in a window.
+Closing the window hides it in the tray and the hub keeps working (schedules, the daily loop, notifications).
 
-| Program | What | Port |
-|---|---|---|
-| `hub` | Node 22: REST, server-sent events and WebSocket (the web app, jobs, scheduler, daily loops) | 4000 |
-| `voicestudio` | VoiceStudio (uvicorn) with the VoxCPM2 engine | 3900 |
-| `display` | Xvfb `:99`, x11vnc and noVNC for the Instagram login window; Chromium runs in it | 6080 (internal) |
+- **Tray menu:** *Open Reel Studio*, *Start at login*, *Quit (stops the hub)*.
+- `reel-studio --hidden` starts in the tray only.
+- Only one copy runs: starting the app again brings the window back.
+- If the hub port (4000) is already taken by another program, the app uses what answers there instead of starting its own hub.
+- Killing the app (a logout, `kill`) also stops the hub and the voice server it started.
 
-Blender, Remotion renders and headless Claude are started by the hub or by Claude when a job needs them. The project folder,
-`~/.claude` and `~/.claude.json` are bind-mounted at the **same absolute paths** as on the host.
+## Where things live
 
-All configuration is in the repository-root `.env` (made by `./install.sh`, mode 600, never committed; every variable is documented in
-[`../.env.example`](../.env.example)). The compose files in this folder are not meant to be run by hand: use `./install.sh`, `./update.sh`,
-`./uninstall.sh`, or `dc` as below for any other compose command.
+Your studio folder is `~/ReelStudio` (or `REEL_STUDIO_HOME`). This repository is only the program, so updating or reinstalling it never touches your files.
 
-## Everyday commands
+| What | Where |
+|---|---|
+| **A brand: one folder** | `~/ReelStudio/data/brands/<slug>/` |
+| its identity: `brand.json`, style guide, logo (and the voice when there is no character) | `.../<slug>/identity/` |
+| its character: Blender script, model, voice, rendered moves, reference sheet | `.../<slug>/mascot/` (`movements/<move>/` holds the frames, `studio/` the reference sheet) |
+| its reels: script, MP4, caption, cover, audio, the code, the chat with Claude (`chat.json`) and the last three versions before a chat change (`.versions/`) | `.../<slug>/reels/<n>-<name>/` |
+| code the brand's reels share | `.../<slug>/code/` |
+| the hub's data of the brand: question list, settings, schedule, daily plans, analytics, ideas | `.../<slug>/` (`reel-questions.md`, `settings.json`, `scheduled.json`, ...) |
+| the Instagram login of the brand (a Chromium profile) | `.../<slug>/profile/` |
+| Hub state: jobs, settings, the token | `~/ReelStudio/data/` (`jobs.json`, `settings.json`, `dev-token`) |
+| Deleted brands | `~/ReelStudio/data/trash/<slug>-<time>/` |
+| What the setup installed: Blender, VoiceStudio and its models | `~/ReelStudio/data/tools/` (delete a folder and the setup offers to install it again) |
+| What the setup screen saved, and the log of each install step | `~/ReelStudio/data/setup.json`, `~/ReelStudio/data/setup/<step>.log` |
+| The Remotion project the program fills: kit, `scripts/`, base skills, `node_modules`, `whisper.cpp/` | `~/ReelStudio/workspace/` |
+| The program: hub, desktop app, scripts, Remotion kit, base skills | `/usr/lib/reel-studio/` (the package) |
 
-Run these from the repository root.
+**The workspace is the program's.** The program refreshes its own files in it at every start (a file of yours that differs is saved aside in `.reel-studio/overwritten`).
+A reel's code is not in it: it lives with the brand (`<brand>/reels/<n>-<name>/code/`, shared code in `<brand>/code/`) and reaches the kit by the aliases `@kit` and `@cover`
+(`remotion.config.ts` and `tsconfig.json` define them). Render from the workspace:
+`REEL_BRAND=<brand> npx remotion render <brand folder>/reels/<n>-<name>/code/index.ts <CompositionId> out.mp4 --props=<props file>`. `npx tsc --noEmit` there type-checks the kit and every brand's code.
 
-```bash
-source scripts/stack-lib.sh          # defines dc (docker compose with the right files), env_get and friends
-dc ps                                # state
-dc stop                              # stop without removing anything
-dc start                             # start again
-dc restart                           # stop and start
-dc logs -f                           # supervisord output
-docker exec "$(env_get CONTAINER_NAME)" supervisorctl restart hub    # restart only the hub
-```
+**Where a render finds its files.** Remotion reads the logo, sounds, character frames and the reels' audio with `staticFile()` from one `public` folder, but each brand keeps them in its own folder.
+`remotion.config.ts` builds a small public folder for the brand of the run, out of hard links, in `workspace/.reel-studio/public-<uid>/<brand>-<pid>/`: `logo.png` from `identity/`,
+`mascot/<move>/` from `mascot/movements/`, `sfx/` (from the program) and `<n>-<name>/<voice>.wav` from each reel's `audio/`. It is removed when the run ends. Nothing is copied by hand into a `public/` folder.
 
-`docker ps` shows `(healthy)` when the hub and VoiceStudio both answer.
+## Setup and voices
 
-**Never use `dc down -v`** and never `docker volume prune` while the stack is stopped: they delete the volumes (the Instagram login,
-the voice engine and its models).
+The setup screen appears on the first start, and is always reachable from the "Setup" link at the bottom of the menu. It checks the computer and installs what the app can install:
+the video packages (`npm ci` in the workspace), whisper.cpp and its model, the Remotion agent skills, Blender (a pinned download, checked with its SHA-256), VoiceStudio (cloned at a pinned tag, its Python packages with `uv`, the engine and its model for the voice mode you chose).
+A step that fails says why and can be pressed again; it continues where it stopped. Programs the app cannot install itself (Node, Claude Code, Chromium, FFmpeg, Git, uv, `gcc` and `make`) show the `pacman` command.
 
-Restart the hub only when no job is running or queued (Jobs page, or `GET /api/jobs`): a job that is running during a restart ends as failed "interrupted".
+**Voices** are in **Settings > Voice**: download a model (its licence first, then a tick, then a progress bar), choose the one to use, remove the ones you do not need. The voice in use cannot be removed.
+VoiceStudio blocks its reviewed-install path for every voice model of this version, so the downloads use the same call its own settings use, after you read the licence.
+A licence such as CC-BY-NC does not allow commercial use: check it before you publish reels made with that voice.
 
 ## Ports
 
-All published on `127.0.0.1` only. Change them in `.env` and run `./update.sh`.
+All on `127.0.0.1` only.
 
 | Port | Variable | What |
 |---|---|---|
 | 4000 | `HUB_PORT` | The hub (web app and API). Needs the token. |
 | 3900 | `VOICE_PORT` | VoiceStudio API (health check at `/health`). |
-| 6080, 5900 | none | noVNC and VNC, inside the container only. In the Docker setup the Instagram login window is reached at `http://127.0.0.1:<HUB_PORT>/novnc/vnc.html` (sign in to the hub first). |
-
-## Where things live
-
-Everything of yours lives in **one folder**, `STUDIO_HOME` (default `~/ReelStudio`, written into `.env` by `./install.sh`). This repository is only the program, so updating or reinstalling it never touches your files.
-
-| What | Where | In git? |
-|---|---|---|
-| **A brand: one folder** | `$STUDIO_HOME/data/brands/<slug>/` | no |
-|  its identity: `brand.json`, style guide, logo (and the voice when there is no character) | `.../<slug>/identity/` | |
-|  its character: Blender script, model, voice, rendered moves, reference sheet | `.../<slug>/mascot/` (`movements/<move>/` holds the frames, `studio/` the reference sheet) | |
-|  its reels: script, MP4, caption, cover, audio, the code, the chat with Claude (`chat.json`) and the last three versions before a chat change (`.versions/`) | `.../<slug>/reels/<n>-<name>/` | |
-|  the hub's data of the brand: question list, settings, schedule, daily plans, analytics, ideas, Instagram login | `.../<slug>/` (`reel-questions.md`, `settings.json`, `scheduled.json`, `profile/`, ...) | |
-| The reels' own code | `.../<slug>/reels/<n>-<name>/code/` (one reel) and `.../<slug>/code/` (shared by the brand's reels) | |
-| Hub state: jobs, settings | `$STUDIO_HOME/data/` (`jobs.json`, `settings.json`) | no |
-| Deleted brands | `$STUDIO_HOME/data/trash/<slug>-<time>/` | no |
-| Settings of the stack (token, ports) | `.env` in the repository | no |
-| The program: hub, scripts, Remotion kit, base skills | this repository | yes |
-| VoiceStudio, the voice engine and its models | Docker volumes `voicestudio-config`, `omnivoice-data`, `hf-cache`, `uv-python`, `uv-cache` | n/a |
-| whisper.cpp binary and model | volume `whisper-cpp` (mounted in the workspace) | n/a |
-| The hub's `node_modules` (built for Ubuntu, not for the host) and the workspace's | volumes `hub-node-modules`, `workspace-node-modules` | n/a |
-
-Volume names are prefixed with `COMPOSE_PROJECT_NAME` (default `reel-studio`). The volumes hold only caches and models that can be downloaded again.
-
-**The workspace is a Remotion project, and it is the program's.** It holds the Remotion kit (`src/kit`, `src/cover`), `package.json` and `node_modules`, `scripts/`, the base skills, `whisper.cpp/` and `tsconfig.json`, and the program refreshes its own files at every start (a file of yours that differs is saved aside in `.reel-studio/overwritten`). **A reel's code is not in it:** it lives with the brand, in `<brand>/reels/<n>-<name>/code/` (and `<brand>/code/` for what several reels share). The code reaches the kit by the aliases `@kit` and `@cover` (`remotion.config.ts` and `tsconfig.json` define them). Render from the workspace: `REEL_BRAND=<brand> npx remotion render <brand folder>/reels/<n>-<name>/code/index.ts <CompositionId> out.mp4 --props=<props file>`. `npx tsc --noEmit` there type-checks the kit and every brand's code.
-
-**Where a render finds its files.** Remotion reads the logo, sounds, character frames and the reels' audio with `staticFile()` from one `public` folder, but each brand keeps them in its own folder. `remotion.config.ts` builds that `public` folder for the brand of the run (the hub sets `REEL_BRAND` for every job) out of hard links, in `workspace/.reel-studio/public-<uid>/<brand>-<pid>/`, and removes it when the run ends: `logo.png` from `identity/`, `mascot/<move>/` from `mascot/movements/`, `sfx/` (from the program) and `<n>-<name>/<voice>.wav` from each reel's `audio/`. Nothing is copied into a shared `public/` folder, so one brand's logo is never drawn on another's cover.
-
-**Moving to one folder per brand** (a workspace made before `identity/`, `mascot/` and `reels/` were inside each brand): stop the hub, run `scripts/migrate-brand-folders.sh` (it only shows the plan), then `scripts/migrate-brand-folders.sh --apply`. It copies and checks, and the originals stay; once the hub works from the new folders, `scripts/migrate-brand-folders.sh --remove-old` lists the old copies that have an identical new copy and `--remove-old --yes` removes them.
-
-**Moving from the old layout** (everything in the repository folder): stop the hub, run `scripts/migrate-layout.sh` (it only shows the plan), then `scripts/migrate-layout.sh --apply`. It copies, never moves: your originals stay until you delete them. Then add `STUDIO_HOME=<folder>` to `.env` and run `./update.sh`.
-
-## Backup and restore
-
-Nothing is backed up automatically. Your files are the studio folder (`workspace/` and `data/`, a few hundred MB to a few GB, mostly your reels and character frames). The voice engine and its models (10 to 15 GB) can be downloaded again, no need to back them up. Your voice samples are in `workspace/brand/<slug>/voice/`.
-
-```bash
-source scripts/stack-lib.sh
-mkdir -p ~/reel-hub-backup && chmod 700 ~/reel-hub-backup
-dc stop                                                        # a consistent copy of the browser profiles
-tar czf ~/reel-hub-backup/studio-$(date +%F).tgz -C "$(studio_home)" workspace data
-dc start
-```
-
-`.env` (the hub token and ports) is not in that archive: copy it by hand if you want it, and keep it private. Restore into an empty studio folder, with the stack stopped:
-
-```bash
-source scripts/stack-lib.sh
-tar xzf ~/reel-hub-backup/studio-<date>.tgz -C "$(studio_home)"
-dc start
-```
-
-To use the same studio on another computer, copy the folder, run `./install.sh` there with `STUDIO_HOME` pointing at it, and log in to Claude and Instagram again if the browser profiles were not copied.
 
 ## Update
 
-```bash
-./update.sh
-```
+Pull or edit the repository and commit, close the app, then `cd packaging/arch && makepkg -si`. Your studio folder is never touched.
+`makepkg` builds from the last commit. Pacman reinstalls a package of the same version without checking what changed: raise `pkgver` in `packaging/arch/PKGBUILD` for a release.
 
-It runs `git pull --ff-only`, rebuilds the image (`dc up -d --build`), waits for the hub, runs `npm ci` and the smoke test in the container,
-and refreshes the Remotion agent skills from upstream. Your `.env`, volumes, brands and reels are kept.
-The hub is not baked into the image: it is read from `platform/hub` (bind mount) and on every container start supervisord runs `npm ci`
-(only when `package-lock.json` changed), `npm run build` and `npm run start`. After a plain `git pull` you can restart just the hub
-(see above) instead of rebuilding.
+## Backup and restore
 
-Old image layers pile up: run `docker image prune` now and then and `docker system df` to see the total.
+Nothing is backed up by the app, and nothing it does touches your files. To copy your work, quit the app from the tray and copy `~/ReelStudio` (brands, reels, voices, Instagram logins, hub state); copy it back to restore.
+`data/tools/` is about 35 GB and can be left out: the setup downloads it again.
 
 ## Logs and health
 
-```bash
-docker exec "$(env_get CONTAINER_NAME)" tail -f /var/log/reel-hub/hub.log        # also voicestudio.log, display.log, supervisord.log
-curl -fsS http://127.0.0.1:4000/api/health                                       # {"ok":true}, needs no token
-docker exec "$(env_get CONTAINER_NAME)" bash scripts/smoke-test.sh               # hub, Blender, Remotion, VoiceStudio, Claude
-```
+- Started from a terminal (`reel-studio`), the app prints the hub's log, and VoiceStudio's output (lines starting with `[voice]`).
+- The install steps log to `~/ReelStudio/data/setup/<step>.log`.
+- Health: `curl http://127.0.0.1:4000/api/health` (`{"ok":true}`) and `curl http://127.0.0.1:3900/health` (VoiceStudio and the device it uses).
+- The token is `~/ReelStudio/data/dev-token`, readable only by you. The app signs its window in with it by itself (a one-time pass).
+- Restart the hub only when no job is running or queued (Jobs page, or `GET /api/jobs`): a job running during a restart ends as failed "interrupted".
 
-Every job also keeps its own log, shown on the Jobs page. A failed Instagram step leaves a screenshot in
-`$STUDIO_HOME/data/brands/<slug>/shots/`.
+## Environment variables
 
-## Hub environment variables
-
-Set by the compose file from `.env`; useful when you run the hub yourself.
+None is needed. These change where the app looks, for the hub it starts (set them where your session sets its environment, for example `~/.config/environment.d/`).
 
 | Variable | Default | What |
 |---|---|---|
-| `HUB_PORT` | `4000` | Port to listen on. |
-| `HUB_HOST` | `0.0.0.0` in Docker, else `127.0.0.1` | Address to listen on. Docker publishes the port on `127.0.0.1` only. |
-| `HUB_TOKEN` | none | Access token. If unset the hub makes one in `<data>/dev-token` and says so in the log. |
-| `REEL_STUDIO_HOME` | `~/ReelStudio` | The studio folder; with it set, the workspace is `<it>/workspace` and the data `<it>/data`. In Docker the compose file sets the two below directly. |
-| `HUB_DATA` | `<REEL_STUDIO_HOME>/data` | Where the hub keeps its state (settings, jobs, each brand's data and Instagram login). |
-| `REEL_ROOT` | `<REEL_STUDIO_HOME>/workspace` | The workspace (brands, reels, the Remotion project); Claude jobs run in it. |
-| `PROGRAM_ROOT` | three levels above the hub | The program folder (this repository): the hub's code and the files it copies into the workspace. |
-| `HUB_CLAUDE_BIN` | `claude` | The Claude command; in Docker `/usr/local/bin/claude-hub`. |
-| `HUB_BLOG_DIR` | `<root>/sources/blog` | Default folder of source texts for the idea jobs (a brand can set its own). |
-| `CHROME_PROFILE_ROOT` | none | Old setting: a shared folder with one browser profile per brand. Without it each brand's login is in `<data>/brands/<slug>/profile`. |
-| `HUB_SCHEDULER` | on | `off` replaces the Instagram scheduler with a stub that does nothing. |
-| `HUB_SCHEDULER_MODULE` | `./scheduler/index.js` | Another module with the scheduler interface (a test fixture, for example). |
-| `HUB_NOVNC_URL` | `http://127.0.0.1:6080` | Where the hub finds noVNC (Docker setup). |
-| `HUB_WEB_DIR` | built web app | Folder with the built web app. |
-| `HUB_TERMINAL_CMD` | `claude` in tmux | The command the Claude page runs. |
-| `HUB_LOG_LEVEL` | info | Log level. |
+| `REEL_STUDIO_HOME` | `~/ReelStudio` | The studio folder: `workspace/` and `data/`. |
+| `HUB_PORT` | `4000` | Port of the hub. |
+| `VOICE_PORT` | `3900` | Port of VoiceStudio. |
+| `HUB_TOKEN` | random | A fixed token instead of the one in `data/dev-token`. |
+| `HUB_DATA` | `<REEL_STUDIO_HOME>/data` | Where the hub keeps its state. |
+| `REEL_ROOT` | `<REEL_STUDIO_HOME>/workspace` | The workspace; Claude jobs run in it. |
+| `HUB_CLAUDE_BIN` | `claude` | The Claude Code command. |
+| `HUB_BLOG_DIR` | `<workspace>/sources/blog` | A folder of source texts (blog posts) the ideas jobs read. A brand can name its own. |
+| `CHROME_PATH` | system Chromium or Chrome | The browser for Instagram. |
+| `HUB_SCHEDULER` | on | `off` runs without the Instagram scheduler (tests). |
+| `HUB_WEB_DIR` | built web app | Folder of the built web app. |
+| `HUB_TERMINAL_CMD` | `claude` in tmux | The command of the Claude page. |
+| `HUB_LOG_LEVEL` | `info` | Log level. |
 
 ## One GPU, one VoiceStudio
 
-The voice engine needs about 8 GB of GPU memory. Do not run a VoiceStudio on the host next to the container's on a small GPU: two copies
-of the model do not fit. `scripts/ensure-voice.sh` starts the container (`docker start <name>`) when it exists, and a host environment only
-otherwise. `scripts/slot.sh voice 1 -- <command>` queues GPU work so one voice job runs at a time (renders: `render 3`).
-
-In CPU mode (`VOICE_DEVICE=cpu`) there is no GPU limit, but a voice takes many minutes instead of seconds.
-
-## First start of VoiceStudio
-
-`platform/docker/voicestudio-run` installs VoiceStudio on the first start from `github.com/debpalash/VoiceStudio` (the tag `VOICESTUDIO_REF`,
-default in the Dockerfile) with `uv sync`, then installs the VoxCPM2 engine with VoiceStudio's own installer
-(`POST /engines/sidecar/voxcpm2/install`) and downloads the model weights from Hugging Face. State:
-`docker exec <name> cat ~/.config/VoiceStudio/reel-bootstrap.state` and `.../reel-bootstrap.status` (a log). A failed step retries every minute,
-finished steps are skipped, and uv keeps its download cache in the volume `uv-cache`.
-Set `VOICE_ENGINE_INSTALL=0` in `.env` to skip the engine and model (voices will not work until it is installed).
+The voice engine needs about 8 GB of GPU memory. Only one VoiceStudio can use it: the app starts one and keeps it running, so do not start another copy of VoiceStudio next to it (two copies of the model do not fit).
+`scripts/slot.sh voice 1 -- <command>` queues GPU work so one voice job runs at a time (renders: `render 3`); the jobs do this by themselves.
+Without an NVIDIA card pick a processor voice mode in the setup: there is no GPU limit, but the voice of a reel takes many minutes instead of seconds.
+If `nvidia-smi` says "Driver/library version mismatch", the driver needs a reboot.
 
 ## Log in to Instagram
 
-**App:** open Settings > Instagram for the brand and press *Log in to Instagram*: a Chromium window opens on your desktop. Log in yourself there (the hub never types your password), then press *Check again*. Reads (the calendar, the session check) run without a window; only the login and a schedule flow open one.
-**Docker setup:** press the same button, then open `http://127.0.0.1:<HUB_PORT>/novnc/vnc.html` (signed in to the hub): a noVNC window shows the Chromium running in the
-container. Log in yourself (the hub never types your password). The profile of each brand is kept in your studio folder, in
-`data/brands/<slug>/profile/`.
+Open Settings > Instagram for the brand and press *Log in to Instagram*: a Chromium window opens on your desktop. Log in yourself there (the app never types your password), then press *Check again*.
+Reads (the calendar, the session check) run without a window; only the login and a schedule flow open one. The login is kept in `~/ReelStudio/data/brands/<slug>/profile/`.
 
 ## Blender device
 
-`BLENDER_DEVICE=cpu|gpu|auto` in `.env` (or on the Settings page), then `dc up -d` to apply. `/usr/local/bin/blender-run` (also installed
-as `blender`) reads it: `cpu` is Mesa software GL on Xvfb, `gpu` is NVIDIA GL, `auto` is `gpu` if `nvidia-smi` works.
-Test with a character: `docker exec <name> blender -b -P <workspace>/brand/<brand>/mascot/<character>.py -- still idle` (writes `<tmp>/mascot-stills/still-idle-0-0.png`).
+`BLENDER_DEVICE=cpu|gpu|auto` (also the *Blender device* setting). The app's Blender is on the PATH of the jobs as `blender` and `blender-run` (in `~/ReelStudio/data/tools/bin/`); `blender-run` reads the device:
+`cpu` software GL, `gpu` the graphics card, `auto` the card when `nvidia-smi` works. Test with a character:
+`blender-run -b -P ~/ReelStudio/data/brands/<brand>/mascot/<character>.py -- still idle` (writes `<tmp>/mascot-stills/still-idle-0-0.png`).
 
-## Running the hub without Docker
+## Running the hub without the app
 
-For development, or to try the hub against a scratch folder. The Instagram scheduler, Blender and the voice engine are not set up this way;
-use `HUB_SCHEDULER=off` or a stand-in scheduler module.
+For development, or to try the hub against a scratch folder. The Instagram scheduler is set up the same way as in the app; use `HUB_SCHEDULER=off` to leave it out.
 
 ```bash
-cd platform/hub && npm ci && npm run build:web
-HUB_PORT=4300 HUB_TOKEN=any-token REEL_STUDIO_HOME=/path/to/a/scratch-folder npx tsx src/index.ts
+cd platform/hub && npm ci && npm run build
+REEL_STUDIO_HOME=/path/to/a/scratch-folder HUB_PORT=4300 HUB_TOKEN=any-token node dist/index.js
 ```
 
-`npm run dev` builds the web app and starts the hub on the defaults; `npm run test` runs the tests.
+`npm run dev` builds the web app and starts the hub on the defaults; `npm run test` runs the tests. The desktop app is `electron platform/desktop`.
 
-## Removing everything
+## Remove
 
-`./uninstall.sh` removes the container and image and asks before deleting the volumes. `--yes` keeps the volumes, `--yes --delete-volumes`
-deletes them (the voice engine and its models go with them: about 20 GB to download again). Your studio folder (brands, reels, hub data, Instagram logins) is never touched by it.
+`sudo pacman -R reel-studio` removes the program. `~/ReelStudio` stays: delete it by hand if you want everything gone (the brands, reels and Instagram logins in it cannot be recovered).

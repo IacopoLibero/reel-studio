@@ -4,19 +4,20 @@ How the hub is built and why. Decided on 2026-11-19, brought up to date on 2026-
 decision that was revised while building. For running it see [../README.md](../README.md); for the daily loop, skills and analytics see
 [DAILY.md](DAILY.md); for brands see [BRANDS.md](BRANDS.md).
 
+
 ## The app (2026-11-22)
 
-The normal way to run it is now a desktop app, a pacman package (`packaging/arch/`). **Changed:** the hub no longer needs Docker; the container setup below is the alternative.
+It runs as a desktop app, a pacman package (`packaging/arch/`). **Changed (2026-11-22):** the first design ran the hub in one Docker container; that setup was removed and the hub runs on the host.
 
 - **Electron shell** (`platform/desktop/`): starts the hub as a separate Node process (so `node-pty` is not rebuilt for Electron), waits for `/api/health`,
   opens a window on it, sits in the tray (closing the window hides it; the hub keeps its schedules), polls `/api/notifications?unseen=1` every minute and shows them as system
   notifications, and offers "Start at login" (an autostart entry). Only one copy runs. The window may only show the hub: links to other sites open in the browser, permissions are refused.
 - **Sign-in of the window:** the app reads the token from `data/dev-token` and asks `POST /api/enter-nonce` for a one-time pass (30 seconds, used once);
   the window opens `/api/enter?n=<pass>`, which sets the cookie. The token is never in a command line or an address, and `/api/enter` answers only for `127.0.0.1` / `localhost` hosts (DNS rebinding).
-- **Native start of the hub** (`src/index.ts`, outside Docker): the program's files are copied into the workspace, the app's Blender (`data/tools/bin/blender`, `blender-run`) is put on the `PATH`,
+- **Start of the hub** (`src/index.ts`): the program's files are copied into the workspace, the app's Blender (`data/tools/bin/blender`, `blender-run`) is put on the `PATH`,
   and a `VoiceSupervisor` starts VoiceStudio if nothing answers on its port, restarts it when it stops (up to 5 times in a row) and stops it with the hub.
 - **First-run setup** (`src/setup/`, `src/routes/setup.ts`, `web/pages/Setup.tsx`): pure checks of the machine (`checks.ts`), the voice modes (`voice-modes.ts`), a step runner with a log per step (`installer.ts`),
-  and the steps: workspace packages (`npm ci`; an empty root-owned `node_modules` left by Docker is removed first), Blender (pinned tarball with SHA-256), VoiceStudio (git clone of a pinned tag, `uv sync`, the engine, the model, engine selection; the server is stopped at the end).
+  and the steps: workspace packages (`npm ci`; an empty root-owned `node_modules` left by the old Docker setup is removed first), Blender (pinned tarball with SHA-256), VoiceStudio (git clone of a pinned tag, `uv sync`, the engine, the model, engine selection; the server is stopped at the end).
   Everything VoiceStudio writes stays in `data/tools/voicestudio/` (its own `HOME`), so deleting that folder removes the voice.
 - **Voice models** (`src/setup/voice-catalog.ts`, `voice-engines.ts`, `src/routes/setup-voice.ts`, `web/pages/SetupVoice.tsx`, also in Settings): only voice (TTS) models; transcription and language models are not used.
   VoiceStudio's reviewed-install path (`/models/install/prepare` and `commit`) blocks every voice model of this version (its review of licences and sources is not finished), so the download uses
@@ -24,46 +25,39 @@ The normal way to run it is now a desktop app, a pacman package (`packaging/arch
   A voice is chosen with `POST /engines/select`; the voice in use cannot be removed.
 - **Not packed in the app:** Blender, VoiceStudio and its models are downloaded at first run into `data/tools/`.
 
+
 ## What it is for
 
-A web platform that is always up (as the app, or in Docker: one container, default name `reel-hub`, restart policy `unless-stopped`). Everything lives under
-`platform/` of the repository. It lets one person:
+A web platform that is up while the app is open or in the tray. Everything lives under `platform/` of the repository. It lets one person:
 
 - run a **Claude session inside the page** (a terminal running Claude Code with their own login);
 - have a **browser that schedules reels on Instagram in the background**, with a progress bar;
-- make whole reels in the container (voice, Blender, Remotion, ffmpeg, whisper.cpp);
+- make whole reels (voice, Blender, Remotion, ffmpeg, whisper.cpp);
+- change a finished reel by talking to Claude;
 - see and approve everything in one place, for **several brands**, each with its own pages and data.
 
 ## Fixed facts
 
-- **Same paths inside and out.** The container runs as the host user (name, uid, gid from `.env`, written by `install.sh`) and mounts the project,
-  `~/.claude` and `~/.claude.json` at the same absolute paths as on the host, so every path in skills, scripts and logs is valid on both sides.
-  The user is created at container start by `platform/docker/entrypoint.sh`.
-- **Claude login:** the user's own (mount of `~/.claude`), no API key. The hub runs `claude` through `platform/docker/claude-hub`
-  (`--setting-sources project,local`) because the host's user hooks and plugins hang headless Claude inside the container.
-- **Instagram login:** done by the user in a Chromium window (on the desktop in the app; a noVNC window onto a Chromium inside the container in Docker). Nobody types the password for them. The login state and the button that opens the window are in **Settings > Instagram**; there is no Instagram page. Reads (session check, calendar) run in a headless browser; the login and the schedule flow use a window.
-  The browser profile persists in a Docker volume, one folder per brand.
-- **VoiceStudio** (uvicorn on 3900, with the VoxCPM2 engine) lives in named Docker volumes, filled at first start from the official sources
-  (`platform/docker/voicestudio-run`: git clone of a pinned tag, `uv sync`, then VoiceStudio's own installer for the engine). Nothing is copied
-  from the host. Do not run a host VoiceStudio next to it on a GPU of 8 GB: two copies of the model do not fit.
-- **GPU is optional.** `VOICE_DEVICE=gpu|cpu`, `GPU=1` passes the NVIDIA GPU through. CPU mode works but the voice is slow.
-- **Blender** 5.3 from the official tarball. Headless Workbench needs a GL context: `BLENDER_DEVICE=gpu` uses NVIDIA GL, `cpu` uses Mesa software
-  GL under Xvfb, `auto` picks. It is a setting, not hard-coded.
-- **Host binaries are not copied.** The host's glibc differs: whisper.cpp is built in the image or the volume, and the hub's `node_modules`
-  live in a volume.
-- **Security.** The hub gives a shell. It is published on `127.0.0.1` only and needs a token (`HUB_TOKEN`, generated into the root `.env`,
-  never committed or printed). **Changed:** the token used to live in `platform/.env`; it is the root `.env` now.
-- **Where the state is.** In the studio folder, outside the program: the hub reads `HUB_DATA` (`<STUDIO_HOME>/data`) and works in `REEL_ROOT`
-  (`<STUDIO_HOME>/workspace`, a Remotion project); the repository is only the program (`PROGRAM_ROOT`) and the hub copies its own files into the workspace
-  at every start (`src/layout/`). **Changed:** the first design kept state in a Docker volume at `/data`, then in `platform/data` inside the project folder;
-  each brand's Instagram login moved from a volume into `<data>/brands/<slug>/profile`.
+- **It runs as you.** The hub, the voice server and the jobs are your processes, with your files. Paths in skills, scripts and logs are the real paths.
+- **Claude login:** the user's own (`~/.claude`), no API key. The hub runs the `claude` command; the app gives the hub a `PATH` that includes `~/.local/bin`.
+- **Instagram login:** done by the user in a Chromium window on the desktop. Nobody types the password for them. The login state and the button that opens the window are in **Settings > Instagram**; there is no Instagram page.
+  Reads (session check, calendar) run in a headless browser; the login and the schedule flow use a window. The browser profile is `<data>/brands/<slug>/profile/`, always inside the brand's own folder.
+- **VoiceStudio** (uvicorn on 3900, with the engine the person chose) lives in `<data>/tools/voicestudio/`, installed by the setup from the official sources (a pinned tag, `uv sync`, VoiceStudio's own installer for the engine). Nothing is copied from elsewhere.
+  Do not run another VoiceStudio next to it on a GPU of 8 GB: two copies of the model do not fit.
+- **GPU is optional.** The voice mode chosen in the setup says where the voice runs. CPU modes work but the voice is slow.
+- **Blender** 5.3 from the official tarball, installed by the setup into `<data>/tools/blender/`; `blender` and `blender-run` wrappers in `<data>/tools/bin/` are put on the `PATH` of the jobs. `BLENDER_DEVICE=cpu|gpu|auto` is a setting, not hard-coded.
+- **whisper.cpp** is built in the workspace by the setup (`scripts/setup-whisper.mjs`), for this machine.
+- **Security.** The hub gives a shell. It listens on `127.0.0.1` only and needs a token (`data/dev-token`, mode 600, never committed or printed). The app's window signs in with a one-time pass.
+- **Where the state is.** In the studio folder, outside the program: the hub reads `HUB_DATA` (`<REEL_STUDIO_HOME>/data`) and works in `REEL_ROOT` (`<REEL_STUDIO_HOME>/workspace`, a Remotion project);
+  the repository is only the program (`PROGRAM_ROOT`, installed in `/usr/lib/reel-studio`) and the hub copies its own files into the workspace at every start (`src/layout/`).
+  **Changed:** the first design kept state in a Docker volume, then in `platform/data` inside the project folder; each brand became one folder in `<data>/brands/<slug>/`, with its Instagram login inside.
 
-## Services in the container (supervisord)
+## Processes
 
-1. `hub` (Node 22): REST, server-sent events and WebSocket on port 4000.
-2. `voicestudio`: uvicorn on port 3900.
-3. `display`: Xvfb `:99`, x11vnc and noVNC (websockify) for the Instagram login window; Chromium runs in it.
-4. On demand: Blender, Remotion renders, headless Claude, spawned by the hub or by Claude.
+1. The app (Electron): the window, the tray, the notifications.
+2. `hub` (Node 22), started by the app: REST, server-sent events and WebSocket on port 4000.
+3. `voicestudio`: uvicorn on port 3900, started and watched by the hub.
+4. On demand: Blender, Remotion renders, headless Claude, Chromium for Instagram, spawned by the hub or by Claude.
 
 ## The hub: pages
 
@@ -100,7 +94,7 @@ startup becomes `failed: interrupted`.
 
 ## Instagram scheduler (`platform/hub/src/scheduler`)
 
-Playwright (Chromium, headed on the Xvfb display, persistent profile per brand) doing what was first done by hand. The flow on
+Playwright (the system Chromium, headless for reads and with a window for the login and the schedule flow, persistent profile per brand) doing what was first done by hand. The flow on
 `https://www.instagram.com/scheduled_content/`:
 
 1. **Schedule content** opens "Create new post". The only `input[type=file]` in the dialog takes the MP4. Wait for the "Crop" step.
@@ -165,5 +159,6 @@ The page of one reel has a conversation with Claude that changes the reel. Each 
 - **Safety.** Before the run the reel (video, caption, cover, script, plan, props, `code/`) is copied to `<reel>/.versions/<time>/`, the newest three are kept (`versions.ts`). The tools are the ones of `reel.make` (voice, Blender and renders only through the slot queue; no git, no posting, no `rm -rf`), plus `--add-dir` of the brand folder. If the run fails, is stopped, or leaves the reel without MP4, caption or cover, the missing deliverables are put back from the snapshot and the chat says so.
 - **Rules of the request** (`createSchema`/`editSpec`): the reel must exist; a reel with a change queued or running, or one being scheduled on Instagram, is refused (409); the message is 1 to 4000 characters.
 - **The conversation** is `<reel>/chat.json` (the last 200 messages, written atomically); the page shows a message whose job has not started yet from the job's own params. The video address carries a version (the MP4's time and size), so a new render loads at once.
-- **Not done:** undo from the page (the versions are only files), editing the script's audio by hand, several reels in one conversation.
+- **Undo.** The page lists the versions (`GET /reels/:folder` returns `versions`) and `POST /reels/:folder/restore {version}` puts one back (`restoreVersion`): the saved video, caption, cover, script, plan, props and code replace the current ones (files the change added to `code/` are removed, the audio is left alone), after the reel as it is now is saved, so an undo can itself be undone. It is refused while a change or a schedule of the reel runs.
+- **Not done:** editing the script's audio by hand, several reels in one conversation.
 

@@ -5,7 +5,9 @@ import type { FastifyInstance } from "fastify";
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { buildApp } from "../src/app.js";
 import type { Config } from "../src/config.js";
-import { appendMessage } from "../src/reels/chat.js";
+import { appendMessage, readChat } from "../src/reels/chat.js";
+import { snapshotReel } from "../src/reels/versions.js";
+import { readFileSync } from "node:fs";
 import { writeTestBrand } from "./helpers/brand.js";
 
 const TOKEN = "t0ken";
@@ -25,7 +27,7 @@ beforeEach(async () => {
     writeFileSync(join(reelDir(b, f), "a.mp4"), "0123456789"); writeFileSync(join(reelDir(b, f), "caption.md"), `Caption of ${b}`); writeFileSync(join(reelDir(b, f), "cover.png"), "png");
     writeFileSync(join(reelDir(b, f), "script.json"), JSON.stringify({ sentences: ["One.", "Two."] }));
   }
-  const config: Config = { port: 0, host: "127.0.0.1", dataDir: data, root, token: TOKEN, webDir: join(tmp, "web"), novncTarget: "http://127.0.0.1:1", claudeBin: "/nonexistent", blogDir: join(tmp, "blog"), terminalCmd: null };
+  const config: Config = { port: 0, host: "127.0.0.1", dataDir: data, root, token: TOKEN, webDir: join(tmp, "web"), claudeBin: "/nonexistent", blogDir: join(tmp, "blog"), terminalCmd: null };
   app = (await buildApp(config)).app; await app.ready();
 });
 afterEach(async () => { await app.close(); rmSync(tmp, { recursive: true, force: true }); });
@@ -69,5 +71,35 @@ describe("the video", () => {
     const bad = await get(url, { range: "bytes=50-60" });
     expect(bad.statusCode).toBe(416);
     expect(bad.headers["content-range"]).toBe("bytes */10");
+  });
+});
+
+describe("undoing a change", () => {
+  const post = (url: string, payload: unknown) => app.inject({ method: "POST", url, headers: auth, payload: payload as object });
+  const dir = () => reelDir("acme", "3-half-loaf");
+
+  it("lists the saved versions on the reel page, newest first", async () => {
+    const a = snapshotReel(dir(), new Date("2026-11-22T10:00:00Z")); const b = snapshotReel(dir(), new Date("2026-11-22T11:00:00Z"));
+    const r = (await get("/api/brands/acme/reels/3-half-loaf")).json();
+    expect(r.versions.map((v: { name: string }) => v.name)).toEqual([b, a]);
+    expect(r.versions[0]).toMatchObject({ at: "2026-11-22T11:00:00.000Z", hasVideo: true });
+  });
+  it("restores a version, says so in the chat, and keeps the undo undoable", async () => {
+    const old = snapshotReel(dir(), new Date("2026-11-22T10:00:00Z"));
+    writeFileSync(join(dir(), "a.mp4"), "changed");
+    const r = await post("/api/brands/acme/reels/3-half-loaf/restore", { version: old });
+    expect(r.statusCode).toBe(200);
+    expect(readFileSync(join(dir(), "a.mp4"), "utf8")).toBe("0123456789");
+    expect(readChat(dir()).messages.at(-1)).toMatchObject({ role: "claude" });
+    expect(readChat(dir()).messages.at(-1)?.text).toMatch(/restored/i);
+    expect((await get("/api/brands/acme/reels/3-half-loaf")).json().versions.length).toBeGreaterThan(1);
+  });
+  it("refuses an unknown or unsafe version, and a version name that is not a version", async () => {
+    expect((await post("/api/brands/acme/reels/3-half-loaf/restore", { version: "2020-01-01T00-00-00-000Z" })).statusCode).toBe(404);
+    expect((await post("/api/brands/acme/reels/3-half-loaf/restore", { version: "../../x" })).statusCode).toBe(400);
+    expect((await post("/api/brands/acme/reels/3-half-loaf/restore", {})).statusCode).toBe(400);
+  });
+  it("never restores in another brand's reel", async () => {
+    expect((await post("/api/brands/acme/reels/1-other/restore", { version: "2026-11-22T10-00-00-000Z" })).statusCode).toBe(404);
   });
 });

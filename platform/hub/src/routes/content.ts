@@ -5,7 +5,8 @@ import { join } from "node:path";
 import { countPngs, listMoves, moveDir } from "../character/gallery.js";
 import { folderOfKey, readScheduled, reelDirOf, resolveReelFile, scanReels } from "../reels/scanner.js";
 import { readReelDetail } from "../reels/detail.js";
-import { readChat } from "../reels/chat.js";
+import { appendMessage, readChat } from "../reels/chat.js";
+import { listVersions, restoreVersion } from "../reels/versions.js";
 import { parseRange } from "./range.js";
 import { nextSlots } from "../slots.js";
 import { settingsSchema } from "../settings.js";
@@ -43,7 +44,24 @@ export function contentRoutes(app: FastifyInstance, d: AppDeps, scope: Scope): v
     const reel = readReelDetail(b.paths.reelsDir, req.params.folder, b.slug, readScheduled(b.paths.scheduledFile));
     if (!reel) return reply.code(404).send({ error: "Reel not found." });
     const busy = d.store.list().some((j) => j.type === "reel.edit" && j.brand === b.slug && j.params.folder === req.params.folder && (j.status === "queued" || j.status === "running"));
-    return { reel, chat: readChat(reelDirOf(b.paths.reelsDir, req.params.folder)), busy };
+    const dir = reelDirOf(b.paths.reelsDir, req.params.folder);
+    return { reel, chat: readChat(dir), busy, versions: listVersions(dir) };
+  });
+
+  // Undo: puts a saved version of the reel back. Not while a change or a schedule of this reel is running.
+  app.post<{ Params: { folder: string } }>("/reels/:folder/restore", async (req, reply) => {
+    const b = scope(req);
+    if (!readReelDetail(b.paths.reelsDir, req.params.folder, b.slug, {})) return reply.code(404).send({ error: "Reel not found." });
+    const body = z.object({ version: z.string().regex(/^\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2}-\d{3}Z$/, "That is not a version name.") }).safeParse(req.body);
+    if (!body.success) throw new HttpError(400, body.error.issues[0]?.message ?? "Name the version to restore.");
+    const key = `${b.slug}/${req.params.folder}`;
+    const busy = d.store.list().some((j) => j.brand === b.slug && (j.status === "queued" || j.status === "running") && ((j.type === "reel.edit" && j.params.folder === req.params.folder) || (j.type === "instagram.schedule" && j.params.reel === key)));
+    if (busy) throw new HttpError(409, "A change or a schedule of this reel is running. Try again when it is done.");
+    const dir = reelDirOf(b.paths.reelsDir, req.params.folder);
+    if (!listVersions(dir).some((v) => v.name === body.data.version)) return reply.code(404).send({ error: "That version was not found." });
+    restoreVersion(dir, body.data.version);
+    appendMessage(dir, { role: "claude", text: `Restored the version of ${body.data.version.replace(/T(\d{2})-(\d{2}).*/, " $1:$2")}. The reel as it was just before is saved too, so you can undo this.`, jobId: `restore-${Date.now()}` });
+    return { restored: body.data.version };
   });
 
   app.get<{ Querystring: { count?: string } }>("/slots", async (req) => {

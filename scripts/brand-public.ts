@@ -89,7 +89,7 @@ function linkFile(from: string, to: string): void {
   }
 }
 
-/** One folder per Unix user (public-1000, public-0): a run as root (docker exec) and the hub's jobs (as the owner) never meet in a folder the other cannot write. */
+/** One folder per Unix user (public-1000, public-0): a run as root and the hub's jobs (as the owner) never meet in a folder the other cannot write. */
 export const stageRoot = (workspace: string): string => join(workspace, ".reel-studio", `public-${process.getuid?.() ?? "user"}`);
 
 /**

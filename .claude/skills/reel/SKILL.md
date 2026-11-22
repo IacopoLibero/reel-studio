@@ -18,7 +18,7 @@ character), `mascot/` (only for a brand with a character: its Blender script `<i
 `<id>-voice.txt`, and the rendered `movements/`) and `reels/` (one folder per reel). The hub's own data for the brand (the question list `reel-questions.md`, the schedule, the analytics) is in the same folder. Read `identity/brand.json` and `identity/style.md` first.
 Everything below that says `style.md` means `<brand folder>/identity/style.md`. If there is only one brand folder, use it and
 say nothing. If there are several, ask which one at the start (see step 1), unless the hub gave you the brand. A new
-brand is made in the hub ("New brand") or with `scripts/new-brand.sh`, never by copying a finished brand.
+brand is made in the hub ("New brand"), never by copying a finished brand.
 
 The person approves two things, the script and the storyboard. Never skip either.
 
@@ -61,19 +61,14 @@ they want to switch first.
      after the last idea and is the only thing allowed after it. It is its own scene (see step 4).
    - Show the script and wait. Go on only when the person approves it; change it when they ask.
 3. **Voice.** Use the voice in `style.md`, and save the audio and the time each word starts and ends.
-   - **VoiceStudio (the local voice in `style.md`; the sample is the `.wav` it names, in `identity/` or in `mascot/`):** you start it yourself, in the background, with no window. Never
-     ask the person to open the app, and never launch the VoiceStudio app window: the person could close it by
-     mistake. Run `bash scripts/ensure-voice.sh`. It starts VoiceStudio's own server (`uvicorn`, port 3900) detached,
-     waits until `GET /health` answers, and selects the `voxcpm2` engine. It does nothing if the server is already
-     up. Then use only the local API (`http://localhost:3900`), never the app's screen.
+   - **VoiceStudio (the local voice in `style.md`; the sample is the `.wav` it names, in `identity/` or in `mascot/`):** the Reel Studio app starts it and keeps it running, with no window, and has selected the voice engine the person chose in the setup (Settings > Voice). Never ask the person to open VoiceStudio's own app, and never start another copy. Use only the local API (`http://localhost:3900`), never the app's screen.
    - Save the approved script as `<brand folder>/reels/<name>/script.json` and run
      `node scripts/voice.mjs <brand folder>/reels/<name> <voice>=<brand folder>/<the sample .wav that style.md names> ...`. It reads the sample's
      spoken words from the `.txt` next to it, and its speed and pauses from the `.json` next to it when there is one. The audio stays in
-     the reel's `audio/` folder: the final file is `audio/<voice>.wav`. It calls `ensure-voice.sh` first, speaks every
+     the reel's `audio/` folder: the final file is `audio/<voice>.wav`. It checks that VoiceStudio answers (it stops with a clear message when it does not), speaks every
      sentence through `POST /generate` in the cloned voice, joins them with pauses, times every word with Whisper and
      writes `<voice>-props.json`. For several voices, pass several `<voice>=<sample.wav>` pairs.
-   - If the server does not become ready, read `/tmp/voicestudio-headless.log` (or `$TMPDIR/voicestudio-headless.log`)
-     and say what failed. If the engine stops with an out-of-memory error, `voice.mjs` already retries three times.
+   - If VoiceStudio does not answer, say so: the person has to open the Reel Studio app (it starts the voice). If the engine stops with an out-of-memory error, `voice.mjs` already retries three times.
    - **The free voice (Kokoro):** speak the whole script, a sentence at a time with natural pauses between them,
      into one audio file. Then get the word times from that audio with Remotion's Whisper tooling. The script is the
      truth: keep its words and spelling, and take only the times from what Whisper heard.
@@ -108,8 +103,7 @@ they want to switch first.
    - **The character's mouth moves little:** pass `open={mouthOpen(frame, wf)}`, which opens it for a few frames on every other
      word. Never flap it on every syllable.
    - A new move or prop is a function in the character's Blender script `<brand folder>/mascot/<character.id>.py`; render it with
-     `blender -b -P <project root>/<brand folder>/mascot/<character.id>.py -- move <name>` (in the container; on a host with Flatpak:
-     `flatpak run --filesystem=home org.blender.Blender -b -P <project root>/<brand folder>/mascot/<character.id>.py -- move <name>`).
+     `blender-run -b -P <brand folder>/mascot/<character.id>.py -- move <name>` (`blender-run` is on the PATH of the jobs; it is the app's own Blender).
      Use the absolute path of the script; Blender has no window; the frames are written next to the script, in `movements/<name>/`. Add its
      frame count to `MOVE_FRAMES`. `<brand folder>/mascot/<character.id>.blend` opens the rigged model in Blender.
    - The question headline must be fully visible from frame 0; a hello wave is fine.

@@ -7,12 +7,11 @@ import path from "node:path";
 import { spawnSync } from "node:child_process";
 import { transcribe, toCaptions } from "@remotion/install-whisper-cpp";
 
-// start VoiceStudio in the background if it is not running
-const ensure = spawnSync("bash", [path.resolve(import.meta.dirname, "ensure-voice.sh")], { encoding: "utf8", stdio: ["ignore", "inherit", "inherit"] });
-if (ensure.status !== 0) throw new Error("VoiceStudio is not available");
-
 const GAP = 0.3;
 const BASE = `http://localhost:${process.env.VOICE_PORT || 3900}`;
+// The hub starts and watches VoiceStudio. If it does not answer, say so and stop: do not start another copy.
+const up = await fetch(`${BASE}/health`, { signal: AbortSignal.timeout(5000) }).then((r) => r.ok, () => false);
+if (!up) throw new Error(`VoiceStudio does not answer on ${BASE}. It is started by the Reel Studio app (open the app and finish the Voice step of the setup), then run this again.`);
 // Reference text: the words spoken in the sample, read from <sample>.txt next to the wav (each brand keeps its own).
 const refTextOf = (wav) => {
   const txt = wav.replace(/\.wav$/i, ".txt");

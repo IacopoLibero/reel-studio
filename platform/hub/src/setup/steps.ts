@@ -7,7 +7,7 @@ import { toolsDir } from "./checks.js";
 import type { StepFn } from "./installer.js";
 import { runCommand, sha256File } from "./run.js";
 
-/** The Blender the app downloads: the official tarball, pinned and checked (the same build the Docker image used). */
+/** The Blender the app downloads: the official tarball, pinned and checked. */
 export const BLENDER = {
   version: "5.3.0",
   url: "https://download.blender.org/release/Blender5.3/blender-5.3.0-linux-x64.tar.xz",
@@ -31,7 +31,7 @@ async function download(url: string, to: string, log: (l: string) => void): Prom
 }
 
 /**
- * An empty folder left by an earlier Docker setup (it was the mount point of a volume, so it belongs to root and npm cannot write in it).
+ * An empty folder that belongs to root (left by an old Docker setup, where it was the mount point of a volume), so npm cannot write in it.
  * An empty folder holds nothing, so it is removed and npm makes a new one. Returns true when it was removed.
  */
 export function clearEmptyMountPoint(dir: string): boolean {

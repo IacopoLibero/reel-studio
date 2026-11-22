@@ -35,7 +35,7 @@ beforeEach(() => {
   for (const f of ["improve-restaurant-efficiency.ts", "index.ts"]) writeFileSync(join(blog, f), "");
   process.env.FAKE_SCHED_LOG = schedLog(); process.env.FAKE_SCHEDULED_FILE = join(bdata, "scheduled.json"); delete process.env.FAKE_SCHED_FAIL; delete process.env.FAKE_MODE;
   writeFileSync(ctx.paths.settingsFile, JSON.stringify({ ...DEFAULT_SETTINGS, daily: { enabled: true, earliest: "06:00", ideas: 3 }, factory: { ...DEFAULT_SETTINGS.factory, concurrency: 3 } }));
-  const config: Config = { port: 0, host: "127.0.0.1", dataDir: data, root, token: "t", webDir: "", novncTarget: "", claudeBin: FAKE, blogDir: blog, terminalCmd: null };
+  const config: Config = { port: 0, host: "127.0.0.1", dataDir: data, root, token: "t", webDir: "", claudeBin: FAKE, blogDir: blog, terminalCmd: null };
   store = new JobStore(join(data, "jobs.json"));
   const settings = new SettingsStore(join(data, "settings.json"), { brandFile: (s) => reg.paths(s).settingsFile, defaultSlug: () => reg.defaultSlug() });
   const runner = new JobRunner(store, settings, { root, claudeBin: FAKE, dataDir: data, blogDir: blog, brands: reg });

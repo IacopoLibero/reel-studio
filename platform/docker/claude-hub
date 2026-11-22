@@ -1,5 +1,0 @@
-#!/bin/sh
-# Claude Code as used by the Reel Hub inside the container.
-# The host user settings (hooks and plugins that call host-only programs such as mempalace, MCP servers)
-# make Claude hang here, so only the project and local settings are read. The login (~/.claude credentials) is kept.
-exec claude --setting-sources project,local "$@"

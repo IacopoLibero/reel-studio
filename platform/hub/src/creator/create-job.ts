@@ -16,7 +16,7 @@ const MARKER = ".created-by.json";
 const MARKS = [0.05, 0.2, 0.5, 0.85, 1];
 
 export const NEXT_STEPS = [
-  "Log in to Instagram on this brand's Instagram page.",
+  "Log in to Instagram in Settings > Instagram.",
   "Add your first questions to the Factory, or press \"Find ideas\".",
   "Make the first reel.",
 ];

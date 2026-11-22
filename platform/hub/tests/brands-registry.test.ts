@@ -3,7 +3,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { BrandError, BrandRegistry, listBrandSlugs, readBrand, readBrandFile, writeBrand } from "../src/brands/registry.js";
-import { brandPaths, chromeProfileRoot } from "../src/brands/paths.js";
+import { brandPaths } from "../src/brands/paths.js";
 import { brandCtx, blogDirOf } from "../src/brands/context.js";
 import { defaultBrandValues } from "../src/brands/schema.js";
 import { offerOf, humanDay, isOfferLine, afterOffer, NO_OFFER } from "../src/brands/offer.js";
@@ -76,11 +76,6 @@ describe("paths", () => {
   it("the Instagram profile is always the brand's own folder, and the template stays addressable", () => {
     expect(brandPaths("acme", { dataDir: "/d" }).profileDir).toBe("/d/brands/acme/profile");
     expect(brandPaths("_template", { dataDir: "/d" }).brandDir).toBe("/d/brands/_template");
-  });
-  it("reads the Chrome profile root from the environment", () => {
-    expect(chromeProfileRoot({})).toBe("/data/chrome-profile");
-    expect(chromeProfileRoot({ CHROME_PROFILE: "/old" })).toBe("/old");
-    expect(chromeProfileRoot({ CHROME_PROFILE_ROOT: "/new", CHROME_PROFILE: "/old" })).toBe("/new");
   });
   it("brandCtx and the registry agree, and a profile folder named in an old brand.json is ignored", () => {
     const b = writeTestBrand(root, "acme", { instagram: { account: "a", userId: "1", profileDir: "/data/chrome-profile" } });

@@ -68,7 +68,7 @@ export function CalendarPage({ jobs }: { jobs: Job[] }) {
         <button className="btn small" onClick={() => step(1)} aria-label="Next">Next</button>
         <button className="btn small" onClick={() => setCursor(data?.today ?? null)}>Today</button>
         <span className="grow" />
-        <span className="muted"><span className={`dot ${logged ? "ok" : needLogin ? "bad" : ""}`} />{logged ? "Instagram session active" : needLogin ? "Not logged in" : "Session unknown"} · <a href="#/instagram">Instagram page</a></span>
+        <span className="muted"><span className={`dot ${logged ? "ok" : needLogin ? "bad" : ""}`} />{logged ? "Instagram session active" : needLogin ? "Not logged in" : "Session unknown"} · <a href={`#/${getBrand()}/settings`}>Instagram login</a></span>
         <span className="muted">Checked {time(data?.checkedAt ?? null)}</span>
         <button className="btn" disabled={loading} onClick={() => load(true)}>{loading ? <><span className="spin" /> Reading</> : "Refresh from Instagram"}</button>
       </div>
@@ -78,8 +78,8 @@ export function CalendarPage({ jobs }: { jobs: Job[] }) {
       {error && <p className="error">{error}</p>}
       {data?.error && <p className="error">{data.stale ? "Showing the last reading. " : ""}{data.error}</p>}
       {data && data.posts.length === 0 && (
-        <EmptyState title={needLogin ? "Log in to Instagram first" : "Nothing scheduled yet"} action={<><a className="btn" href={`#/${getBrand()}/instagram`}>Instagram page</a><a className="btn" href={`#/${getBrand()}/factory`}>Factory</a></>}>
-          {needLogin ? "The calendar reads this brand's own Instagram session. Open its Instagram page and log in once. " : "Free slots of the posting pattern are shown below. "}
+        <EmptyState title={needLogin ? "Log in to Instagram first" : "Nothing scheduled yet"} action={<><a className="btn" href={`#/${getBrand()}/settings`}>Settings</a><a className="btn" href={`#/${getBrand()}/factory`}>Factory</a></>}>
+          {needLogin ? "The calendar reads this brand's own Instagram session. Open Settings, Instagram section, and log in once. " : "Free slots of the posting pattern are shown below. "}
           The first reel comes from the Factory: pick a question, make the reel, then schedule it here or from the Reels page.
         </EmptyState>
       )}

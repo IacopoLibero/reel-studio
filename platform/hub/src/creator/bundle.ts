@@ -98,7 +98,7 @@ export function inspectBundle(files: Map<string, Buffer>, o: InspectOptions): { 
   const v = validateBrand(candidate);
   if (!v.ok) throw new BundleError(`brand.json is not valid: ${v.errors.join("; ")}`);
   let brand = v.brand;
-  if (brand.instagram.profileDir) { brand = { ...brand, instagram: { ...brand.instagram, profileDir: null } }; warnings.push("The Instagram profile folder of the other machine was dropped. Log in again on the Instagram page."); }
+  if (brand.instagram.profileDir) { brand = { ...brand, instagram: { ...brand.instagram, profileDir: null } }; warnings.push("The Instagram profile folder of the other machine was dropped. Log in again in Settings > Instagram."); }
   if (brand.sources.blogDir) { brand = { ...brand, sources: { blogDir: null } }; warnings.push("The folder of source texts belongs to the other machine and was dropped."); }
   if (brand.character.enabled && !(o.hasMascot?.(brand.character.id) ?? false)) {
     brand = { ...brand, character: { ...brand.character, enabled: false } };

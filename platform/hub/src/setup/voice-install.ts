@@ -6,7 +6,7 @@ import { runCommand } from "./run.js";
 import type { SupervisorDeps } from "./voice-supervisor.js";
 import type { VoiceMode } from "./voice-modes.js";
 
-/** VoiceStudio is cloned from its official source at a pinned tag (the same one the Docker image used). */
+/** VoiceStudio is cloned from its official source at a pinned tag. */
 export const VOICESTUDIO = { repo: "https://github.com/debpalash/VoiceStudio.git", ref: "v0.5.8" } as const;
 export const DEFAULT_VOICE_PORT = 3900;
 

@@ -31,8 +31,8 @@ outreach and partnership skills, content-factory, reel-builder, reel-scripter, a
 ## Analytics
 
 Source: Instagram insights through Composio (`INSTAGRAM_GET_IG_USER_MEDIA` and `INSTAGRAM_GET_IG_MEDIA_INSIGHTS`, GET only) for the account whose numeric
-user id is in the brand's `brand.json` (`instagram.userId`). **Changed:** it used to be `IG_USER_ID` in `.env`. The Composio login is read from
-`~/.composio` on the host, mounted read-only (the compose overlay `docker-compose.composio.yml` is added when that folder exists); the key is never printed.
+user id is in the brand's `brand.json` (`instagram.userId`). **Changed:** it used to be an environment variable. The Composio login is read from
+`~/.composio` (your own login); the key is never printed.
 
 - `analytics.collect` stores a snapshot in `<data>/brands/<slug>/analytics/<date>.json` (per post: id, permalink, caption start, posted time,
   plays, reach, likes, comments, saves, shares, average watch time where the API gives it, matched to the reel folder by caption) and exports
@@ -55,7 +55,7 @@ The Factory shows the series badge next to a question.
 The request: "Every day, as soon as the computer is online: analyse the data, improve, create three video ideas, alert me, then after my manual
 approval make everything, and when I confirm each video, schedule it."
 
-One `daily.run` per brand per calendar day (Europe/Rome by default), started by a loop inside the hub (the container is always up):
+One `daily.run` per brand per calendar day (Europe/Rome by default), started by a loop inside the hub (the hub runs while the app is open or in the tray):
 
 1. **Trigger.** Every 5 minutes the loop checks that the brand's daily loop is switched on, that it is after the earliest time (default 06:00), that no
    plan exists for today, that Instagram and `api.anthropic.com` answer over HTTPS, and that no heavy browser or voice job is active. If the computer
@@ -68,8 +68,7 @@ One `daily.run` per brand per calendar day (Europe/Rome by default), started by 
    for the configured number of ideas (default 3), each with hook, source, closing A or B, why, and a "based on your data" reason. Optionally a Threads text
    per idea (generated, never posted).
 5. **Alert.** The plan `<data>/brands/<slug>/daily/<date>.json` gets the status `awaiting_approval` and the hub adds a notification
-   (`GET /api/notifications`). Optional, on the host: `scripts/reel-hub-notify.sh` polls the hub every 60 seconds (token read from `.env`) and shows a desktop
-   notification with `notify-send` that opens the Daily page. Install it as a systemd user service with `scripts/install-notifier.sh` (`--uninstall` removes it, `--print` shows the unit). The container does not get the host's D-Bus socket.
+   (`GET /api/notifications`). The desktop app polls that list every minute and shows each new one as a system notification (clicking it opens the Daily page); it works with the window closed, while the app is in the tray.
 6. **Approval 1 (manual).** The Daily page shows readout, proposals and ideas with checkboxes and an editable closing each. **Create selected** or **Skip today**.
    Nothing is created before the click.
 7. **Creation.** One `reel.make` job per selected idea (the factory, with folder allocation and the question tick); progress on the Daily page.

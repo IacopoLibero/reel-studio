@@ -29,7 +29,7 @@ async function boot(claudeBin = "/nonexistent", dir?: string): Promise<void> {
   mkdirSync(data); mkdirSync(join(tmp, "web")); writeFileSync(join(tmp, "web/index.html"), "<html></html>");
   mkdirSync(root, { recursive: true });
   writeTestBrand(root, "acme", { name: "Acme" }, "## To do\n");
-  const config: Config = { port: 0, host: "127.0.0.1", dataDir: data, root, token: TOKEN, webDir: join(tmp, "web"), novncTarget: "http://127.0.0.1:1", claudeBin, blogDir: join(tmp, "blog"), terminalCmd: null };
+  const config: Config = { port: 0, host: "127.0.0.1", dataDir: data, root, token: TOKEN, webDir: join(tmp, "web"), claudeBin, blogDir: join(tmp, "blog"), terminalCmd: null };
   const built = await buildApp(config);
   app = built.app; deps = built.deps;
   await app.ready();

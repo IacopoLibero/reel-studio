@@ -2,7 +2,7 @@
 # Fetch the official Remotion agent skills from upstream (github.com/remotion-dev/skills) into .claude/skills.
 #
 # They are NOT part of this repository: the upstream project declares no licence, so we do not redistribute them.
-# Downloading them at install time also keeps them current. Run again any time to refresh (./update.sh does).
+# Downloading them at install time also keeps them current. Run again any time to refresh (the Reel Studio setup runs it).
 # It never fails the install: without internet it prints how to retry and exits 0.
 #
 # usage: scripts/install-remotion-skills.sh [--quiet]

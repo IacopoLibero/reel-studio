@@ -15,7 +15,7 @@ Brand: {{BRAND_NAME}} ({{WEBSITE}}). Colours and fonts match the website.
 
 ## Voice
 - Engine: VoiceStudio, engine `voxcpm2`, backend `http://localhost:3900`, used only through its local API.
-- It runs in the background with no window: `scripts/ensure-voice.sh` starts VoiceStudio's own server detached when `GET /health` does not answer, and selects `voxcpm2`. `scripts/voice.mjs` calls it first. Never ask the person to open the app and never launch the app window.
+- It runs in the background with no window: the Reel Studio app starts it and keeps it running, with the voice engine the person chose in Settings > Voice. `scripts/voice.mjs` only checks that it answers. Never ask the person to open VoiceStudio's own app and never launch its window.
 - Speak with `POST /generate` (multipart: `text`, `language`, `instruct`, optional `ref_audio` + `ref_text`, `guidance_scale=1.6`).
 - To keep the same voice in every sentence and every reel, clone from a saved sample: pass the sample as `ref_audio` and its spoken text as `ref_text`.
 - Chosen voice: **{{VOICE_NAME}}**, cloned from `{{VOICE_BASE}}.wav` (its words are in `{{VOICE_BASE}}.txt`, optional settings in `{{VOICE_BASE}}.json`). See `.claude/skills/reel/voice-sample.md` for how to record it.

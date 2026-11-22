@@ -1,6 +1,0 @@
-# Added by the scripts when BLOG_DIR is set in .env: a folder of source texts (for example blog posts)
-# that the ideas jobs read, mounted read-only at the same path.
-services:
-  reel-hub:
-    volumes:
-      - ${BLOG_MOUNT:-${BLOG_DIR}}:${BLOG_MOUNT:-${BLOG_DIR}}:ro

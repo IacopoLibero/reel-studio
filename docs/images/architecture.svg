@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1200" height="800" viewBox="0 0 1200 800" role="img" aria-labelledby="t d">
   <title id="t">Reel Hub architecture</title>
-  <desc id="d">Your browser talks to the hub inside one Docker container published on 127.0.0.1. The hub starts Claude Code, the voice engine, Blender, Remotion and an Instagram browser. Claude talks to Anthropic, the browser to Instagram, the hub reads analytics through Composio. All brand data stays on your machine.</desc>
+  <desc id="d">The Reel Studio window talks to the hub, which listens on 127.0.0.1 only. The hub starts Claude Code, the voice engine, Blender, Remotion and an Instagram browser. Claude talks to Anthropic, the browser to Instagram, the hub reads analytics through Composio. All brand data stays on your machine.</desc>
   <defs>
     <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#8b93a1"/></marker>
     <marker id="r" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#d94a3d"/></marker>
@@ -21,12 +21,12 @@
   <rect x="0.5" y="0.5" width="1199" height="799" rx="19.5" fill="none" stroke="#2a2f38"/>
 
   <rect class="box" x="40" y="300" width="150" height="96" rx="12"/>
-  <text class="h" x="115" y="338" text-anchor="middle">Your browser</text>
-  <text class="s" x="115" y="361" text-anchor="middle">127.0.0.1:4000</text>
-  <text class="s" x="115" y="380" text-anchor="middle">token login</text>
+  <text class="h" x="115" y="338" text-anchor="middle">The app window</text>
+  <text class="s" x="115" y="361" text-anchor="middle">Electron, tray, notifications</text>
+  <text class="s" x="115" y="380" text-anchor="middle">signed in by itself</text>
 
   <rect x="230" y="30" width="700" height="745" rx="18" fill="#12151a" stroke="#d94a3d" stroke-opacity="0.55" stroke-width="2"/>
-  <text class="c" x="254" y="58">DOCKER CONTAINER reel-hub (127.0.0.1 only)</text>
+  <text class="c" x="254" y="58">THE HUB (127.0.0.1 only)</text>
 
   <rect class="hub" x="255" y="80" width="200" height="520" rx="14"/>
   <text class="h" x="355" y="130" text-anchor="middle">Hub</text>
@@ -58,13 +58,13 @@
 
   <rect class="box" x="510" y="440" width="395" height="76" rx="12"/>
   <text class="h" x="707" y="472" text-anchor="middle">Instagram browser</text>
-  <text class="s" x="707" y="496" text-anchor="middle">Chromium + Playwright, one profile per brand, noVNC login</text>
+  <text class="s" x="707" y="496" text-anchor="middle">Chromium + Playwright, one profile per brand</text>
 
   <rect class="data" x="255" y="640" width="650" height="112" rx="14"/>
   <text class="h" x="580" y="672" text-anchor="middle">Per-brand data on your machine, outside git</text>
-  <text class="s" x="580" y="698" text-anchor="middle">brand/&lt;slug&gt;/ and reels/&lt;slug&gt;/ (your project folder, same path inside and out)</text>
-  <text class="s" x="580" y="720" text-anchor="middle">platform/data/brands/&lt;slug&gt;/ (settings, daily plans, analytics, series)</text>
-  <text class="s" x="580" y="742" text-anchor="middle">Instagram login profile (Docker volume)</text>
+  <text class="s" x="580" y="698" text-anchor="middle">~/ReelStudio/data/brands/&lt;slug&gt;/ : one folder per brand</text>
+  <text class="s" x="580" y="720" text-anchor="middle">identity, character, reels and their code, settings, daily plans, analytics</text>
+  <text class="s" x="580" y="742" text-anchor="middle">and the Instagram login, in the same folder</text>
 
   <rect class="ext" x="975" y="80" width="195" height="76" rx="12"/>
   <text class="h" x="1072" y="112" text-anchor="middle">Anthropic</text>

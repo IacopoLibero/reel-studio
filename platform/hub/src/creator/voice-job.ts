@@ -93,7 +93,7 @@ async function checkServer(server: VoiceServer): Promise<void> {
     const r = await fetch(`${server.url}/health`, { signal: AbortSignal.timeout(4000) });
     if (r.ok) return;
   } catch { /* falls through to the message */ }
-  throw new Error("VoiceStudio is not running. Start it with scripts/ensure-voice.sh (or start the reel-hub container), then try again.");
+  throw new Error("VoiceStudio is not running. It is started by the Reel Studio app: finish the Voice step of the setup, then try again.");
 }
 
 /**

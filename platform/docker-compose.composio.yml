@@ -1,5 +1,0 @@
-# Added by the scripts when ~/.composio exists: the Composio CLI login for the analytics page (read-only).
-services:
-  reel-hub:
-    volumes:
-      - ${HOST_HOME}/.composio:${HOST_HOME}/.composio:ro

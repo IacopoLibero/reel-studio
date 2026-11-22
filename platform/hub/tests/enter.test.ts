@@ -44,7 +44,7 @@ describe("enter routes", () => {
   beforeEach(async () => {
     tmp = mkdtempSync(join(tmpdir(), "enter-"));
     mkdirSync(join(tmp, "data")); mkdirSync(join(tmp, "web")); writeFileSync(join(tmp, "web/index.html"), "<html></html>");
-    const config: Config = { port: 0, host: "127.0.0.1", dataDir: join(tmp, "data"), root: join(tmp, "ws"), token: TOKEN, webDir: join(tmp, "web"), novncTarget: "http://127.0.0.1:1", claudeBin: "/nonexistent", blogDir: join(tmp, "b"), terminalCmd: null };
+    const config: Config = { port: 0, host: "127.0.0.1", dataDir: join(tmp, "data"), root: join(tmp, "ws"), token: TOKEN, webDir: join(tmp, "web"), claudeBin: "/nonexistent", blogDir: join(tmp, "b"), terminalCmd: null };
     app = (await buildApp(config)).app; await app.ready();
   });
   afterEach(async () => { await app.close(); rmSync(tmp, { recursive: true, force: true }); });

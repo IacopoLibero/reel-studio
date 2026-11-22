@@ -1,5 +1,4 @@
 import { chromium, type BrowserContext, type Page } from 'playwright';
-import { existsSync } from 'node:fs';
 import { systemChrome } from './chrome-path.js';
 import { canReuse, launchMode, type ContextOptions } from './launch-mode.js';
 import { SchedulerError } from './types.js';
@@ -11,7 +10,8 @@ let context: BrowserContext | null = null;
 let contextProfile: string | null = null;
 let contextVisible = false;
 
-export const DEFAULT_PROFILE = process.env.CHROME_PROFILE ?? '/data/chrome-profile';
+/** Used only by the scheduler's own tests; the hub always names the brand's profile folder. */
+export const DEFAULT_PROFILE = process.env.CHROME_PROFILE ?? '/tmp/reel-studio-chrome-profile';
 
 /**
  * The browser of one Instagram profile. Only one profile is open at a time (the scheduler lock already runs one browser flow
@@ -26,15 +26,14 @@ export async function getContext(profileDir: string = DEFAULT_PROFILE, opts: Con
       await closeBrowser();
     } catch { context = null; contextProfile = null; contextVisible = false; }
   }
-  const mode = launchMode(opts, process.env, existsSync('/.dockerenv'));
+  const mode = launchMode(opts);
   const ctx = await chromium.launchPersistentContext(profileDir, {
     headless: mode.headless,
     viewport: VIEWPORT,
     locale: 'en-US',
     timezoneId: 'Europe/Rome',
     executablePath: systemChrome(),
-    env: { ...process.env, DISPLAY: process.env.DISPLAY_IG ?? process.env.DISPLAY ?? ':99' } as Record<string, string>,
-    args: mode.args,
+        args: mode.args,
   });
   ctx.on('close', () => { if (context === ctx) { context = null; contextProfile = null; contextVisible = false; } });
   context = ctx;
@@ -74,6 +73,6 @@ export async function detectLogin(page: Page, url = IG_URL): Promise<boolean> {
 
 export async function requireLogin(page: Page, url = IG_URL): Promise<void> {
   if (!(await detectLogin(page, url))) {
-    throw new SchedulerError('login_required', 'Instagram is logged out: log in through the noVNC window');
+    throw new SchedulerError('login_required', 'Instagram is logged out: log in again in Settings > Instagram');
   }
 }

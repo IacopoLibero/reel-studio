@@ -1,9 +1,6 @@
 # Brand template
 
-Do not edit this folder for a real brand. Create a brand from it:
+Do not edit this folder for a real brand: the Reel Studio app reads it when you press **New brand**, fills in `{{BRAND}}` and the details you give (name, website, colours, voice), and makes the brand's folder in your data folder, `data/brands/<slug>/`.
 
-    ./scripts/new-brand.sh my-brand
-
-That makes `brand/my-brand/` (with `identity/`, `reels/` and a question list in your data folder), fills in `{{BRAND}}` and asks for the name, website and colours.
-Put the brand logo in `brand/my-brand/identity/logo.png`
-and record the voice sample as described in `.claude/skills/reel/voice-sample.md`. A brand with no logo has none on its covers.
+A brand's logo is a PNG saved as `identity/logo.png` (the New brand form and Settings take it). A brand with no logo has none on its covers.
+The voice sample is described in `.claude/skills/reel/voice-sample.md`.

@@ -10,7 +10,6 @@ export interface Config {
   root: string;
   token: string;
   webDir: string;
-  novncTarget: string;
   claudeBin: string;
   blogDir: string;
   terminalCmd: string | null;
@@ -32,12 +31,11 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
   const root = defaultRoot(env);
   return {
     port: Number(env.HUB_PORT ?? 4000),
-    host: env.HUB_HOST ?? (existsSync("/.dockerenv") ? "0.0.0.0" : "127.0.0.1"),
+    host: env.HUB_HOST ?? "127.0.0.1",
     dataDir,
     root,
     token,
     webDir,
-    novncTarget: env.HUB_NOVNC_URL ?? "http://127.0.0.1:6080",
     claudeBin: env.HUB_CLAUDE_BIN ?? "claude",
     // Optional folder of source texts (blog posts) the ideas jobs read. Default: sources/blog inside the project.
     blogDir: env.HUB_BLOG_DIR?.trim() || join(root, "sources", "blog"),
