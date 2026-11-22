@@ -109,7 +109,7 @@ Everything of yours lives in **one folder**, `STUDIO_HOME` (default `~/ReelStudi
 | **A brand: one folder** | `$STUDIO_HOME/data/brands/<slug>/` | no |
 |  its identity: `brand.json`, style guide, logo (and the voice when there is no character) | `.../<slug>/identity/` | |
 |  its character: Blender script, model, voice, rendered moves, reference sheet | `.../<slug>/mascot/` (`movements/<move>/` holds the frames, `studio/` the reference sheet) | |
-|  its reels: script, MP4, caption, cover, audio | `.../<slug>/reels/<n>-<name>/` | |
+|  its reels: script, MP4, caption, cover, audio, the code, the chat with Claude (`chat.json`) and the last three versions before a chat change (`.versions/`) | `.../<slug>/reels/<n>-<name>/` | |
 |  the hub's data of the brand: question list, settings, schedule, daily plans, analytics, ideas, Instagram login | `.../<slug>/` (`reel-questions.md`, `settings.json`, `scheduled.json`, `profile/`, ...) | |
 | The reels' own code | `.../<slug>/reels/<n>-<name>/code/` (one reel) and `.../<slug>/code/` (shared by the brand's reels) | |
 | Hub state: jobs, settings | `$STUDIO_HOME/data/` (`jobs.json`, `settings.json`) | no |
