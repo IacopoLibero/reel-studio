@@ -53,7 +53,7 @@ async function runScheduleJobLocked(
   const offer = ctx.target?.offer;
   const { caption, dropped: offerLines } = dropExpiredOffer(fileCaption, slot, offer);
 
-  const page = await (await getContext(ctx.target?.profileDir)).newPage();
+  const page = await (await getContext(ctx.target?.profileDir, { visible: true, minimized: true })).newPage();
   try {
     await requireLogin(page, url);
     const scheduledAt = new Date().toISOString();
@@ -101,7 +101,7 @@ export function getSessionStatus(target?: SchedulerTarget): Promise<{ loggedIn: 
 /** Opens (or focuses) the Instagram window of a brand on the Xvfb display so the user can log in through noVNC. */
 export function openLoginWindow(target?: SchedulerTarget): Promise<void> {
   return maybeLocked(target, async () => {
-    const ctx = await getContext(target?.profileDir);
+    const ctx = await getContext(target?.profileDir, { visible: true });
     const page = ctx.pages()[0] ?? (await ctx.newPage());
     await page.goto('https://www.instagram.com/accounts/login/', { waitUntil: 'domcontentloaded' });
     await page.bringToFront();

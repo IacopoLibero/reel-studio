@@ -1,5 +1,7 @@
 import { chromium, type BrowserContext, type Page } from 'playwright';
+import { existsSync } from 'node:fs';
 import { systemChrome } from './chrome-path.js';
+import { canReuse, launchMode, type ContextOptions } from './launch-mode.js';
 import { SchedulerError } from './types.js';
 
 export const IG_URL = process.env.IG_SCHEDULE_URL ?? 'https://www.instagram.com/scheduled_content/';
@@ -7,6 +9,7 @@ export const VIEWPORT = { width: 1568, height: 727 };
 
 let context: BrowserContext | null = null;
 let contextProfile: string | null = null;
+let contextVisible = false;
 
 export const DEFAULT_PROFILE = process.env.CHROME_PROFILE ?? '/data/chrome-profile';
 
@@ -14,26 +17,29 @@ export const DEFAULT_PROFILE = process.env.CHROME_PROFILE ?? '/data/chrome-profi
  * The browser of one Instagram profile. Only one profile is open at a time (the scheduler lock already runs one browser flow
  * at a time across all brands): asking for another profile closes the current one first.
  */
-export async function getContext(profileDir: string = DEFAULT_PROFILE): Promise<BrowserContext> {
+export async function getContext(profileDir: string = DEFAULT_PROFILE, opts: ContextOptions = {}): Promise<BrowserContext> {
+  const needsWindow = opts.visible === true;
   if (context) {
     try {
       context.pages(); // throws if closed
-      if (contextProfile === profileDir) return context;
+      if (contextProfile !== null && canReuse({ profile: contextProfile, visible: contextVisible }, profileDir, needsWindow)) return context;
       await closeBrowser();
-    } catch { context = null; contextProfile = null; }
+    } catch { context = null; contextProfile = null; contextVisible = false; }
   }
+  const mode = launchMode(opts, process.env, existsSync('/.dockerenv'));
   const ctx = await chromium.launchPersistentContext(profileDir, {
-    headless: process.env.SCHED_HEADLESS === '1',
+    headless: mode.headless,
     viewport: VIEWPORT,
     locale: 'en-US',
     timezoneId: 'Europe/Rome',
     executablePath: systemChrome(),
     env: { ...process.env, DISPLAY: process.env.DISPLAY_IG ?? process.env.DISPLAY ?? ':99' } as Record<string, string>,
-    args: process.env.CHROME_NO_SANDBOX === '1' ? ['--no-sandbox'] : [],
+    args: mode.args,
   });
-  ctx.on('close', () => { if (context === ctx) { context = null; contextProfile = null; } });
+  ctx.on('close', () => { if (context === ctx) { context = null; contextProfile = null; contextVisible = false; } });
   context = ctx;
   contextProfile = profileDir;
+  contextVisible = !mode.headless;
   return ctx;
 }
 
@@ -44,6 +50,7 @@ export async function closeBrowser(): Promise<void> {
   const c = context;
   context = null;
   contextProfile = null;
+  contextVisible = false;
   await c?.close().catch(() => undefined);
 }
 

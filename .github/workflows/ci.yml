@@ -68,7 +68,7 @@ jobs:
       - uses: actions/checkout@v4
       - name: shellcheck
         run: |
-          shellcheck -x -S warning install.sh update.sh uninstall.sh scripts/*.sh \
+          shellcheck -x -S warning install.sh update.sh uninstall.sh scripts/*.sh packaging/arch/reel-studio \
             platform/docker/entrypoint.sh platform/docker/voicestudio-run platform/docker/blender-run platform/docker/claude-hub
 
   compose:
