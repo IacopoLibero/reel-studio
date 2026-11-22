@@ -22,6 +22,8 @@ import { skillRoutes } from "./routes/skills.js";
 import { creatorRoutes } from "./routes/creator.js";
 import { studioRoutes } from "./routes/studio.js";
 import { EntryNonces } from "./enter.js";
+import { setupVoiceRoutes } from "./routes/setup-voice.js";
+import { VoiceClient } from "./setup/voice-catalog.js";
 import { setupRoutes } from "./routes/setup.js";
 import { SetupInstaller } from "./setup/installer.js";
 import { blender, workspacePackages } from "./setup/steps.js";
@@ -125,6 +127,7 @@ export async function buildApp(config: Config): Promise<{ app: FastifyInstance; 
       workspace: config.root, dataDir: config.dataDir, nodeVersion: process.versions.node, gpu: detectGpu(),
     });
     setupRoutes(api, deps, installer, checkContext);
+    setupVoiceRoutes(api, () => new VoiceClient(`http://127.0.0.1:${Number(process.env.VOICE_PORT ?? 3900)}`));
     const terminal = new Terminal(config);
     api.get("/ws/terminal", { websocket: true }, (socket, req) => {
       if (!sameOrigin(req)) { socket.close(1008, "origin"); return; }

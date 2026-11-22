@@ -101,7 +101,16 @@ export interface VoiceModeInfo { id: string; label: string; description: string;
 export interface StepStatus { state: "idle" | "running" | "done" | "failed"; lines: string[]; error: string | null }
 export interface SetupData { state: { completed: boolean; voiceMode: string | null }; items: SetupItem[]; modes: VoiceModeInfo[]; recommended: string; steps: Record<string, StepStatus> }
 
+export interface VoiceModelRow { repoId: string; label: string; role: string; sizeGb: number; required: boolean; note: string; installed: boolean }
+export interface VoiceProvider { id: string; label: string; local: boolean; notes: string; needsKey: boolean; hasKey: boolean; signupUrl: string }
+export interface VoicePlan { repoId: string; ready: boolean; blockers: string[]; planId: string; planDigest: string; components: { id: string; revision: string; license: string; url: string }[]; documents: { id: string; title: string; url: string }[]; acknowledgement: string }
+export interface VoiceSetup { running: boolean; message?: string; models: VoiceModelRow[]; llm: { active: string; providers: VoiceProvider[] }; status: { jobs?: { state?: string; repo_id?: string; progress?: number }[] } | null }
+
 export const api = {
+  setupVoice: () => call<VoiceSetup>("GET", "/api/setup/voice"),
+  setupVoicePlan: (repoId: string) => call<VoicePlan>("POST", "/api/setup/voice/plan", { repoId }),
+  setupVoiceInstall: (p: VoicePlan, acknowledged: boolean) => call<{ started: boolean }>("POST", "/api/setup/voice/install", { planId: p.planId, planDigest: p.planDigest, documentIds: p.documents.map((d) => d.id), acknowledged }),
+  setupVoiceLlm: (provider: string, apiKey?: string) => call<{ provider: string }>("PUT", "/api/setup/voice/llm", { provider, ...(apiKey ? { apiKey } : {}) }),
   setup: () => call<SetupData>("GET", "/api/setup"),
   setupVoiceMode: (id: string) => call<{ voiceMode: string }>("PUT", "/api/setup/voice-mode", { id }),
   setupStep: (id: string) => call<{ started: boolean; status: StepStatus }>("POST", `/api/setup/steps/${encodeURIComponent(id)}`),

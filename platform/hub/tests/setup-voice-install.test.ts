@@ -57,6 +57,12 @@ describe("installVoiceStudio", () => {
     expect(calls).not.toContain("weights");
     expect(calls).toContain("POST /engines/select");
   });
+  it("fails (and stops the server) when the model weights cannot be downloaded, instead of reporting a finished install", async () => {
+    const { deps, calls } = fakes({ downloadWeights: async () => { throw new Error("network down"); } });
+    await expect(installVoiceStudio({ dataDir: tmp }, voiceMode("gpu-voxcpm2")!, () => {}, deps)).rejects.toThrow(/network down/);
+    expect(calls).toContain("stop");
+    expect(calls).not.toContain("POST /engines/select");
+  });
   it("does nothing for the 'none' mode", async () => {
     const { deps, calls } = fakes();
     await installVoiceStudio({ dataDir: tmp }, voiceMode("none")!, () => {}, deps);

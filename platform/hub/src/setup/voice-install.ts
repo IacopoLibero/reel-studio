@@ -145,8 +145,9 @@ function realDeps(ctx: VoiceContext): VoiceInstallDeps {
         "        if m.get('id') == 'openbmb/VoxCPM2':", "            rev = m.get('runtime_revision') or m.get('revision')", "except Exception:", "    pass",
         "snapshot_download('openbmb/VoxCPM2', revision=rev)",
       ].join("\n");
+      // A failed download fails the step: the voice does not work without the model. Pressing Install again continues where it stopped.
       await runCommand(py, ["-I", "-c", script], { cwd: voiceProject(c.dataDir), env: { ...voiceEnv(c, { device: "gpu" }), HF_HUB_DISABLE_PROGRESS_BARS: "1" } }, log)
-        .catch(() => log("model download failed: it will be fetched on first use"));
+        .catch((e: unknown) => { throw new Error(`The voice model did not download. Press Install again to continue. ${e instanceof Error ? e.message : String(e)}`); });
     },
     sleep: (ms) => new Promise((r) => setTimeout(r, ms)),
   };

@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { api, type SetupData, type SetupItem } from "../api";
+import { SetupVoice } from "./SetupVoice";
 
 const stateText = { idle: "", running: "Installing…", done: "Done", failed: "Failed" } as const;
 
@@ -46,6 +47,14 @@ export function SetupPage({ onFinished, onSkip }: { onFinished: () => void; onSk
         ))}
       </div>
       {chosen && chosen.needsGpu && data.items.find((i) => i.id === "gpu")?.status === "missing" && <p className="error">No NVIDIA graphics card was found, so this mode will not work. Pick a processor mode.</p>}
+
+      {data.items.find((i) => i.id === "voicestudio")?.status === "ok" && (
+        <>
+          <h2>Voice models</h2>
+          <p className="sub">Choose which models VoiceStudio downloads. You can come back here later from Setup.</p>
+          <SetupVoice />
+        </>
+      )}
 
       <div className="row wrap" style={{ marginTop: 16 }}>
         <button className="btn primary" type="button" disabled={blockers.length > 0 || running} onClick={finish}>Finish setup</button>
