@@ -63,6 +63,7 @@ Factory rules:
 - Use the voice that style.md names (the brand's voice sample). Make one version only.
 - Do not edit the brand's question list (reel-questions.md) and do not tick the question: the hub does it when you finish.
 - Remotion finds the logo, the character's moves, the sounds and the reels' voice files by itself, from this brand's own folder (the hub sets REEL_BRAND). Never copy files into a public/ folder.
+- The reel's own code goes in ${dir}/code/ (index.ts, Root.tsx, the scenes), never in the workspace's \`src/\`. Code that several of this brand's reels share goes in ${i.brandDir}/code/. Import the program's kit by alias (\`@kit/theme\`, \`@kit/Captions\`, \`@cover/Cover\`), never by a relative path. Render with \`REEL_BRAND=${i.brand} npx remotion render ${dir}/code/index.ts <CompositionId> ...\` from the workspace.
 ${movesText(i)}
 - Never schedule on Instagram and never post. Skip step 14.
 - Do not run git, docker, systemctl, kill or rm -rf. Do not touch other reels' folders.

@@ -14,7 +14,7 @@ Acme Cafe (style guide, question list, logo, voice sample, reel scripts and capt
 its Blender builder and renders). A real brand and its character keep working on the owner's machine, outside git, and are "just another brand" created by the same mechanism.
 - Private (in your studio folder, outside this repository): `data/brands/<slug>/` for every brand (identity, character, reels and the hub's data: see section 2) and, in `workspace/src/`, the branded Remotion compositions (every folder of `src/` except `src/kit` and `src/cover`, and the characters' components). The common sounds (`sfx/`) are shipped by the program. The brand template stays in the repository (`brand/_template`) and is read from there. One rule block in `.gitignore` covers all of it; the README explains it ("Your brands are not in git").
 - The public tree must typecheck, test, build and start with all of that absent. `src/Root.tsx` registers only generic compositions (`Cover`, shell);
-  every reel is rendered from its own entry (`npx remotion render src/r<n>/index.ts ...`) as today, so branded code can simply be absent.
+  every reel is rendered from its own entry (`npx remotion render <brand folder>/reels/<n>-<name>/code/index.ts ...`), so branded code can simply be absent.
   Moving a branded folder must not break the user's working tree: do it by ignoring, not by moving, unless a move is cleaner and all imports are fixed.
 - Git history: the repository starts from a clean history that holds no brand content.
 

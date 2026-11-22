@@ -12,14 +12,30 @@
     "esModuleInterop": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
-    "noUnusedLocals": true
+    "noUnusedLocals": true,
+    "baseUrl": ".",
+    "paths": {
+      "@kit/*": [
+        "src/kit/*"
+      ],
+      "@cover/*": [
+        "src/cover/*"
+      ],
+      "*": [
+        "node_modules/@types/*",
+        "node_modules/*"
+      ]
+    }
   },
   "exclude": [
     "node_modules",
     "platform",
-    "remotion.config.ts"
+    "remotion.config.ts",
+    "src/_tmp"
   ],
   "include": [
-    "src"
+    "src",
+    "../data/brands/*/code",
+    "../data/brands/*/reels/*/code"
   ]
 }

@@ -221,7 +221,7 @@ image tool (flat 2D vector, your colours, a sheet with views and eight expressio
 **This is experimental: it needs iteration and may not give a finished character**, and turning an approved preview into the moves
 the reels use is still manual work. A brand with no character uses full-width scenes and works completely.
 
-**Your brands are not in this repository.** They live in your studio folder (default `~/ReelStudio`): `data/brands/<name>/` is one brand: `identity/` (brand.json, style guide, logo), `mascot/` (the character, its voice and its rendered moves) and `reels/` (one folder per reel, audio included); its question list, the hub's data of the brand and its Instagram login are in the same folder, so a brand is one folder to back up, move or delete. `workspace/src/` has your branded Remotion code; the sounds every reel can use are in `sfx/` of the program. Back that folder up yourself (a private repository, a drive).
+**Your brands are not in this repository.** They live in your studio folder (default `~/ReelStudio`): `data/brands/<name>/` is one brand: `identity/` (brand.json, style guide, logo), `mascot/` (the character, its voice and its rendered moves) and `reels/` (one folder per reel: audio, video, and the reel's own code in `code/`), `code/` (code the brand's reels share); its question list, the hub's data of the brand and its Instagram login are in the same folder, so a brand is one folder to back up, move or delete. `workspace/src/` has your branded Remotion code; the sounds every reel can use are in `sfx/` of the program. Back that folder up yourself (a private repository, a drive).
 
 ## The daily loop and its approvals
 
@@ -265,7 +265,7 @@ These optional variables change where the app looks (set them in the environment
 
 | Variable | Default | What it does |
 |---|---|---|
-| `REEL_STUDIO_HOME` | `~/ReelStudio` | Your studio folder: `workspace/` (your Remotion code), `data/` (brands, hub state, `tools/`). Never touched by the package. |
+| `REEL_STUDIO_HOME` | `~/ReelStudio` | Your studio folder: `workspace/` (the Remotion project the program fills), `data/` (brands, hub state, `tools/`). Never touched by the package. |
 | `HUB_PORT` | `4000` | Port of the hub, on `127.0.0.1` only. |
 | `VOICE_PORT` | `3900` | Port of VoiceStudio, on `127.0.0.1` only. |
 | `HUB_TOKEN` | random | Fixed token instead of the one in `data/dev-token`. |
@@ -338,7 +338,7 @@ An installation made before brands existed may still carry `BRAND`, `IG_USER_ID`
 
 **Can I use another AI than Claude?** The jobs run headless Claude Code. Only the brand interview can use `codex` or a custom command, and those are untested.
 
-**Where is my data?** In your studio folder, `~/ReelStudio` by default: `data/brands/<name>/` (one folder per brand: identity, character, reels, question list, Instagram login) and `workspace/` (your Remotion code). Docker volumes hold only the voice engine, its models and caches. [platform/README.md](platform/README.md) shows how to back it up.
+**Where is my data?** In your studio folder, `~/ReelStudio` by default: `data/brands/<name>/` (one folder per brand: identity, character, reels, question list, Instagram login) and `workspace/` (the Remotion project the program fills; your reels' code is in the brand folders). Docker volumes hold only the voice engine, its models and caches. [platform/README.md](platform/README.md) shows how to back it up.
 
 ## Project layout
 
@@ -350,7 +350,7 @@ install.sh update.sh uninstall.sh   install, update, remove the Docker setup
 platform/                           compose files, Dockerfile, the hub (platform/hub), docs, vendored Ootto skills
 platform/docs/                      DESIGN (the hub), DAILY (skills, analytics, daily loop), BRANDS (multi-brand)
 scripts/                            voice, slot queue, new-brand, migrate-layout, migrate-brand-folders, the public folder of a render, smoke test, helpers
-src/                                generic Remotion kit (src/kit) and cover (src/cover); your reel code is in your workspace, outside this repository
+src/                                generic Remotion kit (src/kit) and cover (src/cover); your reels' code is in each brand's folder (`reels/<n>-<name>/code/`), outside this repository
 brand/_template/                    the template new brands are made from (read from here, not copied into the workspace)
 sfx/                                the sounds every reel can use (read from here)
 .claude/skills/                     the reel skill and its helpers (reel, reel-hooks, reel-research, reel-insights, reel-threads)

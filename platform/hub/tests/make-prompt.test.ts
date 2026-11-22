@@ -42,4 +42,11 @@ describe("buildReelPrompt", () => {
     expect(MAKE_ALLOWED_TOOLS).toContain("Bash");
     for (const d of ["rm -rf", "git", "docker", "systemctl", "kill"]) expect(MAKE_DENIED_TOOLS).toContain(`Bash(${d}:*)`);
   });
+
+  it("tells Claude where the reel's code goes, and to import the kit by alias", () => {
+    const p = buildReelPrompt(base);
+    expect(p).toContain(`/d/brands/acme/reels/22-paper-menu/code/`);
+    expect(p).toMatch(/@kit\/theme/);
+    expect(p).toMatch(/never in the workspace's `src\/`/i);
+  });
 });
