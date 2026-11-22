@@ -30,7 +30,20 @@ Config.setVideoImageFormat("jpeg");
 Config.setOverwriteOutput(true);
 Config.setDefaultPremountInSeconds(2);
 Config.setPublicDir(publicDir);
+/**
+ * A reel's code may live outside the workspace (in its brand folder). It reaches the kit through the aliases `@kit` and `@cover`
+ * and finds the packages (react, remotion) in the workspace's node_modules wherever the file is.
+ */
 Config.overrideBundlerConfig((config) => ({
   ...config,
-  resolve: { ...config.resolve, alias: { ...(config.resolve?.alias as Record<string, string> | undefined), "brand-theme": themeFile(workspace, brandsDir, slug) } },
+  resolve: {
+    ...config.resolve,
+    modules: [join(workspace, "node_modules"), ...(config.resolve?.modules ?? ["node_modules"])],
+    alias: {
+      ...(config.resolve?.alias as Record<string, string> | undefined),
+      "brand-theme": themeFile(workspace, brandsDir, slug),
+      "@kit": join(workspace, "src", "kit"),
+      "@cover": join(workspace, "src", "cover"),
+    },
+  },
 }));
