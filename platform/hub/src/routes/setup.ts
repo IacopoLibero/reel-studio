@@ -8,7 +8,7 @@ import { recommendMode, voiceMode, VOICE_MODES } from "../setup/voice-modes.js";
 import { HttpError } from "./scope.js";
 
 /** The steps the screen can start. */
-export const INSTALL_STEPS = ["workspace-packages", "whisper", "blender", "voicestudio"] as const;
+export const INSTALL_STEPS = ["workspace-packages", "whisper", "remotion-skills", "blender", "voicestudio"] as const;
 
 /** The first-run setup screen: what is installed, the voice mode, and the install steps the app runs itself. */
 export function setupRoutes(app: FastifyInstance, d: AppDeps, installer: SetupInstaller, context: () => CheckContext): void {

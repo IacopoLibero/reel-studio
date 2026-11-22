@@ -52,3 +52,19 @@ describe("clearEmptyMountPoint", () => {
     expect(clearEmptyMountPoint(join(tmp, "nope"))).toBe(false);
   });
 });
+
+import { countRemotionSkills } from "../src/setup/steps.js";
+import { writeFileSync as wf } from "node:fs";
+
+describe("countRemotionSkills", () => {
+  it("counts the remotion-* folders in .claude/skills", () => {
+    mk(join(tmp, ".claude", "skills", "remotion-docs"), { recursive: true });
+    mk(join(tmp, ".claude", "skills", "remotion-captions"), { recursive: true });
+    mk(join(tmp, ".claude", "skills", "reel"), { recursive: true });
+    wf(join(tmp, ".claude", "skills", "remotion-file"), "x");
+    expect(countRemotionSkills(tmp)).toBe(2);
+  });
+  it("is 0 when there is no skills folder", () => {
+    expect(countRemotionSkills(tmp)).toBe(0);
+  });
+});

@@ -19,6 +19,9 @@ const BASE = `http://127.0.0.1:${PORT}`;
 const HUB_DIR = resolve(__dirname, "../hub");
 const COMMAND = process.env.REEL_STUDIO_COMMAND || "/usr/bin/reel-studio";
 const hiddenStart = process.argv.includes("--hidden");
+// The name the desktop shows on notifications and in the tray (the package name is "reel-studio-desktop").
+app.setName("Reel Studio");
+app.setDesktopName("reel-studio.desktop");
 
 let win = null, tray = null, hub = null, quitting = false, poller = null;
 
@@ -117,3 +120,6 @@ async function quit() {
 // With a tray the app lives on after its window closes; without one there would be no way back, so closing the window quits.
 app.on("window-all-closed", () => { if (!tray) void quit(); });
 app.on("before-quit", () => { quitting = true; });
+// The hub must never outlive the app: a logout, a shutdown or a kill of the app (SIGTERM, SIGINT, SIGHUP) stops it too.
+for (const sig of ["SIGTERM", "SIGINT", "SIGHUP"]) process.on(sig, () => { void quit(); });
+process.on("exit", () => { if (hub && hub.child.exitCode === null) hub.child.kill("SIGTERM"); });

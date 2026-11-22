@@ -1,4 +1,4 @@
-import { existsSync } from "node:fs";
+import { existsSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 
 /** One thing Reel Studio needs on this computer, as the setup screen shows it. */
@@ -32,6 +32,9 @@ const nodeOk = (v: string): boolean => {
   const [maj = 0, min = 0] = v.split(".").map(Number);
   return maj > MIN_NODE[0]! || (maj === MIN_NODE[0] && min >= MIN_NODE[1]!);
 };
+const remotionSkillsPresent = (workspace: string): boolean => {
+  try { return readdirSync(join(workspace, ".claude", "skills")).some((n) => n.startsWith("remotion-")); } catch { return false; }
+};
 const first = (which: CheckContext["which"], names: string[]): string | null => names.map(which).find((p): p is string => !!p) ?? null;
 
 function tool(id: string, label: string, found: string | null, hint: string, required = true): SetupItem {
@@ -51,6 +54,7 @@ export function runChecks(ctx: CheckContext): SetupItem[] {
     tool("uv", "uv (installs the voice's Python packages)", first(ctx.which, ["uv"]), "sudo pacman -S uv", false),
     { ...tool("build-tools", "Build tools (make, g++): they build whisper.cpp", ctx.which("make") && ctx.which("g++") ? "make, g++" : null, "sudo pacman -S base-devel"), required: true },
     { id: "workspace-packages", label: "Remotion and the video packages", status: existsSync(join(ctx.workspace, "node_modules", "remotion", "package.json")) ? "ok" : "missing", required: true, auto: true, detail: ctx.workspace, hint: "The app installs them (about 600 MB)." },
+    { id: "remotion-skills", label: "Remotion agent skills (help Claude write the videos)", status: remotionSkillsPresent(ctx.workspace) ? "ok" : "missing", required: false, auto: true, detail: join(ctx.workspace, ".claude", "skills"), hint: "The app downloads them from remotion-dev/skills (needs internet)." },
     { id: "whisper", label: "Whisper (times each word of the narration)", status: existsSync(join(ctx.workspace, "whisper.cpp", "main")) && existsSync(join(ctx.workspace, "whisper.cpp", "ggml-medium.bin")) ? "ok" : "missing", required: true, auto: true, detail: join(ctx.workspace, "whisper.cpp"), hint: "The app builds whisper.cpp and downloads its model (about 1.5 GB)." },
     { ...tool("blender", "Blender (the character)", blender, "The app downloads Blender, or install it with `sudo pacman -S blender`.", false), auto: true },
     { id: "voicestudio", label: "VoiceStudio (the voice)", status: existsSync(voiceProject) ? "ok" : "missing", required: false, auto: true, detail: toolsDir(ctx.dataDir, "voicestudio"), hint: "The app installs it with the voice mode you choose." },

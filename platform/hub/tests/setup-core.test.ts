@@ -70,6 +70,11 @@ describe("checks", () => {
     writeFileSync(join(w, "ggml-medium.bin"), "");
     expect(byId(runChecks(ctx()), "whisper")?.status).toBe("ok");
   });
+  it("sees the Remotion agent skills once one is in the workspace, and offers to fetch them", () => {
+    expect(byId(runChecks(ctx()), "remotion-skills")).toMatchObject({ status: "missing", required: false, auto: true });
+    mkdirSync(join(tmp, "workspace", ".claude", "skills", "remotion-best-practices"), { recursive: true });
+    expect(byId(runChecks(ctx()), "remotion-skills")?.status).toBe("ok");
+  });
   it("treats uv as optional: only the voice needs it", () => {
     expect(byId(runChecks(ctx()), "uv")).toMatchObject({ status: "missing", required: false });
   });

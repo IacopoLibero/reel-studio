@@ -1,4 +1,5 @@
 import { chromium, type BrowserContext, type Page } from 'playwright';
+import { systemChrome } from './chrome-path.js';
 import { SchedulerError } from './types.js';
 
 export const IG_URL = process.env.IG_SCHEDULE_URL ?? 'https://www.instagram.com/scheduled_content/';
@@ -26,7 +27,7 @@ export async function getContext(profileDir: string = DEFAULT_PROFILE): Promise<
     viewport: VIEWPORT,
     locale: 'en-US',
     timezoneId: 'Europe/Rome',
-    executablePath: process.env.CHROME_PATH || undefined,
+    executablePath: systemChrome(),
     env: { ...process.env, DISPLAY: process.env.DISPLAY_IG ?? process.env.DISPLAY ?? ':99' } as Record<string, string>,
     args: process.env.CHROME_NO_SANDBOX === '1' ? ['--no-sandbox'] : [],
   });

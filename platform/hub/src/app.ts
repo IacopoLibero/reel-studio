@@ -26,7 +26,7 @@ import { setupVoiceRoutes } from "./routes/setup-voice.js";
 import { VoiceClient } from "./setup/voice-catalog.js";
 import { setupRoutes } from "./routes/setup.js";
 import { SetupInstaller } from "./setup/installer.js";
-import { blender, whisper, workspacePackages } from "./setup/steps.js";
+import { blender, remotionSkills, whisper, workspacePackages } from "./setup/steps.js";
 import { ensureToolBin } from "./setup/bin.js";
 import { installVoiceStudio } from "./setup/voice-install.js";
 import { readSetup } from "./setup/state.js";
@@ -114,7 +114,7 @@ export async function buildApp(config: Config): Promise<{ app: FastifyInstance; 
     }
     skillRoutes(api, config.root);
     const stepContext = { workspace: config.root, dataDir: config.dataDir, programRoot: defaultProgramRoot() };
-    const installer = new SetupInstaller(config.dataDir, { "workspace-packages": workspacePackages(stepContext), whisper: whisper(stepContext), blender: async (log) => { await blender(stepContext)(log); ensureToolBin(config.dataDir); },
+    const installer = new SetupInstaller(config.dataDir, { "workspace-packages": workspacePackages(stepContext), whisper: whisper(stepContext), "remotion-skills": remotionSkills(stepContext), blender: async (log) => { await blender(stepContext)(log); ensureToolBin(config.dataDir); },
       voicestudio: async (log) => {
         const mode = voiceMode(readSetup(config.dataDir).voiceMode);
         if (!mode) throw new Error("Choose a voice mode first.");

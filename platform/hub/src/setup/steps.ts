@@ -82,3 +82,22 @@ export const whisper = (c: StepContext): StepFn => async (log) => {
   log("building whisper.cpp and downloading its model (about 1.5 GB)");
   await runCommand("node", [script], { cwd: c.workspace }, log);
 };
+
+/** How many Remotion agent skills the workspace has (folders `remotion-*` in `.claude/skills`). */
+export function countRemotionSkills(workspace: string): number {
+  try { return readdirSync(join(workspace, ".claude", "skills"), { withFileTypes: true }).filter((e) => e.isDirectory() && e.name.startsWith("remotion-")).length; } catch { return 0; }
+}
+
+/**
+ * Fetches the official Remotion agent skills from upstream into the workspace's `.claude/skills` (they are not redistributed: that repository has no licence).
+ * The script itself never fails, so the step checks that skills arrived.
+ */
+export const remotionSkills = (c: StepContext): StepFn => async (log) => {
+  const script = join(c.workspace, "scripts", "install-remotion-skills.sh");
+  if (!existsSync(script)) throw new Error("The workspace has no scripts/install-remotion-skills.sh. Install the video packages first.");
+  log("fetching the Remotion skills from github.com/remotion-dev/skills");
+  await runCommand("bash", [script], { cwd: c.workspace }, log);
+  const n = countRemotionSkills(c.workspace);
+  if (n === 0) throw new Error("No Remotion skill arrived (offline, or GitHub is unreachable). Try again when you are online.");
+  log(`${n} Remotion skills ready`);
+};
