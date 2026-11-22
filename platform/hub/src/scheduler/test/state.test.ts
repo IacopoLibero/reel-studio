@@ -13,6 +13,9 @@ describe('state', () => {
 
   it('derives keys', () => {
     expect(reelKey('/x/brand/acme/reels/9-foo/')).toBe('acme/9-foo');
+    // the layout of the app: <data>/brands/<brand>/reels/<folder>
+    expect(reelKey('/home/u/ReelStudio/data/brands/acme/reels/25-day-guest/')).toBe('acme/25-day-guest');
+    expect(reelKey('/home/u/ReelStudio/data/brands/acme/reels/25-day-guest')).toBe('acme/25-day-guest');
     expect(reelKey('/x/reels/acme/9-foo')).toBe('9-foo'); // the first layout is no longer a brand folder
     expect(reelKey('/x/other/9-foo')).toBe('9-foo');
   });

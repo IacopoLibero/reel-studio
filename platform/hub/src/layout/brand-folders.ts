@@ -68,7 +68,7 @@ const sameContent = (a: string, b: string): boolean => regularFile(a) && regular
 /** A path inside a brand folder as brand.json writes it: relative, never leaving the folder. */
 const safeRel = (p: string | null): p is string => !!p && !p.startsWith("/") && !p.split("/").includes("..") && !/[\u0000-\u001f\\]/.test(p);
 
-const pathsOf = (workspace: string, data: string, slug: string): BrandPaths => brandPaths(slug, { dataDir: data, chromeRoot: null });
+const pathsOf = (workspace: string, data: string, slug: string): BrandPaths => brandPaths(slug, { dataDir: data });
 
 /** What is missing or different in the copy. Extra files in the destination are not a problem (the final audio of public/ is added to the reels). */
 const lacking = (from: string, to: string): string[] => compareTrees(from, to).filter((x) => !x.startsWith("unexpected:"));

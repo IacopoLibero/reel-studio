@@ -27,7 +27,7 @@ export function writeTestBrand(root: string, slug = "acme", over: Partial<BrandI
 /** A registry on a temp root and data folder, with one brand written. */
 export function testRegistry(root: string, data: string, slug = "acme", over: Partial<BrandInput> = {}, questions?: string): { reg: BrandRegistry; ctx: BrandCtx } {
   writeTestBrand(root, slug, over, questions, data);
-  const reg = new BrandRegistry({ root, dataDir: data, chromeRoot: join(data, "chrome"), programRoot: root });
+  const reg = new BrandRegistry({ root, dataDir: data, programRoot: root });
   mkdirSync(reg.paths(slug).dataDir, { recursive: true });
   return { reg, ctx: brandCtx(reg, slug) as BrandCtx };
 }

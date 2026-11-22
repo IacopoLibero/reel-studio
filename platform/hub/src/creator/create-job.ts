@@ -129,7 +129,6 @@ export const brandCreate: Handler = async (job, ctx) => {
   const busy = folders.find((f) => existsSync(f));
   if (busy) throw new BrandError(`The folder ${relative(svc.root, busy) || busy} already exists, so "${brand.slug}" cannot be created. Nothing was changed.`);
 
-  const profileExisted = existsSync(p.profileDir);
   try {
     step(1, `Creating ${brand.slug}`);
     mkdirSync(p.dataDir, { recursive: true });
@@ -177,7 +176,7 @@ export const brandCreate: Handler = async (job, ctx) => {
 
     const summary = {
       slug: brand.slug, name: brand.name, source: req.source, daily: req.dailyLoop, logo, voice: voice ? voiceRelPaths(brand.character).sample : null,
-      character: req.character.mode, folders: [...folders, p.profileDir].map((f) => { const r = relative(svc.root, f); return r.startsWith("..") ? f : r; }),
+      character: req.character.mode, folders: folders.map((f) => { const r = relative(svc.root, f); return r.startsWith("..") ? f : r; }),
       files: listFiles(p.brandDir).filter((f) => !f.startsWith("mascot/movements/")).map((f) => `brand/${brand.slug}/${f}`), nextSteps: NEXT_STEPS,
     };
     writeFileSync(join(p.dataDir, MARKER), JSON.stringify({ requestId, summary }));
@@ -186,7 +185,6 @@ export const brandCreate: Handler = async (job, ctx) => {
     return summary;
   } catch (e) {
     for (const f of folders) rmSync(f, { recursive: true, force: true });
-    if (!profileExisted) rmSync(p.profileDir, { recursive: true, force: true });
     ctx.update({ log: "Rolled back: everything this run created was removed." });
     throw e;
   }

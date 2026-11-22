@@ -1,11 +1,11 @@
 import { existsSync, mkdirSync, readdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { defaultDataDir, defaultProgramRoot, defaultRoot } from "../paths.js";
-import { brandPaths, explicitChromeRoot, type BrandPathOptions, type BrandPaths } from "./paths.js";
+import { brandPaths, type BrandPathOptions, type BrandPaths } from "./paths.js";
 import { brandSchema, isValidSlug, validateBrand, type Brand } from "./schema.js";
 import { fillTemplate } from "./template.js";
 
-export interface RegistryOptions { root?: string; dataDir?: string; chromeRoot?: string; /** The program folder, where brand/_template lives (default: the folder this program runs from). */ programRoot?: string; env?: NodeJS.ProcessEnv }
+export interface RegistryOptions { root?: string; dataDir?: string; /** The program folder, where brand/_template lives (default: the folder this program runs from). */ programRoot?: string; env?: NodeJS.ProcessEnv }
 
 const SKELETON = "## To do\n\n## Done\n";
 
@@ -51,7 +51,6 @@ export function writeBrand(dataDir: string, brand: Brand): void {
 export class BrandRegistry {
   readonly root: string;
   readonly dataDir: string;
-  readonly chromeRoot: string | null;
   /** brand/_template inside the program folder: the starting files of a new brand. */
   readonly templateDir: string;
 
@@ -59,7 +58,6 @@ export class BrandRegistry {
     const env = o.env ?? process.env;
     this.root = o.root ?? defaultRoot(env);
     this.dataDir = o.dataDir ?? defaultDataDir(env);
-    this.chromeRoot = o.chromeRoot ?? explicitChromeRoot(env);
     this.templateDir = join(o.programRoot ?? defaultProgramRoot(), "brand", "_template");
   }
 
@@ -72,7 +70,7 @@ export class BrandRegistry {
   defaultSlug(): string | null { return this.list()[0]?.slug ?? null; }
 
   paths(slug: string, brand: Brand | null = this.get(slug)): BrandPaths {
-    const opts: BrandPathOptions = { dataDir: this.dataDir, chromeRoot: this.chromeRoot, profileDir: brand?.instagram.profileDir ?? null };
+    const opts: BrandPathOptions = { dataDir: this.dataDir };
     return brandPaths(slug, opts);
   }
 

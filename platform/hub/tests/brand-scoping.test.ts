@@ -93,11 +93,11 @@ describe("jobs of a brand", () => {
     expect(buildSpec({ type: "blender.render", params: { move: "hop" } }, d).title).toBe("Re-render Pip move: hop");
     expect(buildSpec({ type: "claude.task", params: { move: "hop", request: "jumps high" } }, d).brand).toBe("acme");
   });
-  it("the scheduler is given the brand's profile, data folder and offer rule", () => {
+  it("the scheduler is given the brand's own profile folder, data folder and offer rule", () => {
     const { ctx } = testRegistry(root, data, "acme", { offer: { lastDay: "2026-11-30", regex: "CODE" }, instagram: { account: "a", userId: "1", profileDir: "/data/chrome-profile" } });
-    expect(targetOf(ctx)).toMatchObject({ slug: "acme", profileDir: "/data/chrome-profile", dataDir: join(data, "brands/acme"), offer: { lastDay: "2026-11-30" } });
+    expect(targetOf(ctx)).toMatchObject({ slug: "acme", profileDir: join(data, "brands/acme/profile"), dataDir: join(data, "brands/acme"), offer: { lastDay: "2026-11-30" } });
     const plain = testRegistry(root, data, "beta").ctx;
-    expect(targetOf(plain).profileDir).toBe(join(data, "chrome", "beta"));
+    expect(targetOf(plain).profileDir).toBe(join(data, "brands/beta/profile"));
     expect(targetOf(plain).offer).toEqual({ lastDay: null, pattern: null });
   });
   it("jobs get the brand in their environment and never the hub token", () => {

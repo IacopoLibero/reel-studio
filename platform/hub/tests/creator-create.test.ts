@@ -181,15 +181,6 @@ describe("safety of brand.create", () => {
     expect(existsSync(env.reg.paths("acme-bakery").profileDir)).toBe(false);
     expect(env.patches.some((p) => String(p.log).includes("Rolled back"))).toBe(true);
   });
-  it("does not remove an existing Instagram profile folder when it rolls back", async () => {
-    const p = env.reg.paths("acme-bakery");
-    mkdirSync(p.profileDir, { recursive: true }); writeFileSync(join(p.profileDir, "Cookies"), "login");
-    const ctx = env.ctx(job("brand.create", "acme-bakery", {}));
-    const sheet = env.svc.uploads.put("sheet", PNG);
-    env.svc.uploads.remove(sheet.id);
-    await expect(brandCreate(job("brand.create", "acme-bakery", { source: "form", requestId: "6".repeat(32), brand: formBrand(), character: { mode: "create", name: "B", sheetUpload: sheet.id } }), ctx)).rejects.toThrow(/gone/);
-    expect(readFileSync(join(p.profileDir, "Cookies"), "utf8")).toBe("login");
-  });
   it("needs the creator services", async () => {
     await expect(brandCreate(job("brand.create", "x", {}), { ...env.ctx(job("brand.create", "x", {})), creator: undefined })).rejects.toThrow(/not available/);
   });

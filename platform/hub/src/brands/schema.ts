@@ -60,7 +60,8 @@ export const brandSchema = z.object({
     account: z.string().regex(/^[A-Za-z0-9._]{0,40}$/, "Account name has invalid characters").default(""),
     userId: z.string().regex(/^\d{0,30}$/, "The Instagram user id is only digits").default(""),
     /** Absolute folder of the browser profile. Empty = <chrome profile root>/<slug>. Set for a profile that already existed. */
-    profileDir: z.string().max(300).nullable().default(null),
+    /** Ignored: the Instagram login is always in the brand's own folder (`profile/`). Kept so a brand.json that still has the field stays valid. */
+  profileDir: z.string().max(300).nullable().default(null),
   }).default({ account: "", userId: "", profileDir: null }),
   sources: z.object({ blogDir: z.string().max(400).nullable() }).default({ blogDir: null }),
   character: z.object({

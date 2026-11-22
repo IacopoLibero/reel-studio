@@ -1,21 +1,13 @@
-import { existsSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { defaultDataDir } from "../paths.js";
 import { isValidSlug } from "./schema.js";
 
-/** The old shared browser-profile root from the environment (CHROME_PROFILE_ROOT, else the legacy CHROME_PROFILE), or null: with none, each brand's login lives in its own data folder. */
-export const explicitChromeRoot = (env: NodeJS.ProcessEnv = process.env): string | null =>
-  env.CHROME_PROFILE_ROOT?.trim() || env.CHROME_PROFILE?.trim() || null;
-
-/** Where the old single-folder layout kept the browser profiles: CHROME_PROFILE_ROOT, else the legacy CHROME_PROFILE, else /data/chrome-profile (the Docker volume). Used only to migrate. */
+/** Where the old single-folder layout kept the browser profiles (only the layout migration reads it): CHROME_PROFILE_ROOT, else the legacy CHROME_PROFILE, else /data/chrome-profile (the Docker volume). Used only to migrate. */
 export const chromeProfileRoot = (env: NodeJS.ProcessEnv = process.env): string =>
   env.CHROME_PROFILE_ROOT?.trim() || env.CHROME_PROFILE?.trim() || "/data/chrome-profile";
 
 export interface BrandPathOptions {
   dataDir?: string;
-  chromeRoot?: string | null;
-  /** The brand's own profile folder (brand.json: instagram.profileDir). Without it: <chromeRoot>/<slug> when an old shared root is given, else <data>/brands/<slug>/profile. */
-  profileDir?: string | null;
   env?: NodeJS.ProcessEnv;
 }
 
@@ -83,12 +75,6 @@ export const voiceRelPaths = (character: { enabled: boolean; id: string }): { sa
   return { sample: t.relWav, sampleText: t.relTxt };
 };
 
-/** A brand's login lives in its data folder; an install that still has it in the old shared profile folder (and none yet in the new place) keeps working. */
-function defaultProfile(fresh: string, slug: string, env: NodeJS.ProcessEnv): string {
-  const old = join(chromeProfileRoot(env), slug);
-  return !existsSync(fresh) && existsSync(old) ? old : fresh;
-}
-
 /** Every path of one brand. Throws on a slug that is not safe to put in a path. */
 export function brandPaths(slug: string, o: BrandPathOptions = {}): BrandPaths {
   if (!isValidSlug(slug) && slug !== "_template") throw new Error(`Invalid brand slug "${slug}"`);
@@ -105,6 +91,6 @@ export function brandPaths(slug: string, o: BrandPathOptions = {}): BrandPaths {
     dataDir: data, settingsFile: join(data, "settings.json"), scheduledFile: join(data, "scheduled.json"),
     dailyDir: join(data, "daily"), analyticsDir: join(data, "analytics"), ideasDir: join(data, "ideas"),
     seriesFile: join(data, "series.json"), locksDir: join(data, "locks"), notificationsFile: join(data, "notifications.json"),
-    profileDir: o.profileDir ? resolve(o.profileDir) : o.chromeRoot ? join(o.chromeRoot, slug) : defaultProfile(join(data, "profile"), slug, env),
+    profileDir: join(data, "profile"), // the Instagram login of the brand is always inside its own folder
   };
 }

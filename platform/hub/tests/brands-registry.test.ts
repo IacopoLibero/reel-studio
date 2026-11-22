@@ -13,7 +13,7 @@ let tmp: string, root: string, data: string;
 beforeEach(() => { tmp = mkdtempSync(join(tmpdir(), "brands-")); root = join(tmp, "root"); data = join(tmp, "data"); mkdirSync(root); mkdirSync(data); });
 afterEach(() => rmSync(tmp, { recursive: true, force: true }));
 // The program folder (where brand/_template lives) is `root` in these tests.
-const reg = () => new BrandRegistry({ root, dataDir: data, chromeRoot: join(tmp, "chrome"), programRoot: root });
+const reg = () => new BrandRegistry({ root, dataDir: data, programRoot: root });
 
 describe("listing and loading", () => {
   it("lists the brands that have a valid identity/brand.json, sorted, never the template or hidden folders", () => {
@@ -54,7 +54,7 @@ describe("listing and loading", () => {
 
 describe("paths", () => {
   it("puts everything of a brand under its own folders", () => {
-    const p = brandPaths("acme", { dataDir: "/d", chromeRoot: "/chrome" });
+    const p = brandPaths("acme", { dataDir: "/d" });
     const b = "/d/brands/acme"; // everything of a brand is in this one folder
     expect(p).toMatchObject({
       brandDir: b, dataDir: b, identityDir: `${b}/identity`, brandJson: `${b}/identity/brand.json`, styleMd: `${b}/identity/style.md`, logo: `${b}/identity/logo.png`,
@@ -62,19 +62,19 @@ describe("paths", () => {
       questionsMd: `${b}/reel-questions.md`, scheduledFile: `${b}/scheduled.json`, settingsFile: `${b}/settings.json`,
       dailyDir: `${b}/daily`, analyticsDir: `${b}/analytics`, ideasDir: `${b}/ideas`,
       seriesFile: `${b}/series.json`, locksDir: `${b}/locks`, notificationsFile: `${b}/notifications.json`,
-      profileDir: "/chrome/acme",
+      profileDir: `${b}/profile`,
     });
   });
   it("two brands never share a path", () => {
-    const a = Object.values(brandPaths("acme", { dataDir: "/d", chromeRoot: "/c" }));
-    const b = Object.values(brandPaths("beta", { dataDir: "/d", chromeRoot: "/c" }));
+    const a = Object.values(brandPaths("acme", { dataDir: "/d" }));
+    const b = Object.values(brandPaths("beta", { dataDir: "/d" }));
     expect(a.filter((x) => typeof x === "string" && b.includes(x) && x !== "acme")).toEqual([]);
   });
   it("refuses a slug that could leave the folder", () => {
     for (const bad of ["../etc", "a/b", "", "A", "new"]) expect(() => brandPaths(bad, { dataDir: "/d" })).toThrow(/Invalid brand slug/);
   });
-  it("uses the brand's own profile folder when it has one, the template stays addressable", () => {
-    expect(brandPaths("acme", { dataDir: "/d", chromeRoot: "/c", profileDir: "/data/chrome-profile" }).profileDir).toBe("/data/chrome-profile");
+  it("the Instagram profile is always the brand's own folder, and the template stays addressable", () => {
+    expect(brandPaths("acme", { dataDir: "/d" }).profileDir).toBe("/d/brands/acme/profile");
     expect(brandPaths("_template", { dataDir: "/d" }).brandDir).toBe("/d/brands/_template");
   });
   it("reads the Chrome profile root from the environment", () => {
@@ -82,9 +82,9 @@ describe("paths", () => {
     expect(chromeProfileRoot({ CHROME_PROFILE: "/old" })).toBe("/old");
     expect(chromeProfileRoot({ CHROME_PROFILE_ROOT: "/new", CHROME_PROFILE: "/old" })).toBe("/new");
   });
-  it("brandCtx and the registry agree, and the brand's profile folder is honoured", () => {
+  it("brandCtx and the registry agree, and a profile folder named in an old brand.json is ignored", () => {
     const b = writeTestBrand(root, "acme", { instagram: { account: "a", userId: "1", profileDir: "/data/chrome-profile" } });
-    expect(reg().paths("acme").profileDir).toBe("/data/chrome-profile");
+    expect(reg().paths("acme").profileDir).toBe(join(data, "brands/acme/profile"));
     expect(brandCtx(reg(), "acme")?.brand).toEqual(b);
     expect(brandCtx(reg(), "nope")).toBeNull();
   });

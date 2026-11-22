@@ -18,7 +18,7 @@ export function makeEnv(extra: { claudeBin?: string } = {}): Env {
   const tmp = mkdtempSync(join(tmpdir(), "creator-"));
   const root = join(tmp, "root"), data = join(tmp, "data");
   mkdirSync(root, { recursive: true }); mkdirSync(data, { recursive: true });
-  const reg = new BrandRegistry({ root, dataDir: data, chromeRoot: join(data, "chrome"), programRoot: join(TEMPLATE, "..", "..") });
+  const reg = new BrandRegistry({ root, dataDir: data, programRoot: join(TEMPLATE, "..", "..") });
   const settings = new SettingsStore(join(data, "settings.json"), { brandFile: (s) => reg.paths(s).settingsFile, defaultSlug: () => reg.defaultSlug(), accountOf: (s) => reg.get(s)?.instagram.account ?? "" });
   const daily: string[] = [];
   const svc: CreatorServices = { root, dataDir: data, brands: reg, uploads: new UploadStore(join(data, "tmp-uploads")), settings, ensureDaily: (s) => { daily.push(s); return true; } };

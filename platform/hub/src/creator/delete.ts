@@ -53,7 +53,6 @@ export function trashBrand(i: TrashInput): TrashResult {
   const kept: string[] = [];
   if (existsSync(p.profileDir)) {
     try {
-      if (brand.instagram.profileDir) throw new Error("own profile folder");
       renameSync(p.profileDir, join(trash, "instagram-profile"));
       moved.push([p.profileDir, join(trash, "instagram-profile")]);
     } catch { kept.push(p.profileDir); }

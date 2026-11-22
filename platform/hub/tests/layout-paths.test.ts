@@ -3,7 +3,7 @@ import { mkdirSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { describe, expect, it } from "vitest";
-import { brandPaths, explicitChromeRoot } from "../src/brands/paths.js";
+import { brandPaths } from "../src/brands/paths.js";
 import { isProgramPath, PROGRAM_ENTRIES, REPO_ONLY_PREFIXES } from "../src/layout/manifest.js";
 import { defaultDataDir, defaultProgramRoot, defaultRoot, studioHome } from "../src/paths.js";
 
@@ -31,30 +31,9 @@ describe("studio folders", () => {
 });
 
 describe("a brand's Instagram login", () => {
-  it("lives inside the brand's data folder by default", () => {
-    expect(brandPaths("acme", { root: "/r", dataDir: "/d", env: { CHROME_PROFILE_ROOT: "/nowhere-at-all" } }).profileDir).toBe(join("/d", "brands/acme/profile"));
-  });
-
-  it("keeps using the old shared profile folder while the new place does not exist yet, so no install loses its login", () => {
-    const tmp = mkdtempSync(join(tmpdir(), "profile-"));
-    try {
-      mkdirSync(join(tmp, "old/acme"), { recursive: true });
-      const env = { CHROME_PROFILE_ROOT: join(tmp, "old") };
-      expect(brandPaths("acme", { root: "/r", dataDir: join(tmp, "data"), env }).profileDir).toBe(join(tmp, "old/acme"));
-      mkdirSync(join(tmp, "data/brands/acme/profile"), { recursive: true });
-      expect(brandPaths("acme", { root: "/r", dataDir: join(tmp, "data"), env }).profileDir).toBe(join(tmp, "data/brands/acme/profile"));
-    } finally { rmSync(tmp, { recursive: true, force: true }); }
-  });
-
-  it("follows an old shared profile root or an own folder when one is given", () => {
-    expect(brandPaths("acme", { root: "/r", dataDir: "/d", chromeRoot: "/c" }).profileDir).toBe("/c/acme");
-    expect(brandPaths("acme", { root: "/r", dataDir: "/d", chromeRoot: "/c", profileDir: "/own" }).profileDir).toBe("/own");
-  });
-
-  it("only an explicit environment variable selects an old shared profile root", () => {
-    expect(explicitChromeRoot({})).toBeNull();
-    expect(explicitChromeRoot({ CHROME_PROFILE_ROOT: "/new", CHROME_PROFILE: "/old" })).toBe("/new");
-    expect(explicitChromeRoot({ CHROME_PROFILE: "/old" })).toBe("/old");
+  it("always lives inside the brand's own folder, whatever the environment or brand.json says", () => {
+    expect(brandPaths("acme", { dataDir: "/d" }).profileDir).toBe(join("/d", "brands/acme/profile"));
+    expect(brandPaths("acme", { dataDir: "/d", env: { CHROME_PROFILE_ROOT: "/nowhere-at-all", CHROME_PROFILE: "/old" } }).profileDir).toBe(join("/d", "brands/acme/profile"));
   });
 });
 

@@ -14,10 +14,10 @@ export function hubDataDir(): string {
 }
 export const scheduledFile = (dir = hubDataDir()) => join(dir, 'scheduled.json');
 
-/** State key "<brand>/<folder>" of a reel folder .../brand/<brand>/reels/<folder>; any other path gives its folder name. */
+/** State key "<brand>/<folder>" of a reel folder .../brands/<brand>/reels/<folder> (the app) or .../brand/<brand>/reels/<folder> (the old layout); any other path gives its folder name. */
 export function reelKey(reelDir: string): string {
   const clean = reelDir.replace(/\/+$/, '');
-  const m = /\/brand\/([^/]+)\/reels\/([^/]+)$/.exec(clean);
+  const m = /\/brands?\/([^/]+)\/reels\/([^/]+)$/.exec(clean);
   return m ? `${m[1]}/${m[2]}` : clean.split('/').pop()!;
 }
 
