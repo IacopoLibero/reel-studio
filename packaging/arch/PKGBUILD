@@ -7,7 +7,7 @@ pkgdesc='Make and schedule short videos for your brands (Remotion, Blender chara
 arch=('x86_64')
 url='https://github.com/'
 license=('MIT')
-depends=('nodejs>=22.13' 'npm' 'git' 'ffmpeg' 'chromium' 'uv' 'electron')
+depends=('nodejs>=22.13' 'npm' 'git' 'ffmpeg' 'chromium' 'uv' 'electron' 'gcc' 'make')
 makedepends=('python' 'make' 'gcc')
 optdepends=('blender: use the system Blender instead of the one the app downloads'
             'nvidia-utils: GPU voices (VoxCPM2 on the graphics card)')

@@ -1,8 +1,10 @@
 # Contributing
 
-Thanks for helping. This project is small: a Remotion + Blender reel factory and a web hub that runs it in Docker.
+Thanks for helping. This project is small: a Remotion + Blender reel factory and a web hub that runs it as a desktop app (or in Docker).
 
 ## Set up
+
+The hub runs on the host without Docker: `cd platform/hub && npm ci && npm run build`, then `REEL_STUDIO_HOME=/path/to/a/scratch-folder HUB_PORT=4300 node dist/index.js` (the setup screen opens first). The desktop app is in `platform/desktop/` (run it with `electron platform/desktop`); the package is built with `makepkg` in `packaging/arch/`. For the Docker stack:
 
     git clone <your fork> && cd reel-studio
     ./install.sh --yes --cpu --no-voice-engine     # the full stack without the 15 GB voice engine, enough to work on the hub

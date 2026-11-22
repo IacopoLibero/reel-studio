@@ -47,15 +47,26 @@ then the app, then the big features, which are born with the final structure and
 
 ### 2. The app
 
-- **Packages.** A pacman package (declares its dependencies). Flatpak: probably avoided (2026-11-21), because the sandbox makes the GPU, Claude Code and Chrome harder; decide after trying the pacman package. Models and other heavy files never go inside the package: they are downloaded on first run into the data folder.
-- **Blender and VoiceStudio are managed by the app, not packed in it** (leaning, to confirm): the app installs or finds them, starts them and checks they answer. Blender can come from its own Flatpak; VoiceStudio
-  (Python, GPU, about 27 GB of models today) is the hard part inside a Flatpak sandbox, so test the GPU path early. Claude Code and Chrome (Instagram scheduling) also need to work from the sandbox.
-- **Delete brand** leaves the Instagram login in place when it cannot be moved cheaply (another volume, or a custom `instagram.profileDir`): remove that profile folder by hand.
-  In the app each brand's login lives inside the brand's own folder, so deleting the brand removes it.
-- **Desktop notifications.** `scripts/install-notifier.sh` installs the host unit for the Docker setup; the app sends its own notifications and that script goes away.
-- **Backups** stay a README recipe until then; with one data folder they become copying that folder.
-- **Updates and first run.** The Remotion agent skills are fetched at first run and on update; the data folder is never touched by an update.
-- **Docs and tests.** Rewrite the install and operations parts of the README and `platform/README.md` for the app; keep the Docker setup only if it is still wanted.
+**Done (2026-11-22), tried on this machine:**
+
+- **Pacman package** (`packaging/arch/`: `PKGBUILD`, launcher, desktop entry, icon) that depends on `electron` and the system programs; the studio folder is never touched. Flatpak: dropped (the sandbox makes the GPU, Claude Code and Chrome harder).
+- **Electron app** (`platform/desktop/`): window, tray (closing hides it), single instance, system notifications from the hub's own notification list, "Start at login". The window signs in with a one-time pass (`/api/enter-nonce`, `/api/enter`).
+- **The hub runs without Docker:** copies the program's files into the workspace, puts the app's Blender on the PATH, starts and watches VoiceStudio.
+- **First-run setup screen:** checks, install buttons with logs (video packages, whisper.cpp, Blender, VoiceStudio), voice modes, voice models (licence first, progress bar, choose, remove, cancel; also in Settings > Voice). Blender and VoiceStudio are installed by the app into `data/tools/`, not packed.
+- **A reel made end to end on the app** (Acme Bakery, voice VoxCPM2 on the GPU, 22 Nov): MP4 1080x1920 with audio (41 s), caption, cover without a logo frame, storyboard. The first run stopped at the word timing because whisper.cpp was missing (an empty root-owned folder from Docker); that is now a setup step (build tools + whisper.cpp and its model). The question was ticked in `reel-questions.md` with the right folder; the stopped first run left `4-freezing-sliced-bread-really-make/` (script and audio only) next to the finished `5-...` because a job made by the API ignores `rerunFolder`: delete the folder by hand.
+
+**Open:**
+
+- **Instagram login on the app.** In Docker the login window is a Chromium on a virtual screen (noVNC). On the host the hub should open a normal Chromium window with the brand's own profile (`data/brands/<brand>/profile/`): not tried; the scheduler on the host is not tried either (a schedule, the verification on Instagram's calendar).
+- **The `scripts/` and `src/r*` folders are still in the workspace** (skills and prompts call `scripts/slot.sh`, `scripts/voice.mjs` relative to the workspace, and the reels' own code is there). Move the reel code into the brand folder and run the scripts from the program.
+- **Remotion agent skills at first run and on update** (`scripts/install-remotion-skills.sh` is called by the Docker installer; the app does not fetch them yet: add a setup step).
+- **Backups:** a copy of `~/ReelStudio` (documented); an in-app button that copies it (without `data/tools/`) is not made.
+- **Tray, notifications and "Start at login"** have unit tests but were not seen working on the desktop; the window was tried only under a virtual display.
+- **Package:** `makepkg` builds from the last commit, the version is fixed at `0.1.0-1` (raise `pkgver` for a release); no `namcap` run; the dependency list (`gcc`, `make`, `uv`, ...) is not checked on a clean system.
+- **Delete brand** leaves the Instagram login when it cannot be moved cheaply (a custom `instagram.profileDir`); in the app the login is in the brand's folder, so deleting the brand removes it: check it.
+- **Docker setup:** still there and documented as the alternative; decide whether to keep it. `scripts/install-notifier.sh` and `reel-hub-notify.sh` are for it only.
+- **Lint** (`npm run lint`) was never run in this work: the repository root has no `node_modules`.
+- **Voice:** OmniVoice (CC-BY-NC) is not installed on purpose (non-commercial). Languages other than English and the choice of another voice per brand are not tried.
 
 ### 3. After the app (big, born with the final structure)
 

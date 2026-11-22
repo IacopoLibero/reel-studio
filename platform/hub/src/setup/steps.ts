@@ -72,3 +72,13 @@ export const blender = (c: StepContext): StepFn => async (log) => {
   rmSync(archive, { force: true });
   log("Blender is ready");
 };
+
+/** Builds whisper.cpp and downloads its "medium" model into `<workspace>/whisper.cpp` (the reel scripts read it there), with the workspace's own script. */
+export const whisper = (c: StepContext): StepFn => async (log) => {
+  const script = join(c.workspace, "scripts", "setup-whisper.mjs");
+  if (!existsSync(script)) throw new Error("The workspace has no scripts/setup-whisper.mjs. Install the video packages first.");
+  if (!existsSync(join(c.workspace, "node_modules", "@remotion", "install-whisper-cpp"))) throw new Error("Install the video packages first (the line above).");
+  if (clearEmptyMountPoint(join(c.workspace, "whisper.cpp"))) log("removed an empty whisper.cpp folder left by the old Docker setup");
+  log("building whisper.cpp and downloading its model (about 1.5 GB)");
+  await runCommand("node", [script], { cwd: c.workspace }, log);
+};

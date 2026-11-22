@@ -56,6 +56,20 @@ describe("checks", () => {
     expect(byId(items, "chromium")).toMatchObject({ status: "missing", required: true });
     expect(byId(items, "chromium")?.hint).toMatch(/pacman -S/);
   });
+  it("needs build tools and whisper, which the app can install, to make a reel", () => {
+    const items = runChecks(ctx());
+    expect(byId(items, "build-tools")).toMatchObject({ status: "missing", required: true, auto: false });
+    expect(byId(items, "whisper")).toMatchObject({ status: "missing", required: true, auto: true });
+    const ok = runChecks(ctx({ which: (n) => (n === "make" || n === "g++" ? `/usr/bin/${n}` : null) }));
+    expect(byId(ok, "build-tools")?.status).toBe("ok");
+  });
+  it("sees whisper once its program and model are both in the workspace", () => {
+    const w = join(tmp, "workspace", "whisper.cpp"); mkdirSync(w, { recursive: true });
+    writeFileSync(join(w, "main"), "");
+    expect(byId(runChecks(ctx()), "whisper")?.status).toBe("missing");
+    writeFileSync(join(w, "ggml-medium.bin"), "");
+    expect(byId(runChecks(ctx()), "whisper")?.status).toBe("ok");
+  });
   it("treats uv as optional: only the voice needs it", () => {
     expect(byId(runChecks(ctx()), "uv")).toMatchObject({ status: "missing", required: false });
   });

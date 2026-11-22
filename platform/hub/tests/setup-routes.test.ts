@@ -34,7 +34,7 @@ describe("setup routes", () => {
   it("answers with the checks, the voice modes, a recommendation and the step states", async () => {
     const r = (await get("/api/setup")).json();
     expect(r.state).toEqual({ version: 1, completed: false, voiceMode: null });
-    expect(r.items.map((i: { id: string }) => i.id)).toEqual(expect.arrayContaining(["node", "claude", "blender", "voicestudio"]));
+    expect(r.items.map((i: { id: string }) => i.id)).toEqual(expect.arrayContaining(["node", "claude", "blender", "voicestudio", "whisper", "build-tools"]));
     expect(r.modes.map((m: { id: string }) => m.id)).toContain("gpu-voxcpm2");
     expect(r.recommended).toMatch(/voxcpm2/);
     expect(r.steps.blender.state).toBe("idle");

@@ -4,7 +4,7 @@
 
 <p align="center">
   <a href="LICENSE"><img alt="License: MIT" src="https://img.shields.io/badge/license-MIT-blue.svg"></a>
-  <img alt="Runs in Docker" src="https://img.shields.io/badge/runs%20in-Docker-2496ED?logo=docker&logoColor=white">
+  <img alt="Desktop app for Arch Linux" src="https://img.shields.io/badge/app-Arch%20Linux-1793D1?logo=archlinux&logoColor=white">
   <img alt="Node 22" src="https://img.shields.io/badge/node-22-339933?logo=node.js&logoColor=white">
   <a href="https://github.com/IacopoLibero/reel-studio/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/IacopoLibero/reel-studio/actions/workflows/ci.yml/badge.svg"></a>
   <img alt="Built for Claude Code" src="https://img.shields.io/badge/built%20for-Claude%20Code-d97757">
@@ -46,7 +46,7 @@ All screenshots in this document show an invented demo brand, "Acme Bakery". No 
 - Schedules reels on Instagram through a real browser that you log in to yourself, and checks the result on Instagram's own calendar.
 - Optionally runs a **daily loop**: it reads your results, writes a plain-language readout, proposes three ideas and waits for you.
 - Handles **several brands**, each with its own pages, data, settings, daily loop and Instagram login.
-- Everything runs in one Docker container, bound to `127.0.0.1`. Your logins stay on your machine.
+- Runs as a **desktop app** (an Electron window with a tray icon) on Arch Linux: the hub is bound to `127.0.0.1` and your logins stay on your machine. A Docker setup is still there as an alternative.
 
 The repository holds the platform, a generic Remotion kit, the skills and a brand template. It holds **no brand**: your brands live
 on your machine and stay out of git (see [Creating a brand](#creating-a-brand)).
@@ -146,8 +146,9 @@ The hub also has **Claude** (a terminal in the page running Claude Code), **Inst
 
 ![Architecture: browser, hub, Claude, voice engine, Blender, Remotion, Instagram browser, Composio, per-brand data](docs/images/architecture.svg)
 
-- **One container.** `reel-hub` runs the hub (Node 22, Fastify, React), the voice engine, a virtual screen with Chromium for Instagram,
-  and every tool a reel needs. It runs as your user and sees your project folder at the same path as on the host.
+- **One app.** The Electron window starts the hub (Node 22, Fastify, React) as a separate process and shows it. The hub starts and watches
+  VoiceStudio (the voice engine) and finds Blender; both are installed by the first-run setup into `data/tools/`, not packed in the app.
+  Everything runs as you, with your own files. (The Docker setup runs the same hub, VoiceStudio, Blender and a virtual screen in one container.)
 - **Claude does the thinking.** Headless Claude Code, with your own login, writes scripts, ideas and readouts. The `reel` skill
   (`.claude/skills/reel/SKILL.md`) is the recipe for a whole reel.
 - **Instagram goes through a browser, not an API.** Playwright drives a Chromium that you logged in to once. It follows a flow proven by
@@ -162,26 +163,36 @@ The daily loop:
 
 ```bash
 git clone https://github.com/IacopoLibero/reel-studio.git reel-studio && cd reel-studio
-claude                # once, on the host: log in to Claude Code, then quit (the container shares this login)
-./install.sh          # checks, builds, starts, installs the voice engine: 30 to 90 minutes the first time
-# open http://127.0.0.1:4000 and paste the token the installer printed
-# menu > New brand: fill in the form, or discuss it with the AI, or import a folder
+claude                       # once: log in to Claude Code, then quit
+cd packaging/arch && makepkg -si     # builds the package from this repository and installs it with pacman
+reel-studio                  # or open "Reel Studio" from your application menu
 ```
 
-`./install.sh --yes` asks nothing. `./install.sh --help` lists the options (CPU mode, other ports, a second copy next to the first).
-The installer also downloads the Remotion agent skills from their upstream repository (it needs internet; `./update.sh` refreshes them).
-`./update.sh` pulls and rebuilds; `./uninstall.sh` removes the stack and asks before deleting the volumes. Neither touches your studio folder (your brands, reels and data).
-Day-to-day operation (start, stop, logs, backup, ports) is in [platform/README.md](platform/README.md).
+The first start shows a **setup screen**. It checks what your computer has (Node, Claude Code, Chromium, FFmpeg, Git, uv, your graphics card) and
+installs what the app can install itself:
+
+1. **The video packages** (Remotion, about 600 MB): required.
+2. **Blender** (the character, about 400 MB): optional; the app downloads it into `data/tools/`, or uses the one on your system.
+3. **VoiceStudio** (the voice): pick a voice mode (best quality on an NVIDIA graphics card, best quality on the processor, light and English only, or no voice for now);
+   then choose which voice models to download. Every model shows its licence first and downloads only after you tick that you read it, with a progress bar.
+   Voices can be chosen, removed and added later from **Settings > Voice**.
+
+Then open **New brand** in the menu: fill in the form, discuss it with the AI, or import a folder.
+
+The window sits in the tray when you close it, so schedules and the daily loop keep running; **Quit** in the tray menu stops the hub. "Start at login" is in the tray menu too.
+`reel-studio --hidden` starts it in the tray only. The package never touches your studio folder (`~/ReelStudio`): update it with a new `makepkg -si`, remove it with `sudo pacman -R reel-studio`.
+`makepkg` builds from the last commit, so commit your changes first.
+
+Docker instead of the app: [platform/README.md](platform/README.md#the-docker-setup-alternative). Day-to-day operation (backup, logs, ports) is there too.
 
 ## Requirements
 
-- **Linux** with Docker Engine and Docker Compose v2 (`docker compose`). Windows with WSL2 may work; macOS is not tested.
-- **A Claude subscription** (Claude Code) for the AI parts. Log in once on the host with `claude`.
-- **A GPU is recommended, not required.** An NVIDIA GPU with about 8 GB and the NVIDIA Container Toolkit runs the voice engine (VoxCPM2)
-  fast. Without a GPU the installer offers **CPU mode**: everything works, but making the voice of a 40 second reel can take many
-  minutes instead of seconds. The hub, Blender (CPU rendering) and Remotion do not need a GPU.
-- **Disk:** about 45 GB free with a GPU, about 15 GB in CPU mode (the image is about 8 GB; VoiceStudio and its models are the rest).
-- **Internet** at install time: the image, VoiceStudio and the voice model, and the Remotion agent skills are downloaded from their official sources.
+- **Arch Linux** (or a derivative) with `pacman`. The package depends on `nodejs`, `npm`, `git`, `ffmpeg`, `chromium`, `uv` and `electron`. Other systems: use the Docker setup.
+- **A Claude subscription** (Claude Code) for the AI parts. Log in once with `claude`.
+- **A GPU is recommended, not required.** An NVIDIA GPU with about 8 GB runs the voice engine (VoxCPM2) fast. Without it pick a processor mode in the setup:
+  everything works, but making the voice of a 40 second reel can take many minutes instead of seconds. The hub, Blender (CPU rendering) and Remotion do not need a GPU.
+- **Disk:** about 40 GB free for the best-quality voice on a GPU (VoiceStudio with its packages and models is about 33 GB), much less with the light or processor modes.
+- **Internet** at first run: Blender, VoiceStudio and the voice models, and the Remotion agent skills are downloaded from their official sources.
 - An Instagram **Business or Creator** account for scheduling. Optional: a Composio account (a free plan exists) for the Analytics page.
 
 ## Creating a brand
@@ -226,17 +237,16 @@ Nothing is created before the first click and nothing is scheduled before the se
 
 ## Safety model
 
-- The hub listens on `127.0.0.1` only and needs the token (`HUB_TOKEN`, random, in `.env`, mode 600). It contains a terminal and a
+- The hub listens on `127.0.0.1` only and needs a token (random, in `data/dev-token`, mode 600). The app window signs in with a one-time pass that the hub gives only to a request carrying the token, so the token never appears in a command line or an address. The hub contains a terminal and a
   browser logged in to your Instagram: do not expose it to a network without your own authentication and TLS.
-- **Credentials never leave the machine.** The Claude login (`~/.claude`) and the Composio login (`~/.composio`, read-only) are mounted
-  from your home folder, the Instagram session lives in a Docker volume, and you type your Instagram password yourself in the noVNC window.
+- **Credentials never leave the machine.** The Claude login (`~/.claude`) and the Composio login (`~/.composio`) stay in your home folder, the Instagram session lives in the brand's own folder (`data/brands/<brand>/profile/`), and you type your Instagram password yourself in the browser window (in the Docker setup, the noVNC window).
 - **What Claude jobs can read.** Jobs read untrusted web text, so `platform/hub/src/jobs/claude-safety.ts` denies them any read of `.env`,
   `~/.claude`, `~/.composio`, `~/.config` and the Instagram profile, and restricts research jobs to a few shell commands. The brand
   assistant has read-only tools and cannot see your other brands.
 - **The one broad shell.** The reel-making job (`reel.make`) needs a broad shell for voice, Blender and render. It cannot read those
   credential files or use `curl`, `wget`, `ssh` or `env`, but a prompt-injected model could still read other files in the project.
   Treat the project folder as the trust boundary.
-- The container sees only the project folder, your Claude and Composio files, and the optional source-texts folder.
+- In the app the jobs run as you, so they can reach what you can; in the Docker setup the container sees only the project folder, your Claude and Composio files, and the optional source-texts folder.
 
 Full policy and how to report a problem: [SECURITY.md](SECURITY.md).
 
@@ -250,7 +260,19 @@ Full policy and how to report a problem: [SECURITY.md](SECURITY.md).
 
 ## Configuration
 
-Settings live in `.env` (made by `install.sh`, documented line by line in `.env.example`). Everything about a brand is in its `brand.json`, not in `.env`.
+The app needs no configuration file. Everything about a brand is in its folder (`brand.json`, `settings.json`), not in environment variables.
+These optional variables change where the app looks (set them in the environment of the app, for example in `~/.config/environment.d/`):
+
+| Variable | Default | What it does |
+|---|---|---|
+| `REEL_STUDIO_HOME` | `~/ReelStudio` | Your studio folder: `workspace/` (your Remotion code), `data/` (brands, hub state, `tools/`). Never touched by the package. |
+| `HUB_PORT` | `4000` | Port of the hub, on `127.0.0.1` only. |
+| `VOICE_PORT` | `3900` | Port of VoiceStudio, on `127.0.0.1` only. |
+| `HUB_TOKEN` | random | Fixed token instead of the one in `data/dev-token`. |
+
+### Docker setup
+
+Settings of the Docker setup live in `.env` (made by `install.sh`, documented line by line in `.env.example`).
 
 | Variable | Default | What it does |
 |---|---|---|
@@ -274,6 +296,14 @@ An installation made before brands existed may still carry `BRAND`, `IG_USER_ID`
 [platform/README.md](platform/README.md).
 
 ## Troubleshooting
+
+- **The setup says something is missing.** Each line says what and how: `sudo pacman -S <package>` for the system programs, an Install button for what the app installs.
+  A graphics card shown as "none found" with `nvidia-smi` saying "Driver/library version mismatch" is a driver that needs a reboot.
+- **A model download looks stuck.** The bar shows the speed and the time left; "Cancel download" stops it and the next try continues where it stopped.
+  The full log of each install step is in `data/setup/<step>.log`.
+- **VoiceStudio blocks a model.** Its own licence review is not finished for most models, so the setup downloads with the same call its own settings use, after you read the licence.
+  A licence such as CC-BY-NC does not allow commercial use: check it before you publish reels made with that voice.
+- **Only the Docker setup:** the points below that mention the container, `.env` or `docker`.
 
 - **Claude hangs inside the container.** Your host Claude settings (hooks, plugins, MCP servers that call host-only programs) can hang
   headless Claude. The hub runs `claude` through `platform/docker/claude-hub`, which reads only project and local settings and keeps your
@@ -313,7 +343,9 @@ An installation made before brands existed may still carry `BRAND`, `IG_USER_ID`
 ## Project layout
 
 ```text
-install.sh update.sh uninstall.sh   install, update, remove
+packaging/arch/                     PKGBUILD, launcher and desktop entry of the pacman package
+platform/desktop/                   the Electron app (window, tray, notifications, start at login)
+install.sh update.sh uninstall.sh   install, update, remove the Docker setup
 .env.example                        every setting, documented
 platform/                           compose files, Dockerfile, the hub (platform/hub), docs, vendored Ootto skills
 platform/docs/                      DESIGN (the hub), DAILY (skills, analytics, daily loop), BRANDS (multi-brand)

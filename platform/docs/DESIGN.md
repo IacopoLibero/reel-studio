@@ -4,9 +4,29 @@ How the hub is built and why. Decided on 2026-11-19, brought up to date on 2026-
 decision that was revised while building. For running it see [../README.md](../README.md); for the daily loop, skills and analytics see
 [DAILY.md](DAILY.md); for brands see [BRANDS.md](BRANDS.md).
 
+## The app (2026-11-22)
+
+The normal way to run it is now a desktop app, a pacman package (`packaging/arch/`). **Changed:** the hub no longer needs Docker; the container setup below is the alternative.
+
+- **Electron shell** (`platform/desktop/`): starts the hub as a separate Node process (so `node-pty` is not rebuilt for Electron), waits for `/api/health`,
+  opens a window on it, sits in the tray (closing the window hides it; the hub keeps its schedules), polls `/api/notifications?unseen=1` every minute and shows them as system
+  notifications, and offers "Start at login" (an autostart entry). Only one copy runs. The window may only show the hub: links to other sites open in the browser, permissions are refused.
+- **Sign-in of the window:** the app reads the token from `data/dev-token` and asks `POST /api/enter-nonce` for a one-time pass (30 seconds, used once);
+  the window opens `/api/enter?n=<pass>`, which sets the cookie. The token is never in a command line or an address, and `/api/enter` answers only for `127.0.0.1` / `localhost` hosts (DNS rebinding).
+- **Native start of the hub** (`src/index.ts`, outside Docker): the program's files are copied into the workspace, the app's Blender (`data/tools/bin/blender`, `blender-run`) is put on the `PATH`,
+  and a `VoiceSupervisor` starts VoiceStudio if nothing answers on its port, restarts it when it stops (up to 5 times in a row) and stops it with the hub.
+- **First-run setup** (`src/setup/`, `src/routes/setup.ts`, `web/pages/Setup.tsx`): pure checks of the machine (`checks.ts`), the voice modes (`voice-modes.ts`), a step runner with a log per step (`installer.ts`),
+  and the steps: workspace packages (`npm ci`; an empty root-owned `node_modules` left by Docker is removed first), Blender (pinned tarball with SHA-256), VoiceStudio (git clone of a pinned tag, `uv sync`, the engine, the model, engine selection; the server is stopped at the end).
+  Everything VoiceStudio writes stays in `data/tools/voicestudio/` (its own `HOME`), so deleting that folder removes the voice.
+- **Voice models** (`src/setup/voice-catalog.ts`, `voice-engines.ts`, `src/routes/setup-voice.ts`, `web/pages/SetupVoice.tsx`, also in Settings): only voice (TTS) models; transcription and language models are not used.
+  VoiceStudio's reviewed-install path (`/models/install/prepare` and `commit`) blocks every voice model of this version (its review of licences and sources is not finished), so the download uses
+  `POST /models/install`, the call its own settings screen uses, after the person ticks that they read the licence (the server refuses without it). Progress comes from `/models/install/status`.
+  A voice is chosen with `POST /engines/select`; the voice in use cannot be removed.
+- **Not packed in the app:** Blender, VoiceStudio and its models are downloaded at first run into `data/tools/`.
+
 ## What it is for
 
-A web platform that is always up in Docker. One container (default name `reel-hub`), restart policy `unless-stopped`. Everything lives under
+A web platform that is always up (as the app, or in Docker: one container, default name `reel-hub`, restart policy `unless-stopped`). Everything lives under
 `platform/` of the repository. It lets one person:
 
 - run a **Claude session inside the page** (a terminal running Claude Code with their own login);

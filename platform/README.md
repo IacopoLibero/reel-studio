@@ -3,8 +3,40 @@
 How to run, stop, update, back up and fix the stack. What the hub is for and how to use it: the [root README](../README.md).
 How it is built: [docs/DESIGN.md](docs/DESIGN.md), [docs/DAILY.md](docs/DAILY.md), [docs/BRANDS.md](docs/BRANDS.md).
 
+This manual has two parts: **the app** (the pacman package, the normal way), and **the Docker setup** (an alternative that runs the same hub in a container). Both use the same studio folder.
+
+## The app
+
+**Start and stop.** Open "Reel Studio" from the application menu, or run `reel-studio`. Closing the window hides it in the tray and the hub keeps working
+(schedules, the daily loop). Tray menu: *Open Reel Studio*, *Start at login*, *Quit (stops the hub)*. `reel-studio --hidden` starts in the tray only.
+Only one copy runs: starting it again brings the window back. If the hub port (4000) is already taken, for example by the Docker setup, the app uses what answers there instead of starting its own:
+stop the Docker setup first (`bash -c 'cd <repo> && source scripts/stack-lib.sh && dc stop'`; the file is a bash script, so run it in bash if your shell is fish).
+
+**Where things live.** Your studio folder is `~/ReelStudio` (or `REEL_STUDIO_HOME`): `data/brands/<brand>/` (one folder per brand), `workspace/` (your Remotion code),
+and in `data/`: `tools/` (Blender and VoiceStudio, installed by the app: delete a folder there and the setup offers to install it again), `setup.json` (what the setup screen saved),
+`setup/<step>.log` (the log of each install step), `dev-token` (the hub token, readable only by you), `jobs.json`, `settings.json`.
+
+**Setup and voices.** The setup screen appears on the first start, and is always reachable from the "Setup" link at the bottom of the menu. Voices are in **Settings > Voice**:
+download a model (its licence first, then a tick, then a progress bar), choose the one to use, remove the ones you do not need. The voice in use cannot be removed.
+
+**Update.** Pull or edit the repository, commit, then `cd packaging/arch && makepkg -si`. Close the app first. Your studio folder is never touched.
+Pacman reinstalls a package of the same version without checking what changed: raise `pkgver` in `packaging/arch/PKGBUILD` for a release.
+
+**Backup and restore.** Quit the app from the tray, then copy `~/ReelStudio` (brands, reels, voices, Instagram logins, hub state). Restore by copying it back.
+`data/tools/` is about 35 GB and can be left out: the setup downloads it again.
+
+**Logs.** The app prints the hub's log to the terminal when started from one (`reel-studio`). The install steps log to `data/setup/`. VoiceStudio's output is in the same terminal, lines starting with `[voice]`.
+
+**Remove.** `sudo pacman -R reel-studio` removes the program. `~/ReelStudio` stays; delete it by hand if you want everything gone.
+
+## The Docker setup (alternative)
+
+Everything below is for the Docker setup: one container that runs the hub, VoiceStudio and Blender. Use it on a system that is not Arch, or if you prefer a container.
+
 ## Contents
 
+- [The app](#the-app)
+- [The Docker setup (alternative)](#the-docker-setup-alternative)
 - [The stack at a glance](#the-stack-at-a-glance)
 - [Everyday commands](#everyday-commands)
 - [Ports](#ports)
