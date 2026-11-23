@@ -40,6 +40,7 @@ Your studio folder is `~/ReelStudio` (or `REEL_STUDIO_HOME`). This repository is
 | its identity: `brand.json`, style guide, logo (and the voice when there is no character) | `.../<slug>/identity/` |
 | its character: Blender script, model, voice, rendered moves, reference sheet | `.../<slug>/mascot/` (`movements/<move>/` holds the frames, `studio/` the reference sheet) |
 | its reels: script, MP4, caption, cover, audio, the code, the chat with Claude (`chat.json`) and the last three versions before a chat change (`.versions/`) | `.../<slug>/reels/<n>-<name>/` |
+| its carousels: the slides (`slide-1.png` ...), caption, plan, `carousel.json`, the code and the textures or scene it used | `.../<slug>/carousels/<n>-<name>/` |
 | code the brand's reels share | `.../<slug>/code/` |
 | the hub's data of the brand: question list, settings, schedule, daily plans, analytics, ideas | `.../<slug>/` (`reel-questions.md`, `settings.json`, `scheduled.json`, ...) |
 | the Instagram login of the brand (a Chromium profile) | `.../<slug>/profile/` |

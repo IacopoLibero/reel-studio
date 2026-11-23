@@ -75,8 +75,9 @@ Every page is for the brand chosen in the switcher; the address is `#/<brand>/<p
 | **Analytics** | Results of the reels (Composio, read-only), a chart, a table, a plain-language readout. |
 | **Series** | Recurring formats, plan a series, assign questions. |
 | **Reels** | Every reel folder with its files and Instagram state; Schedule opens a slot picker and creates an `instagram.schedule` job. A click opens the page of one reel (`#/<brand>/reels/<folder>`): video (served with `Range`, so it seeks), cover, caption, script, plan, files, and the chat that edits it (see *Editing a reel by chat*). |
+| **Carousels** | The carousel job (see *Carousels* below): a form (topic, **2D or 3D**, 4 to 8 slides, last slide: offer or follow), the list with miniatures, and the page of one carousel (`#/<brand>/carousels/<folder>`): the slides side by side in swipe order with a full-size view, the caption (copy, download), the plan and "make it again with a note". Scheduling a carousel on Instagram is not available. |
 | **Character** | The moves of the brand's character (PNG sequences in `<brand>/mascot/movements/<move>/`), add a move with Claude and Blender, re-render one. For a brand without one: the experimental character-from-a-picture steps (previews, then the moves). |
-| **Settings** | Per brand: Instagram login, posting schedule, daily loop, factory rules, voice, delete brand. Global: Blender device, Claude model, brand assistant, which content skills are on. |
+| **Settings** | Per brand: Instagram login, posting schedule, daily loop, factory rules, product folder, voice, delete brand. Global: Blender device, Claude model, brand assistant, which content skills are on. |
 | **New brand** | The brand creator (see BRANDS.md). |
 
 ## Job model
@@ -84,7 +85,7 @@ Every page is for the brand chosen in the switcher; the address is `#/<brand>/<p
 All long work is a job. Fields: `id`, `type`, `brand`, `title`, `status` (`queued|running|done|failed|cancelled`), `progress` (0 to 1), `step`,
 `steps`, `stepIndex`, `log`, `params`, `result`, `error`, timestamps. Types: `instagram.schedule`, `instagram.reschedule`, `instagram.delete`,
 `reel.make`, `reel.edit` (one turn of the chat that changes a reel), `reel.ideas`, `daily.run`, `analytics.collect`, `reel.insights`, `series.plan`, `schedule.suggest`, `brand.create`,
-`character.build`, `character.moves`, `blender.render`, `claude.task` (`voice.generate` is declared but not used by the hub).
+`carousel.make`, `character.build`, `character.moves`, `blender.render`, `claude.task` (`voice.generate` is declared but not used by the hub).
 
 API: `GET /api/jobs`, `GET /api/jobs/:id`, `POST /api/jobs`, `POST /api/jobs/:id/cancel`, `GET /api/events` (SSE), all behind
 `Authorization: Bearer <HUB_TOKEN>` or the login cookie `hub_token`. `GET /api/health` needs no token. Brand-scoped routes are
@@ -92,7 +93,7 @@ API: `GET /api/jobs`, `GET /api/jobs/:id`, `POST /api/jobs`, `POST /api/jobs/:id
 startup becomes `failed: interrupted`.
 
 **Lanes.** Jobs run in lanes: `instagram` (one at a time, across all brands), `voice`, `factory` (concurrency per brand, default 2),
-`ideas`, `daily`, `analytics`, `brand`, `character`.
+`ideas`, `daily`, `analytics`, `brand`, `character`, `carousel` (one at a time: a 3D carousel uses the GPU).
 
 ## Instagram scheduler (`platform/hub/src/scheduler`)
 
@@ -185,3 +186,20 @@ The page of one reel has a conversation with Claude that changes the reel. Each 
 - **Environment:** `jobEnv` gives Codex the Codex access and no Anthropic key or hub token.
 - **Terminal:** the Terminal page runs Claude Code or Codex (`HUB_CODEX_BIN`) in the project folder, whichever is chosen; changing the tool closes the old terminal (tmux sessions are `reel-claude` and `reel-codex`).
 - **Not done for Codex:** the sidebar usage box (Codex reports no limits) and the Claude model setting. **Codex is not tested**: nothing was ever run against a real Codex (TODO.md); the interface says so wherever Codex appears.
+
+## Carousels (`carousel.make`)
+
+Swipe posts, 1080 x 1350 (4:5). `POST /api/brands/:slug/jobs` with `{ "type": "carousel.make", "params": { "topic", "style": "2d"|"3d", "slides": 4-8, "closing": "A"|"B", "rerun"?: { "folder", "note" } } }`. The result is `<brand>/carousels/<n>-<name>/`
+(`src/carousels/`: `scanner.ts` lists and serves the folders, `stream.ts` the steps, `prompt.ts` the prompt, `handler.ts` the job). Routes: `GET /carousels`, `GET /carousels/:folder`, `GET /carousels/file?folder=&name=` (only `slide-N.png` and `caption.md`).
+
+- **The job** is one headless run of the chosen AI tool (see *One AI tool for everything*) with the prompt built from `.claude/skills/carousel/SKILL.md`, the approvals waived. Steps: Plan, Build, Render, Checks, Caption, Done; the step follows the files that appear (`plan.md`, the code folder, the slides, `caption.md`).
+  It fails if a slide, `plan.md` or `caption.md` is missing. Renders go through `scripts/slot.sh render 3`, Blender through `scripts/slot.sh blender 1`. It never schedules or posts.
+- **Two Ootto skills are required**: `ootto-viral-carousel` (the structure: the job of every slide, from what carousels in the niche save) and then `ootto-carousel-builder` (the words of every slide). Before the run the job switches both on
+  (`scripts/ootto-skills.sh enable`; they are on by default in the manifest) and after it `requireSkill` fails the job if one was not called (with Codex, if its SKILL.md was not opened). The result lists `skillsUsed`.
+- **The product folder** (`sources.productDir`) is read-only for the job (see BRANDS.md). Without it the slides draw the idea.
+- **2D:** Remotion only. Images come in as data URIs from `scripts/carousel/embed-assets.mjs` (no `public/` folder); slides are rendered with `scripts/carousel/render-slides.sh` (a `Slide` composition with `{n}`).
+  Paper and surfaces use real texture images (`textures.py` makes them); SVG noise filters are not used (they give coloured interference).
+- **3D:** one Blender scene as wide as all the slides (Cycles, OptiX, a shadow-catcher or wood table, a key, a rim and a fill light per slide, a long lens with depth of field), rendered once with a transparent background, cut with `slice-panorama.sh`, and composed with the text in Remotion as in 2D.
+  The kit is `scripts/carousel/blender/`: `kit.py` (props, materials `real()` and `wood()`, studio, camera, `four_views`, `detail_views`, `metrics`, `grid`), `textures.py` (wood, paper, cloth, grain with numpy inside Blender), `check.py` (one object: four views or four close-ups, with `WARN` lines for floating, sunk or zero-area parts).
+  Every object is checked before it goes into the scene, and textures are judged at 100%. Blender runs headless through `blender-run`; the grid is built with ffmpeg (no PIL in Blender).
+- **Not done:** scheduling on Instagram (the scheduler uploads one MP4), per-carousel analytics, a chat that edits one slide (today: make it again with a note), Codex (not tried).

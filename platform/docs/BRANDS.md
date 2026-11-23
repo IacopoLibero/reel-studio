@@ -25,6 +25,7 @@ identity/   brand.json, style.md, logo.png (a PNG, only when the brand has one),
 mascot/     only with a character: <id>.py (Blender script), <id>.blend, <id>-expressions.png, <id>-head.json, <id>-voice.wav / .txt / .json,
             movements/<move>/ (the rendered PNG sequences) and studio/ (the reference sheet, plan and previews of a character being built)
 reels/      one folder per reel, <n>-<name>/: script, plan, MP4, caption, cover, audio/
+carousels/  one folder per carousel, <n>-<name>/: slide-1.png ... slide-N.png (1080 x 1350), caption.md, plan.md, carousel.json, code/ (its Remotion code), and assets/ (2D) or tex/, scene.py (3D)
 ```
 The question list (`reel-questions.md`), the settings, the schedule, the daily plans, the analytics and the Instagram login (`profile/`) are in the same folder. With a character the voice is the character's (`mascot/<id>-voice.*`); without one it is the brand's own (`identity/voice.*`).
 `identity/brand.json` (zod-validated, versioned):
@@ -36,7 +37,7 @@ The question list (`reel-questions.md`), the settings, the schedule, the daily p
   "closing": { "A": { "label": "Try Acme Cafe", "line": "..." }, "B": { "label": "Follow for tips", "line": "Follow me for more restaurant tips." } },
   "offer": { "lastDay": "2026-11-30", "regex": "ACMEFREE" },
   "instagram": { "account": "acme_cafe", "userId": "..." },
-  "sources": { "blogDir": null },
+  "sources": { "blogDir": null, "productDir": "/home/me/my-product" },
   "character": { "enabled": true, "id": "pip", "name": "Pip" },
   "voice": { "engine": "voxcpm2", "sample": "mascot/pip-voice.wav", "sampleText": "mascot/pip-voice.txt" } }
 ```
@@ -44,8 +45,11 @@ The question list (`reel-questions.md`), the settings, the schedule, the daily p
 fonts, closing, offer and Instagram (`language` is the language of the reels, `readoutLanguage` the one the hub writes to the person who runs the brand); `style.md` keeps the prose. The Cover and the Remotion kit read colours and fonts from `brand.json`
 (no hard-coded Acme Cafe colours in generic code). `brand/_template/` (in the repository) has a `brand.json` skeleton, the style.md and question list placeholders; the voice guide is `.claude/skills/reel/voice-sample.md`.
 
+`sources.productDir` is the brand's own product (its source code or screenshots), a full path on this machine, set in Settings > Product (`PUT /api/brands/:slug/sources`, the folder must exist). It is read-only for the AI:
+the carousel job gives it to Claude with `--add-dir` and denies `Write` and `Edit` there (Codex reads it but is not given write access to it). Reels do not use it. An imported brand loses it (it belongs to the other machine).
+
 ## 3. "Each brand has its own hub"
-Everything in the hub is scoped to the current brand: Jobs, Daily, Calendar, Factory, Analytics, Series, Reels, Instagram, Character, Settings.
+Everything in the hub is scoped to the current brand: Jobs, Daily, Calendar, Factory, Analytics, Series, Reels, Carousels, Instagram, Character, Settings.
 - Brand switcher in the nav (name, small colour dot), current brand in the URL hash (`#/<brand>/<page>`) and remembered; a "New brand" entry.
 - Data: `<data>/brands/<slug>/` (`~/ReelStudio/data/brands/<slug>/`) holds that brand's settings (slot pattern, daily loop, factory rules, Threads toggle), jobs (job records carry
   `brand`), daily plans, analytics snapshots and hooks.csv, ideas, series, scheduled.json, locks. Global settings (Blender device, Claude model,

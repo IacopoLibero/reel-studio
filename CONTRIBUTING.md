@@ -39,6 +39,14 @@ The repository holds no brand. Your brands live in your studio folder (`~/ReelSt
 outside this repository. Create one with the app's "New brand".
 The generic platform (`platform/`, `scripts/`, `src/kit`) works with no brand present.
 
+## Carousels and the Blender kit
+
+The carousel job is `platform/hub/src/carousels/` and its method is the skill `.claude/skills/carousel/SKILL.md`; the 3D kit is `scripts/carousel/blender/` (`kit.py`, `textures.py`, `check.py`). To change or add a prop:
+
+1. Build it in `kit.py` with a function that takes the shared materials `M` and returns a root empty (lathe for round things, one extruded outline for flat things, real materials with `real()`), and add it to `check.py`.
+2. Make the textures once: `blender-run -b -P scripts/carousel/blender/textures.py -- /tmp/tex`, then `CAROUSEL_TEX=/tmp/tex CAROUSEL_OUT=/tmp/out blender-run -b -P scripts/carousel/blender/check.py -- <object>` for the four views and `... -- <object> detail` for the close-ups. Read the `WARN` lines: floating parts, sunk objects, faces of zero area.
+3. Look at the images and at a 100% crop of a real render before you commit: a texture that is flat there is too fine. Tests do not run Blender; the job is tested with a stand-in AI tool (`tests/fixtures/fake-claude-carousel.mjs`).
+
 ## Documentation and screenshots
 
 The README and `platform/docs/` describe what the code does today: change them in the same pull request as the behaviour.

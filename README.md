@@ -43,6 +43,7 @@ All screenshots in this document show an invented demo brand, "Acme Bakery". No 
 
 - Turns a question ("Why does real sourdough take two days?") into a 1080 x 1920 reel: script, cloned voice, word-timed captions,
   motion graphics written in code with Remotion, an optional Blender character, a caption with hashtags and a cover.
+- Makes **carousels** (swipe posts, 1080 x 1350) in **2D** (Remotion) or **3D** (a Blender scene cut into slides), built on two Ootto skills, with the product's real screens when you give the brand a product folder.
 - Runs a **factory**: pick several questions, make the reels in parallel, with a queue so the GPU does one voice job at a time.
 - Schedules reels on Instagram through a real browser that you log in to yourself, and checks the result on Instagram's own calendar.
 - Optionally runs a **daily loop**: it reads your results, writes a plain-language readout, proposes three ideas and waits for you.
@@ -273,7 +274,8 @@ Full policy and how to report a problem: [SECURITY.md](SECURITY.md).
 
 ## Costs and limits
 
-- **Claude:** with the **login** (the default) jobs use your Claude subscription. A reel is one long headless session; a change in the reel chat is a shorter one; the daily loop adds a few more a day. Heavy use can hit your limits, so the sidebar shows how much of the **session** (five hours) and the **week** is used, with the time they reset. With an **API key** the jobs are paid per use on your Anthropic account instead and the sidebar shows what they cost (today and the last 7 days). Choose in **Settings > Claude and Codex**.
+- **Claude:** with the **login** (the default) jobs use your Claude subscription. A reel is one long headless session; a **carousel** is one too (a 3D one is longer: it renders a Blender scene and checks every object); a change in the reel chat is a shorter one; the daily loop adds a few more a day. Heavy use can hit your limits, so the sidebar shows how much of the **session** (five hours) and the **week** is used, with the time they reset. With an **API key** the jobs are paid per use on your Anthropic account instead and the sidebar shows what they cost (today and the last 7 days). Choose in **Settings > Claude and Codex**.
+- **GPU for 3D carousels:** the 3D style renders with Cycles on your NVIDIA card (about a minute for the final render, a few minutes in all); without a GPU use the 2D style.
 - **Composio:** the Analytics page calls Composio's Instagram tools; its free plan has a monthly quota. Check your Composio account.
 - **Instagram scheduling:** Instagram accepts scheduled posts about **30 days ahead**, refuses a time **less than 20 minutes** away, and the video must be **9:16**.
   Scheduling uses the browser you log in to, not a paid API.
@@ -326,7 +328,7 @@ The other variables of the hub are in [platform/README.md](platform/README.md).
 
 **Can I use another AI than Claude?** Yes, Codex, as one choice for everything (Settings > AI tool): either Claude or Codex does all the AI work (reels, ideas, the daily loop, readouts, the character, the brand assistant). The hub runs `codex exec --json` (the prompt on stdin, `--sandbox workspace-write` for the jobs that make things, `read-only` for the others) as OpenAI documents for non-interactive use. It was written from that documentation and tested only with a stand-in Codex, never a real one, and the hub cannot limit single commands for Codex (it can for Claude): only its sandbox. Skills are linked into `.agents/skills`, where Codex looks for them, and a job that must use a skill fails if Codex did not open its SKILL.md, as it does with Claude. The Terminal page runs Codex too. **Codex is not tested**: the interface says so wherever it appears. Codex needs to be installed and signed in (`codex login`, or an API key in Settings).
 
-**Where is my data?** In your studio folder, `~/ReelStudio` by default: `data/brands/<name>/` (one folder per brand: identity, character, reels, question list, Instagram login) and `workspace/` (the Remotion project the program fills; your reels' code is in the brand folders). The voice engine, Blender and their models are in `data/tools/` (the setup installs them again if you delete it). To back up, copy `~/ReelStudio` ([platform/README.md](platform/README.md)).
+**Where is my data?** In your studio folder, `~/ReelStudio` by default: `data/brands/<name>/` (one folder per brand: identity, character, reels, carousels, question list, Instagram login) and `workspace/` (the Remotion project the program fills; your reels' code is in the brand folders). The voice engine, Blender and their models are in `data/tools/` (the setup installs them again if you delete it). To back up, copy `~/ReelStudio` ([platform/README.md](platform/README.md)).
 
 ## Project layout
 
@@ -336,10 +338,11 @@ platform/desktop/                   the Electron app (window, tray, notification
 platform/                           the hub (platform/hub), the desktop app (platform/desktop), docs, vendored Ootto skills
 platform/docs/                      DESIGN (the hub), DAILY (skills, analytics, daily loop), BRANDS (multi-brand)
 scripts/                            voice, whisper, slot queue, the public folder of a render, Ootto and Remotion skills, helpers
+scripts/carousel/                   carousels: embed images, render and cut slides, the Blender 3D kit (props, textures, checks)
 src/                                generic Remotion kit (src/kit) and cover (src/cover); your reels' code is in each brand's folder (`reels/<n>-<name>/code/`), outside this repository
 brand/_template/                    the template new brands are made from (read from here, not copied into the workspace)
 sfx/                                the sounds every reel can use (read from here)
-.claude/skills/                     the reel skill and its helpers (reel, reel-hooks, reel-research, reel-insights, reel-threads)
+.claude/skills/                     the reel skill and its helpers (reel, reel-hooks, reel-research, reel-insights, reel-threads) and the carousel skill
 docs/images/                        screenshots and diagrams of this README
 TODO.md                             open items and decisions
 ```
