@@ -1,4 +1,4 @@
-import { DESTRUCTIVE_BASH_DENIES, NETWORK_AND_ENV_BASH_DENIES, RESEARCH_BASH_ALLOWED, SECRET_READ_DENIES, join as joinTools } from "../jobs/claude-safety.js";
+import { DESTRUCTIVE_BASH_DENIES, NETWORK_AND_ENV_BASH_DENIES, SECRET_READ_DENIES, join as joinTools } from "../jobs/claude-safety.js";
 import type { Brand } from "../brands/schema.js";
 import type { SourceKind } from "./questions.js";
 

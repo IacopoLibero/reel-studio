@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // Stand-in for headless Claude of reel.edit. FAKE_MODE: good | resume-lost | error | delete | question.
 // Reads the prompt on stdin, finds the reel folder in it, records the arguments and the prompt in $FAKE_LOG (one JSON per run), and "edits" the MP4.
-import { appendFileSync, existsSync, readdirSync, rmSync, writeFileSync } from "node:fs";
+import { appendFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 let prompt = "";
 process.stdin.on("data", (d) => { prompt += d; });
 process.stdin.on("end", () => {

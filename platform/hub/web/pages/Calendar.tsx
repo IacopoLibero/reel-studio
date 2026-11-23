@@ -43,7 +43,7 @@ export function CalendarPage({ jobs }: { jobs: Job[] }) {
   const title = !active ? "" : view === "week" ? `${weekOf(active)[0]} to ${weekOf(active)[6]}` : new Date(`${active.slice(0, 7)}-15T12:00:00Z`).toLocaleDateString("en-GB", { month: "long", year: "numeric", timeZone: "UTC" });
   const logged = !!data?.checkedAt && !data.error;
   const needLogin = !!data?.error && /login/i.test(data.error);
-  const done = (m: string) => { setNote(m); setSelected(null); setFree(null); setDrop(null); };
+  const closeAndNote = (m: string) => { setNote(m); setSelected(null); setFree(null); setDrop(null); };
 
   const onDrop = (id: string, slot: CalendarSlot) => {
     const post = data?.posts.find((p) => p.id === id);
@@ -51,7 +51,7 @@ export function CalendarPage({ jobs }: { jobs: Job[] }) {
   };
   const confirmDrop = () => {
     if (!drop) return;
-    api.reschedule(drop.post.id, drop.slot.iso).then(() => done("Reschedule started.")).catch((e: Error) => setDropErr(e.message));
+    api.reschedule(drop.post.id, drop.slot.iso).then(() => closeAndNote("Reschedule started.")).catch((e: Error) => setDropErr(e.message));
   };
 
   return (
@@ -90,10 +90,10 @@ export function CalendarPage({ jobs }: { jobs: Job[] }) {
             <CalendarGrid data={data} view={view} cursor={cursor} selectedId={selected?.id ?? null} onSelect={setSelected} onFree={setFree} onDrop={onDrop} />
             {view === "month" && <p className="muted">{monthGrid(cursor).length} weeks shown. Click a day card for details.</p>}
           </div>
-          {selected && <CalendarPanel key={selected.id} post={selected} data={data} onClose={() => setSelected(null)} onDone={done} />}
+          {selected && <CalendarPanel key={selected.id} post={selected} data={data} onClose={() => setSelected(null)} onDone={closeAndNote} />}
         </div>
       )}
-      {free && data && <ScheduleHere slot={free} data={data} onClose={() => setFree(null)} onDone={done} />}
+      {free && data && <ScheduleHere slot={free} data={data} onClose={() => setFree(null)} onDone={closeAndNote} />}
       {drop && (
         <Dialog title="Move this reel?" onClose={() => setDrop(null)}>
           <p>Move {drop.post.reel ? `reel ${drop.post.reel.n}` : "this post"} from {slotLabel(drop.post.date, drop.post.time)} to {slotLabel(drop.slot.date, drop.slot.time)}.</p>

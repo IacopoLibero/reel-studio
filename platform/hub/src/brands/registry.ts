@@ -69,7 +69,7 @@ export class BrandRegistry {
   /** The brand used when a request names none: the first one by slug. Null when the machine has no brand yet. */
   defaultSlug(): string | null { return this.list()[0]?.slug ?? null; }
 
-  paths(slug: string, brand: Brand | null = this.get(slug)): BrandPaths {
+  paths(slug: string): BrandPaths {
     const opts: BrandPathOptions = { dataDir: this.dataDir };
     return brandPaths(slug, opts);
   }
@@ -83,7 +83,7 @@ export class BrandRegistry {
     const v = validateBrand(input);
     if (!v.ok) throw new BrandError(v.errors.join("; "));
     const brand = v.brand;
-    const p = this.paths(brand.slug, brand);
+    const p = this.paths(brand.slug);
     if (existsSync(p.brandJson)) throw new BrandError(`The brand "${brand.slug}" already exists.`);
     const created: string[] = [];
     const ensureDir = (d: string) => { if (!existsSync(d)) { mkdirSync(d, { recursive: true }); created.push(d); } };

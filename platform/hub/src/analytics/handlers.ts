@@ -65,7 +65,7 @@ export const seriesPlan: Handler = async (job, ctx) => {
   if (!skills.includes("series-planner")) throw new Error(`Claude did not call the series-planner skill (called: ${skills.join(", ") || "none"}).`);
   ctx.update({ step: SERIES_STEPS[2], stepIndex: 2, progress: 0.9 });
   let raw: unknown;
-  try { raw = extractJson(answer); } catch (e) { throw new Error((e as Error).message); }
+  try { raw = extractJson(answer); } catch (e) { throw new Error((e as Error).message, { cause: e }); }
   const plan = planSchema.safeParse(raw);
   if (!plan.success) throw new Error(`The series plan had the wrong shape at ${plan.error.issues[0]?.path.join(".") || "root"}: ${plan.error.issues[0]?.message}`);
   const known = new Map(readBrandQuestions(ctx.dataDir, brand).map((q) => [norm(q.question), q]));

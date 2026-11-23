@@ -122,7 +122,11 @@ export interface ChatMessage { role: "user" | "claude"; text: string; at: string
 export interface ReelVersion { name: string; at: string; hasVideo: boolean }
 export interface ReelPageData { reel: ReelDetail; chat: { sessionId: string | null; messages: ChatMessage[] }; busy: boolean; versions: ReelVersion[] }
 
+export interface VoiceLanguage { code: string; name: string }
+
 export const api = {
+  voiceLanguages: () => call<VoiceLanguage[]>("GET", "/api/voice-languages"),
+  setBrandLanguage: (language: string) => call<{ language: string; name: string }>("PUT", `/api/brands/${encodeURIComponent(currentBrand)}/language`, { language }),
   ai: () => call<AiState>("GET", "/api/ai"),
   aiAccess: (provider: "claude" | "codex", body: { mode: "login" | "api-key"; apiKey?: string; removeKey?: boolean }) => call<{ access: AccessState }>("PUT", `/api/ai/${provider}/access`, body),
   aiCheck: (provider: "claude" | "codex") => call<{ ok: boolean; error?: string }>("POST", `/api/ai/${provider}/check`),

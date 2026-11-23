@@ -6,6 +6,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { spawnSync } from "node:child_process";
 import { transcribe, toCaptions } from "@remotion/install-whisper-cpp";
+import { brandLanguage, mergeTokens, numberWords } from "./voice-language.mjs";
 
 const GAP = 0.3;
 const BASE = `http://localhost:${process.env.VOICE_PORT || 3900}`;
@@ -26,6 +27,9 @@ const settingsOf = (wav) => {
 };
 const [, , dirArg, ...voiceArgs] = process.argv;
 const dir = path.resolve(dirArg);
+// The brand decides the language (Settings > Voice): the voice speaks it and Whisper listens for it.
+const LANG = brandLanguage(dir);
+console.log(`language: ${LANG}`);
 const name = path.basename(dir);
 const audioDir = path.join(dir, "audio");
 fs.mkdirSync(audioDir, { recursive: true });
@@ -45,7 +49,7 @@ const REUSE = process.env.REUSE === "1"; // reuse audio + Whisper output already
 const speak = (text, ref, out) => {
   for (let attempt = 1; attempt <= 3; attempt++) {
     const r = spawnSync("curl", ["-s", "-m", "280", "-o", out, "-w", "%{http_code}", `${BASE}/generate`,
-      "-F", `text=${text}`, "-F", "language=en", "-F", `ref_audio=@${ref}`, "-F", `ref_text=${refTextOf(ref)}`, "-F", "guidance_scale=1.6"], { encoding: "utf8" });
+      "-F", `text=${text}`, "-F", `language=${LANG}`, "-F", `ref_audio=@${ref}`, "-F", `ref_text=${refTextOf(ref)}`, "-F", "guidance_scale=1.6"], { encoding: "utf8" });
     if (r.stdout.trim() === "200") return;
     console.log(`  retry ${attempt} (http ${r.stdout.trim()})`);
   }
@@ -80,16 +84,14 @@ for (const arg of voiceArgs) {
   let heard;
   if (REUSE && fs.existsSync(capFile)) heard = JSON.parse(fs.readFileSync(capFile, "utf8"));
   else {
-    const result = await transcribe({ inputPath: k16, whisperPath: path.resolve("whisper.cpp"), whisperCppVersion: "1.5.5", model: "medium", tokenLevelTimestamps: true, language: "en" });
-    heard = toCaptions({ whisperCppOutput: result }).captions
-      .map((c) => ({ text: c.text.trim(), startMs: c.startMs, endMs: c.endMs }))
-      .filter((c) => /[\p{L}\p{N}]/u.test(c.text));
+    const result = await transcribe({ inputPath: k16, whisperPath: path.resolve("whisper.cpp"), whisperCppVersion: "1.5.5", model: "medium", tokenLevelTimestamps: true, language: LANG });
+    heard = mergeTokens(toCaptions({ whisperCppOutput: result }).captions);
     fs.writeFileSync(capFile, JSON.stringify(heard, null, 2));
   }
 
   // Whisper's own clock drifts from the real one, so match script words to heard words over the whole script
   // (longest common subsequence), then place each sentence on its exact start and end from the files.
-  const NUM = { 1: "one", 2: "two", 3: "three", 4: "four", 5: "five", 6: "six", 7: "seven", 8: "eight", 9: "nine", 10: "ten", 14: "fourteen" };
+  const NUM = numberWords(LANG);
   const norm = (w) => { const x = w.toLowerCase().replace(/[^\p{L}\p{N}]/gu, ""); return NUM[x] || x; };
   const flat = sentences.flatMap((t, si) => words(t).map((w, wi) => ({ si, wi, n: norm(w) })));
   const H = heard.map((h) => norm(h.text));

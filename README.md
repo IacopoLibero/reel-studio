@@ -134,11 +134,18 @@ The daily loop ends its automatic part here and waits for you. Nothing is made b
 - The assistant asks one question at a time, in your language, and fills the summary beside the chat.
 - At the end you review and edit the generated `brand.json` and style guide, then press Create.
 
+### A reel's page
+
+![A reel: player, files and the chat with Claude](docs/images/reel-page.png)
+
+Click a reel in **Reels** to watch it and change it by talking to Claude; the last versions are kept and the undo button puts one back.
+
 ### Settings
 
 ![Settings: general, posting schedule, daily loop and factory rules](docs/images/settings.png)
 
 - Posting schedule (the default is 3 posts on Sunday, Tuesday and Thursday, 2 on the other days), the daily loop and the factory rules.
+- **Language of the reels** (per brand): the voice, the captions and the word timing follow it. Light voice mode is English only; use a voice sample in the same language.
 - Blender device, Claude model, which content skills are on, the brand assistant, and deleting a brand (it goes to a trash folder).
 - **Claude and Codex:** how each signs in, with its own login or with an API key (saved in a file only you can read; the page shows the last four characters), and a **Test** button. The **sidebar** shows the Claude usage: session and week bars with their reset times, or the cost with an API key.
 
@@ -180,6 +187,8 @@ installs what the app can install itself:
 3. **VoiceStudio** (the voice): pick a voice mode (best quality on an NVIDIA graphics card, best quality on the processor, light and English only, or no voice for now);
    then choose which voice models to download. Every model shows its licence first and downloads only after you tick that you read it, with a progress bar.
    Voices can be chosen, removed and added later from **Settings > Voice**.
+
+![The setup screen](docs/images/setup.png)
 
 Then open **New brand** in the menu: fill in the form, discuss it with the AI, or import a folder.
 

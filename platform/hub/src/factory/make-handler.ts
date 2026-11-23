@@ -10,7 +10,7 @@ import { runProcess } from "../jobs/process.js";
 import { allocateReelFolder, withFileLock } from "./allocator.js";
 import { MAKE_ALLOWED_TOOLS, MAKE_DENIED_TOOLS, buildReelPrompt } from "./make-prompt.js";
 import { MAKE_MARKS, MAKE_STEPS, initialMakeState, missingOutputs, reduceMake, type MakeState } from "./make-stream.js";
-import { parseQuestions, tickQuestion, type SourceKind } from "./questions.js";
+import { tickQuestion, type SourceKind } from "./questions.js";
 
 const listFiles = (dir: string): string[] => { try { return readdirSync(dir); } catch { return []; } };
 

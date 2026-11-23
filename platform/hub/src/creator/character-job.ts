@@ -1,4 +1,4 @@
-import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
+import { existsSync, readFileSync, statSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { z } from "zod";
 import { parseStreamLine } from "../character/claude-stream.js";
@@ -106,7 +106,7 @@ export const characterBuild: Handler = async (job, ctx) => {
   const planFile = join(studio, "plan.json");
   let plan: z.infer<typeof planSchema>;
   try { plan = planSchema.parse(JSON.parse(readFileSync(planFile, "utf8"))); } catch (e) {
-    throw new Error(`Claude did not leave a usable plan.json (${e instanceof z.ZodError ? e.issues[0]?.message ?? "wrong shape" : "missing or not JSON"}).`);
+    throw new Error(`Claude did not leave a usable plan.json (${e instanceof z.ZodError ? e.issues[0]?.message ?? "wrong shape" : "missing or not JSON"}).`, { cause: e });
   }
   const fresh = listPreviews(brandDir).filter((f) => statSync(join(studio, "previews", f)).mtimeMs >= startedAt);
   if (fresh.length === 0) throw new Error(`Blender produced no new preview. ${existsSync(join(studio, "build.py")) ? `Check ${studio}/build.py and the job log.` : "No builder script was written."}`);

@@ -78,12 +78,12 @@ export async function runAssistant(o: AssistantRun): Promise<string> {
   const timer = setTimeout(() => ac.abort(), o.timeoutMs ?? TIMEOUT_MS);
   o.signal?.addEventListener("abort", () => ac.abort(), { once: true });
   // A codex command gets the Codex access (login or API key); a custom command gets neither, and none of them gets an Anthropic key.
-  const env = { ...assistantEnv(o.config.kind === "codex" ? applyEnvLayer(withoutAnthropicKeys(o.env), "codex") : withoutAnthropicKeys(o.env)), ...(o.extraEnv ?? {}) };
+  const env = { ...assistantEnv(o.config.kind === "codex" ? applyEnvLayer(withoutAnthropicKeys(o.env), "codex") : withoutAnthropicKeys(o.env)), ...o.extraEnv };
   let timedOut = false;
   ac.signal.addEventListener("abort", () => { timedOut = !o.signal?.aborted; }, { once: true });
   try {
     // Only Claude gets the Claude access (login or API key); a codex or custom command never receives an Anthropic key.
-    if (o.config.kind === "claude") return await runClaude(o, { ...assistantEnv(applyEnvLayer(o.env, "claude")), ...(o.extraEnv ?? {}) }, ac.signal);
+    if (o.config.kind === "claude") return await runClaude(o, { ...assistantEnv(applyEnvLayer(o.env, "claude")), ...o.extraEnv }, ac.signal);
     const line = o.config.command.trim() || (o.config.kind === "codex" ? DEFAULT_COMMANDS.codex : "");
     const [cmd, ...args] = splitCommand(line);
     if (!cmd) throw new Error("No assistant command is set. Open Settings and type it.");

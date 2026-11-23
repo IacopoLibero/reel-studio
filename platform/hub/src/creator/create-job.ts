@@ -55,7 +55,7 @@ export function assembleBrand(req: CreateRequest, svc: CreatorServices, hasVoice
   // The voice sample sits with the character when the brand has one, else in identity/ (see voiceTarget).
   const own = character as { enabled?: unknown; id?: unknown } | undefined;
   const rel = voiceRelPaths({ enabled: own?.enabled === true, id: typeof own?.id === "string" ? own.id : "character" });
-  const voice = { ...((raw.voice as object | undefined) ?? {}), sample: hasVoice ? rel.sample : null, sampleText: hasVoice ? rel.sampleText : null };
+  const voice = { ...(raw.voice as object | undefined), sample: hasVoice ? rel.sample : null, sampleText: hasVoice ? rel.sampleText : null };
   const v = validateBrand({ version: 1, ...raw, slug, instagram, voice, ...(character ? { character } : {}) });
   if (!v.ok) throw new BrandError(v.errors.join("; "));
   const blog = v.brand.sources.blogDir;
@@ -74,7 +74,7 @@ function copyVoice(req: CreateRequest, svc: CreatorServices, staged: string | nu
   }
   if (v.mode === "reuse") {
     const from = svc.brands.get(v.from);
-    const dir = svc.brands.paths(v.from, from).brandDir;
+    const dir = svc.brands.paths(v.from).brandDir;
     const wav = from?.voice.sample ? resolve(dir, from.voice.sample) : "";
     const txt = from?.voice.sampleText ? resolve(dir, from.voice.sampleText) : "";
     if (!from || !wav || !inside(dir, wav) || !existsSync(wav)) throw new BrandError(`The brand "${v.from}" has no voice sample to reuse.`);
@@ -118,7 +118,7 @@ export const brandCreate: Handler = async (job, ctx) => {
   const character = brand.character.enabled && req.character.mode === "import" ? findCharacter(brandsDirOf(svc.dataDir), brand.character.id) : null;
   if (brand.character.enabled && req.character.mode === "import" && !character) throw new BrandError(`There is no character "${brand.character.id}" on this machine (<brand>/mascot/${brand.character.id}.py).`);
 
-  const p = svc.brands.paths(brand.slug, brand);
+  const p = svc.brands.paths(brand.slug);
   const folders = [p.brandDir]; // identity, character, reels and the hub data of the brand are all in this one folder
   if (svc.brands.has(brand.slug)) {
     const m = readMarker(p.dataDir);

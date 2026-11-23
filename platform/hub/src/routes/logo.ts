@@ -1,5 +1,5 @@
 import { existsSync, readFileSync, renameSync, rmSync, writeFileSync } from "node:fs";
-import { join } from "node:path";
+
 import type { FastifyInstance } from "fastify";
 import { isPng, LIMITS } from "../creator/files.js";
 import { withLogoLine } from "../creator/style.js";

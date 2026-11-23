@@ -5,7 +5,7 @@ import type { DailyDeps } from "./deps.js";
 import { listPlanDates, readPlan, reconcile, updatePlan } from "./plan.js";
 import { todayOf } from "./service.js";
 import type { DailyViewData } from "../shared/daily.js";
-import { MAX_RERUNS, type DailyPlan, type PlanReel } from "./types.js";
+import { MAX_RERUNS, type PlanReel } from "./types.js";
 
 export interface JobBrief { id: string; status: Job["status"]; progress: number; step: string; stepIndex: number; steps: string[]; error: string | null; log: string[] }
 const brief = (j: Job | undefined): JobBrief | null => (j ? { id: j.id, status: j.status, progress: j.progress, step: j.step, stepIndex: j.stepIndex, steps: j.steps, error: j.error, log: j.log.slice(-4) } : null);

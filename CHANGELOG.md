@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+- **Language of the reels** can be chosen per brand in Settings > Voice (it also updates the brand's style guide). The voice script and Whisper now use the brand's language, and Whisper word pieces are merged so non-English captions match the script.
+- The hub has a linter (`npm run lint`, oxlint); errors fail CI. Unused code found by it was removed.
+- README screenshots retaken (sidebar with icons and usage box, setup screen, reel page).
+
 ## 1.0.0 (2026-11-23)
 
 The first release of Reel Studio as a desktop app. Before it, the project ran as a hub in a Docker container; that setup is gone.

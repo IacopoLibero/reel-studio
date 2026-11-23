@@ -82,7 +82,7 @@ function record(m: RawMedia, ins: Insights | null, reels: ReturnType<typeof load
     hook: (ref && questions.get(ref.key)) || cleanHook(m.caption),
     postedAt: m.postedAt, mediaType: m.mediaType, productType: m.productType,
     reel: ref ? { key: ref.key, n: ref.n, name: ref.name, closing: ref.closing } : null,
-    metrics: { ...base, ...(ins?.metrics ?? {}) },
+    metrics: { ...base, ...ins?.metrics },
     insights: ins?.state ?? "none", skipped: ins?.skipped ?? [],
   };
 }

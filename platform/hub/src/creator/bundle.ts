@@ -13,6 +13,8 @@ export const BUNDLE_LIMITS = { files: 300, fileBytes: 25_000_000, totalBytes: 40
 
 /** A clean relative path: no drive, no leading slash, no "." or ".." parts, no backslash or control characters. */
 export function cleanPath(raw: string): string {
+  // Control characters in a path are exactly what is being refused here.
+  // oxlint-disable-next-line no-control-regex
   if (!raw || /[\\\u0000-\u001f:]/.test(raw) || raw.startsWith("/")) throw new BundleError(`The path "${raw.replace(/[\u0000-\u001f]/g, "?")}" is not allowed.`);
   const parts = raw.split("/").filter((p) => p !== "");
   if (parts.length === 0 || parts.some((p) => p === "." || p === ".." || p.length > 120)) throw new BundleError(`The path "${raw}" is not allowed.`);

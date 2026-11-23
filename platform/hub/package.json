@@ -15,7 +15,8 @@
     "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p web/tsconfig.json --noEmit",
     "migrate:layout": "tsx src/layout/cli.ts",
     "test": "vitest run",
-    "test:coverage": "vitest run --coverage"
+    "test:coverage": "vitest run --coverage",
+    "lint": "oxlint"
   },
   "dependencies": {
     "@fastify/cookie": "^11.1.5",
@@ -37,6 +38,7 @@
     "@vitest/coverage-v8": "^5.1.1",
     "@xterm/addon-fit": "^0.11.0",
     "@xterm/xterm": "^6.0.0",
+    "oxlint": "^1.94.0",
     "react": "^19.3.1",
     "react-dom": "^19.3.1",
     "tsx": "^4.23.15",

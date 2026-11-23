@@ -1,4 +1,4 @@
-import { join, resolve } from "node:path";
+import { join } from "node:path";
 import { defaultDataDir } from "../paths.js";
 import { isValidSlug } from "./schema.js";
 

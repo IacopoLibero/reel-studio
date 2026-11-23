@@ -4,6 +4,7 @@ import { api } from "../api";
 import { useLoad } from "../hooks";
 import { SkillsSection } from "../components/SkillsSection";
 import { SetupVoice } from "./SetupVoice";
+import { VoiceLanguage } from "../components/VoiceLanguage";
 import { AiAccess } from "../components/AiAccess";
 import { InstagramAccess } from "../components/InstagramAccess";
 import { DeleteBrand } from "../components/DeleteBrand";
@@ -142,6 +143,7 @@ export function SettingsPage({ brand }: { brand: BrandSummary }) {
           </Section>
 
           <Section id="set-voice" title="Voice" intro="The voice models VoiceStudio uses for the narration of every brand. Download one, choose the one to use, or remove the ones you do not need to free the disk.">
+            <VoiceLanguage key={brand.slug + brand.language} current={brand.language} brandName={brand.name} />
             <SetupVoice />
           </Section>
 

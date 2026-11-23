@@ -10,7 +10,7 @@ const result = await transcribe({
   whisperCppVersion: "1.5.5",
   model: "medium",
   tokenLevelTimestamps: true,
-  language: "en",
+  language: process.argv[4] || process.env.REEL_LANGUAGE || "en",
 });
 const { captions } = toCaptions({ whisperCppOutput: result });
 fs.writeFileSync(output, JSON.stringify(captions, null, 2));

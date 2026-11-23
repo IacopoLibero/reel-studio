@@ -1,0 +1,44 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "plugins": [
+    "typescript",
+    "react",
+    "unicorn",
+    "oxc",
+    "import",
+    "promise"
+  ],
+  "categories": {
+    "correctness": "error",
+    "suspicious": "warn"
+  },
+  "env": {
+    "node": true,
+    "browser": true,
+    "es2024": true
+  },
+  "ignorePatterns": [
+    "dist",
+    "node_modules",
+    "coverage",
+    "src/scheduler/node_modules",
+    "src/scheduler/coverage"
+  ],
+  "rules": {
+    "react-hooks/rules-of-hooks": "error",
+    "react-hooks/exhaustive-deps": "warn",
+    "typescript/no-explicit-any": "warn",
+    "no-console": "off",
+    "react/react-in-jsx-scope": "off",
+    "react/set-state-in-effect": "warn",
+    "unicorn/no-array-sort": "off",
+    "unicorn/no-array-reverse": "off",
+    "unicorn/consistent-function-scoping": "off",
+    "oxc/no-async-endpoint-handlers": "off",
+    "promise/always-return": "off",
+    "react/exhaustive-effect-dependencies": "off",
+    "unicorn/prefer-add-event-listener": "off",
+    "import/no-unassigned-import": "off",
+    "eslint/no-underscore-dangle": "off"
+  }
+}

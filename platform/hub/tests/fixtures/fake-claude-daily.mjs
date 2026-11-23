@@ -12,7 +12,7 @@ process.stdin.on("end", () => {
   let text;
   if (/You are making one finished reel/.test(prompt)) {
     const dir = /Work in the folder (\/[^ ]+),/.exec(prompt)?.[1];
-    const root = /reel-studio project at (\S+)\./.exec(prompt)?.[1] ?? process.cwd();
+    // the project folder is in the prompt too; this stand-in works with the reel folder only
     const note = /reviewer rejected .* with this note: "([^"]*)"/.exec(prompt)?.[1] ?? "";
     const abs = dir; // the prompt names the reel folder with its absolute path
     mkdirSync(abs, { recursive: true });

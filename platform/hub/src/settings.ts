@@ -27,7 +27,7 @@ export const brandSettingsSchema = z.object({
 /** What is shared by every brand: how Blender renders and which Claude model the jobs use. Stored in data/settings.json. */
 export const globalSettingsSchema = z.object({
   blenderDevice: z.enum(["cpu", "gpu", "auto"]),
-  claudeModel: z.string().max(80).regex(/^[A-Za-z0-9._:\-\[\]]*$/, "Model name has invalid characters"),
+  claudeModel: z.string().max(80).regex(/^[A-Za-z0-9._:[\]-]*$/, "Model name has invalid characters"),
   assistant: z.object({
     kind: z.enum(["claude", "codex", "custom"]),
     command: z.string().trim().max(300),
@@ -95,14 +95,14 @@ export class SettingsStore {
   }
 
   private readGlobal(): GlobalSettings {
-    const p = globalSettingsSchema.safeParse({ ...DEFAULT_GLOBAL_SETTINGS, ...(readJson(this.globalFile) ?? {}) });
+    const p = globalSettingsSchema.safeParse({ ...DEFAULT_GLOBAL_SETTINGS, ...readJson(this.globalFile) });
     return p.success ? p.data : DEFAULT_GLOBAL_SETTINGS;
   }
 
   private readBrand(slug: string): BrandSettings {
     const own = readJson(this.o.brandFile(slug));
     const legacy = own ? {} : readJson(this.globalFile) ?? {};
-    const p = brandSettingsSchema.safeParse({ ...DEFAULT_BRAND_SETTINGS, ...legacy, ...(own ?? {}) });
+    const p = brandSettingsSchema.safeParse({ ...DEFAULT_BRAND_SETTINGS, ...legacy, ...own });
     return p.success ? p.data : DEFAULT_BRAND_SETTINGS;
   }
 

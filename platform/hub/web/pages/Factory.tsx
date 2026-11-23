@@ -38,7 +38,7 @@ export function FactoryPage({ jobs }: { jobs: Job[] }) {
     setBusy(true); setMsg(null);
     const results = await Promise.allSettled(chosen.map((q) => api.createJob("reel.make", { questionId: q.id, closing: closingOf(q) })));
     const failed = results.filter((r): r is PromiseRejectedResult => r.status === "rejected");
-    setMsg(`${results.length - failed.length} sent to the factory.${failed.length ? ` ${failed.length} refused: ${(failed[0]?.reason as Error).message}` : ""}`);
+    setMsg(`${results.length - failed.length} sent to the factory.${failed.length ? ` ${failed.length} refused: ${((failed[0]?.reason as Error | undefined)?.message ?? "unknown error")}` : ""}`);
     setPicked(new Set()); setBusy(false); reload();
   };
 

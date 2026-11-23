@@ -38,6 +38,8 @@ export function AnalyticsPage({ jobs }: { jobs: Job[] }) {
   const doneCount = mine.filter((j) => j.status === "done").length;
   useEffect(reload, [doneCount]);
   const running = mine.find(active);
+  // "Failed in the last hour" is read on every render on purpose.
+  // oxlint-disable-next-line react/purity
   const failed = mine.find((j) => j.status === "failed" && Date.parse(j.finishedAt ?? "") > Date.now() - 3600_000);
   const reels = data?.reels ?? [];
   const cards = useMemo(() => ({ plays: best(reels, "plays"), worst: best(reels, "plays", true), saves: best(reels, "saves"), shares: best(reels, "shares") }), [data]);

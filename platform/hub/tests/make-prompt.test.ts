@@ -12,10 +12,10 @@ describe("buildReelPrompt", () => {
     expect(p).toContain("/d/brands/acme/identity/style.md");
   });
   it("requires a real reel-hooks call before the script, and reel-research when there is no source", () => {
-    expect(p).toContain("Skill tool call to \`reel-hooks\`");
+    expect(p).toContain("Skill tool call to `reel-hooks`");
     expect(p).toContain("Name the skills you called");
     const noSource = buildReelPrompt({ ...base, source: null, sourceKind: "needs-source" as const });
-    expect(noSource).toContain("\`reel-research\`");
+    expect(noSource).toContain("`reel-research`");
   });
   it("waives approvals and forbids Instagram and the question list", () => {
     expect(p).toMatch(/pre-approved/i);

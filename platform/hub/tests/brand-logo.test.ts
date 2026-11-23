@@ -5,7 +5,7 @@ import type { FastifyInstance } from "fastify";
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { buildApp } from "../src/app.js";
 import type { Config } from "../src/config.js";
-import { readBrand } from "../src/brands/registry.js";
+
 import { writeTestBrand } from "./helpers/brand.js";
 import { JPG, PNG, SVG } from "./helpers/zip.js";
 

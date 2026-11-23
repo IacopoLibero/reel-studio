@@ -1,5 +1,7 @@
-import { existsSync } from "node:fs";
+import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import type { FastifyInstance } from "fastify";
+import { z } from "zod";
+import { isVoiceLanguage, VOICE_LANGUAGES, voiceLanguageName, withLanguageLine } from "../brands/languages.js";
 import { NotificationStore } from "../daily/notifications.js";
 import type { BrandSummary } from "../shared/types.js";
 import type { Brand } from "../brands/schema.js";
@@ -37,6 +39,21 @@ export function brandRoutes(app: FastifyInstance, d: AppDeps): void {
     if (!fresh) return reply.code(404).send({ error: "That brand does not exist." });
     writeBrand(d.config.dataDir, { ...fresh, ...p.data });
     return p.data;
+  });
+
+  // The language of the reels: written, spoken (the voice) and timed (Whisper) in it. Only the languages the voice speaks.
+  app.get("/api/voice-languages", async () => VOICE_LANGUAGES);
+  app.put<{ Params: { slug: string } }>("/api/brands/:slug/language", async (req, reply) => {
+    const b = scope(req);
+    const p = z.object({ language: z.string().refine(isVoiceLanguage, "Choose one of the languages the voice speaks.") }).safeParse(req.body);
+    if (!p.success) return reply.code(400).send({ error: p.error.issues[0]?.message ?? "Choose a language." });
+    const language = p.data.language.slice(0, 2).toLowerCase();
+    const fresh = readBrand(d.config.dataDir, b.slug);
+    if (!fresh) return reply.code(404).send({ error: "That brand does not exist." });
+    writeBrand(d.config.dataDir, { ...fresh, language });
+    const md = b.paths.styleMd;
+    if (existsSync(md)) { const text = readFileSync(md, "utf8"), next = withLanguageLine(text, language); if (next !== text) writeFileSync(md, next); }
+    return { language, name: voiceLanguageName(language) };
   });
 
   const stores = () => d.brands.slugs().map((slug) => NotificationStore.at(d.brands.paths(slug).dataDir));

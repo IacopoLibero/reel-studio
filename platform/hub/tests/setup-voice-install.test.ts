@@ -30,7 +30,7 @@ describe("parseEngineStatus", () => {
 function fakes(over: Partial<VoiceInstallDeps> = {}) {
   const calls: string[] = [];
   const deps: VoiceInstallDeps = {
-    run: async (cmd, args) => { calls.push(`${cmd} ${args.join(" ")}`); if (cmd === "git") mkdirSync(join(args.at(-1)!), { recursive: true }), writeFileSync(join(args.at(-1)!, "pyproject.toml"), ""); },
+    run: async (cmd, args) => { calls.push(`${cmd} ${args.join(" ")}`); if (cmd === "git") { mkdirSync(join(args.at(-1)!), { recursive: true }); writeFileSync(join(args.at(-1)!, "pyproject.toml"), ""); } },
     startServer: async () => { calls.push("start"); return { stop: () => calls.push("stop") }; },
     http: async (method, path) => { calls.push(`${method} ${path}`); return path.endsWith("/install/status") ? { installed: true } : {}; },
     downloadWeights: async () => { calls.push("weights"); },
@@ -47,7 +47,7 @@ describe("installVoiceStudio", () => {
     expect(calls[0]).toMatch(/^git clone --depth 1 --branch v[\d.]+ https:\/\/github\.com\/debpalash\/VoiceStudio\.git /);
     expect(calls).toContain("uv sync --frozen --no-dev --python 3.11 --group cuda");
     const order = ["start", "POST /engines/sidecar/voxcpm2/install", "GET /engines/sidecar/voxcpm2/install/status", "weights", "POST /engines/select", "stop"];
-    expect(order.map((c) => calls.indexOf(c))).toEqual([...order.map((c) => calls.indexOf(c))].sort((a, b) => a - b));
+    expect(order.map((c) => calls.indexOf(c))).toEqual(order.map((c) => calls.indexOf(c)).sort((a, b) => a - b));
     expect(order.every((c) => calls.includes(c))).toBe(true);
   });
   it("skips the engine install for a light engine and only selects it", async () => {

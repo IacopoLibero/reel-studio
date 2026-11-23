@@ -17,6 +17,7 @@ The version is in `package.json` (root), `platform/hub/package.json` (and its lo
 
     cd platform/hub
     npx tsc -p tsconfig.json --noEmit && npx tsc -p web/tsconfig.json --noEmit    # types, server and web app
+    npm run lint                                                                     # oxlint: errors fail, warnings are shown
     npx vitest run                                                                   # all tests must pass
     (cd src/scheduler && npm ci && npx playwright install chromium && npx vitest run)   # Instagram scheduler, needs Chromium
     cd ../.. && npx tsc --noEmit                                                     # the Remotion project

@@ -1,5 +1,7 @@
 import { matchReel, type ReelRef } from "../calendar/merge.js";
 
+// An emoji can be several code points joined by zero-width joiners and variation selectors: the class has to hold them to strip the whole sequence.
+// oxlint-disable-next-line no-misleading-character-class
 const EMOJI = /[\p{Extended_Pictographic}️‍⃣]+/gu;
 
 const firstLine = (caption: string): string => caption.split("\n").find((l) => l.trim())?.trim() ?? "";

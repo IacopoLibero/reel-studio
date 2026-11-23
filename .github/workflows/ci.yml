@@ -7,7 +7,7 @@ on:
 
 jobs:
   hub:
-    name: Hub (typecheck and tests)
+    name: Hub (typecheck, lint and tests)
     runs-on: ubuntu-24.04
     defaults:
       run:
@@ -24,6 +24,8 @@ jobs:
         run: |
           npx tsc -p tsconfig.json --noEmit
           npx tsc -p web/tsconfig.json --noEmit
+      - name: Lint (oxlint: errors fail, warnings are shown)
+        run: npm run lint
       - name: Tests
         run: npx vitest run
         env:

@@ -35,7 +35,7 @@ export function trashBrand(i: TrashInput): TrashResult {
   const active = i.jobs.filter((j) => j.brand === i.slug && (j.status === "queued" || j.status === "running"));
   if (active.length) throw new DeleteError(`A job of this brand is still ${active[0]?.status}: "${active[0]?.title}". Wait for it or cancel it first.`, 409);
 
-  const p = i.brands.paths(i.slug, brand);
+  const p = i.brands.paths(i.slug);
   const trash = join(i.dataDir, "trash", `${i.slug}-${stamp(i.now ?? new Date())}`);
   // The brand's one folder holds its identity, character, reels and hub data (and its Instagram login), so one move takes all of it.
   const parts: [string, string][] = [[p.brandDir, "brand"]];

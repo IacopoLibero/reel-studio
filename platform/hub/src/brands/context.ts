@@ -12,7 +12,7 @@ export interface BrandCtx {
 
 export function brandCtx(reg: BrandRegistry, slug: string): BrandCtx | null {
   const brand = reg.get(slug);
-  return brand ? { slug, brand, paths: reg.paths(slug, brand) } : null;
+  return brand ? { slug, brand, paths: reg.paths(slug) } : null;
 }
 
 /**

@@ -129,7 +129,7 @@ export const voiceGenerate: Handler = async (job, ctx) => {
       const staged = svc.uploads.put("voice", wav);
       made.push({ id: staged.id, label: v.label, instruct: v.instruct, text: v.text, seconds });
     } catch (e) {
-      if (ctx.signal.aborted) throw new Error("Cancelled");
+      if (ctx.signal.aborted) throw new Error("Cancelled", { cause: e });
       failures.push(`${v.label}: ${(e as Error).message}`);
       ctx.update({ log: `Voice ${i + 1} failed: ${(e as Error).message}` });
     }

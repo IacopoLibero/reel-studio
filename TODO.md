@@ -1,19 +1,13 @@
 # TODO
 
-What is still open, on purpose. Move an item out of this file when it is done; what is done is in [CHANGELOG.md](CHANGELOG.md). Last update: 2026-11-23, after the release of 1.0.0.
+What is still open, on purpose. Move an item out of this file when it is done; what is done is in [CHANGELOG.md](CHANGELOG.md). Last update: 2026-11-23, after the voice-language setting and the hub linter.
 
-## Open after 1.0.0
+## Open
 
-Nothing blocks the use of the app. These are the things that were not tried or not finished, most useful first.
+Nothing blocks the use of the app. These are the things that were not tried or not finished.
 
-- **Screenshots in the README are from 20 and 21 November.** Since then the sidebar has icons, the Claude usage box and Setup and Sign out right under Settings; Settings has the sections Claude and Codex, Instagram and Voice; the Reels page opens a page for each reel. Retake `reels-list.png`, `settings.png`, `hero-overview.jpg` (sidebar) and add the setup screen and the page of a reel (with the chat). Use a scratch hub with the invented Acme Bakery brand (see CONTRIBUTING.md), never your own brands.
-- **The package, on another machine.** It was built and installed only on this computer. Not done: `namcap`; a clean Arch system or user to check the dependency list (`nodejs`, `npm`, `git`, `ffmpeg`, `chromium`, `uv`, `electron`, `gcc`, `make`); the first-run text on a machine that lacks some of them (the setup shows the `pacman` line for each, not tried); the Electron window and the tray on a fresh studio folder (the clean-install test started the hub directly). The release package is built from a clean clone but on this machine.
-- **The time of a real first install is not measured.** The clean-install test ran on a very slow line, so the two big model downloads (Whisper, the voice weights) were seeded from files already on the machine (see the notes of 23 Nov in the history). On a normal line it is mostly the 30 GB of the best voice.
-- **The reel page was looked at by you, not clicked through by me.** The chat that changes a reel, the undo and the versions were tried through the API and with a real Claude (a headline made 15% bigger, a follow-up question in the same conversation), and the page as a screenshot; the undo button and its confirmation are covered by tests only.
-- **Claude with an API key and Codex were tried only with stand-ins.** The login mode of Claude was tried for real (the sidebar read the session and week usage). The API-key mode, the key file and the Test button need a real key; Codex is not installed here, so its Test says so. No Codex usage display (it reports no limits). The sidebar usage is as fresh as the last Claude run: the Check button makes one small call to read it again.
-- **Instagram.** A schedule from the calendar works (you made one on 22 Nov, it was verified), and the login is kept in the brand's folder. Not tried: logging in from scratch on a new brand through the Settings button, and the schedule flow when Instagram changes its page (the flow handles the two notices it knows; an unknown dialog stops it with a screenshot).
-- **Voice.** OmniVoice (CC-BY-NC) is not installed on purpose (non-commercial). Languages other than English, and choosing another voice for one brand, were not tried. A character added to a brand later (there is no screen for it) should move the brand's own voice from `identity/` to `mascot/<id>-voice.*`.
-- **Small things.** The head shape of the example character (`mascot/<id>-head.json`) was rebuilt from rendered frames after a file was lost: if the original character sheet turns up, trace the head again. A cover without a logo has its kicker not looked at. The hub has no linter, only `tsc` and the tests (the Remotion kit has `eslint src && tsc`).
+- **Voice.** OmniVoice (CC-BY-NC) is not installed on purpose (non-commercial). A character added to a brand later (there is no screen for it) should move the brand's own voice from `identity/` to `mascot/<id>-voice.*`.
+- **Small things.** A cover without a logo has its kicker not looked at.
 
 ## Paused
 

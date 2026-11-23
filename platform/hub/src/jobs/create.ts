@@ -13,7 +13,7 @@ import { minutesAhead, MIN_LEAD_MINUTES } from "../slots.js";
 import { folderOfKey, readScheduled, reelDirOf, resolveReelFile, scanReels } from "../reels/scanner.js";
 import type { Job, Settings } from "../shared/types.js";
 import type { JobSpec } from "./store.js";
-import { basename, join } from "node:path";
+import { basename } from "node:path";
 
 export const SCHEDULE_STEPS = ["Open dialog", "Upload video", "Crop 9:16", "Upload cover", "Caption", "Date and time", "Schedule", "Verify"];
 

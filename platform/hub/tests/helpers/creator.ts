@@ -27,7 +27,7 @@ export function makeEnv(extra: { claudeBin?: string } = {}): Env {
     const slug = job.brand ?? "";
     const brand = reg.get(slug);
     return {
-      update: (p) => patches.push(p), signal: new AbortController().signal, settings: DEFAULT_SETTINGS, brand: brand ? { slug, brand, paths: reg.paths(slug, brand) } : null,
+      update: (p) => patches.push(p), signal: new AbortController().signal, settings: DEFAULT_SETTINGS, brand: brand ? { slug, brand, paths: reg.paths(slug) } : null,
       root, claudeBin: extra.claudeBin ?? "/nonexistent", dataDir: data, blogDir: join(root, "sources"), startedAtMs: 0, creator: svc,
     };
   };

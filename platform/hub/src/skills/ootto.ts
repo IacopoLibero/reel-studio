@@ -47,7 +47,7 @@ export class OttoSkills {
       return stdout;
     } catch (e) {
       const err = e as Error & { stderr?: string };
-      throw new Error(`The skills script failed: ${(err.stderr?.trim() || err.message).slice(0, 300)}`);
+      throw new Error(`The skills script failed: ${(err.stderr?.trim() || err.message).slice(0, 300)}`, { cause: e });
     }
   }
 

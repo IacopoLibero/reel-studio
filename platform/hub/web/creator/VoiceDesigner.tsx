@@ -20,7 +20,7 @@ export function VoiceDesigner({ brand, character, voice, onChange }: Props) {
   const [job, setJob] = useState<Job | null>(null);
   const [error, setError] = useState<string | null>(null);
   const latest = useRef(voice);
-  latest.current = voice;
+  useEffect(() => { latest.current = voice; });
   const ready = brand.name.trim().length > 0;
   const working = job !== null && (job.status === "queued" || job.status === "running");
 
