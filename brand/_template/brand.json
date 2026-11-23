@@ -14,7 +14,7 @@
     "B": { "label": "Follow for tips", "line": "Follow me for more tips." }
   },
   "offer": { "lastDay": null, "regex": null },
-  "instagram": { "account": "", "userId": "", "profileDir": null },
+  "instagram": { "account": "", "userId": "" },
   "sources": { "blogDir": null },
   "character": { "enabled": false, "id": "character", "name": "" },
   "voice": { "engine": "voxcpm2", "sample": null, "sampleText": null }

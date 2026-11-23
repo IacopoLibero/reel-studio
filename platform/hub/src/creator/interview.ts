@@ -92,7 +92,7 @@ export function makeDraft(brand: Record<string, unknown>, styleMd: string | unde
     ...base, ...brand, slug, name, version: 1,
     colors: { ...base.colors, ...obj(brand.colors) }, fonts: { ...base.fonts, ...obj(brand.fonts) },
     closing: { A: { ...base.closing.A, ...obj(closing.A) }, B: { ...base.closing.B, ...obj(closing.B) } },
-    instagram: { ...obj(brand.instagram), profileDir: null },
+    instagram: obj(brand.instagram),
   };
   const v = validateBrand(merged);
   return { brand: v.ok ? { ...v.brand } : merged, styleMd: styleMd?.trim() ? styleMd : briefStyle(name, merged), errors: v.ok ? [] : v.errors, closingRules };

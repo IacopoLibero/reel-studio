@@ -139,7 +139,7 @@ folders and `scheduled.json`. The Factory page selects to-do questions and creat
 
 Everything brand-specific is scoped to one brand: `<data>/brands/<slug>/`, one folder per brand: `identity/` (the zod-validated `brand.json`, `style.md` and the logo), `mascot/`, `reels/`, and the hub's own data of the brand (the question list, settings, daily plans,
 analytics, ideas, series, `scheduled.json`, locks, notifications) and the Instagram browser profile
-(`<data>/brands/<slug>/profile/`, or the folder named by `instagram.profileDir`). Global settings (Blender device, Claude model, brand assistant)
+(`<data>/brands/<slug>/profile/`). Global settings (Blender device, Claude model, brand assistant)
 stay in `<data>/settings.json`. The job queue is shared (one browser flow at a time); each job carries `brand`.
 A workspace from before the one-folder-per-brand layout is moved with `scripts/migrate-brand-folders.sh` (copies and checks, removes nothing unless asked). More in [BRANDS.md](BRANDS.md).
 

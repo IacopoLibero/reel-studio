@@ -24,7 +24,7 @@ function reelFolder(brand: string, folder: string): void {
 beforeEach(async () => {
   tmp = mkdtempSync(join(tmpdir(), "brand-routes-"));
   root = join(tmp, "root"); data = join(tmp, "data"); mkdirSync(data); mkdirSync(join(tmp, "web")); writeFileSync(join(tmp, "web/index.html"), "<html></html>");
-  writeTestBrand(root, "acme", { name: "Acme", instagram: { account: "acme_cafe", userId: "111", profileDir: null } }, "## To do\n\n- [ ] Is a paper menu cheaper? · hook: myth · source: needs source\n");
+  writeTestBrand(root, "acme", { name: "Acme", instagram: { account: "acme_cafe", userId: "111" } }, "## To do\n\n- [ ] Is a paper menu cheaper? · hook: myth · source: needs source\n");
   writeTestBrand(root, "beta", { name: "Beta", character: { enabled: true, id: "pip", name: "Pip" } }, "## To do\n");
   reelFolder("acme", "1-first"); reelFolder("beta", "1-other");
   const config: Config = { port: 0, host: "127.0.0.1", dataDir: data, root, token: TOKEN, webDir: join(tmp, "web"), claudeBin: "/nonexistent", blogDir: join(tmp, "blog"), terminalCmd: null };

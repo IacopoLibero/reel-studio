@@ -22,7 +22,7 @@ describe("brand.create from the form", () => {
     const r = await create({ brand: formBrand() });
     const b = env.reg.get("acme-bakery");
     expect(b?.name).toBe("Acme Bakery");
-    expect(b?.instagram.profileDir).toBeNull();
+    expect(b?.instagram).toEqual({ account: "acme_bakery", userId: "" });
     for (const d of ["", "identity", "reels"]) expect(existsSync(join(env.data, "brands/acme-bakery", d)), d).toBe(true);
     expect(existsSync(join(env.data, "brands/acme-bakery/mascot"))).toBe(false); // no character, no mascot folder
     expect(existsSync(join(env.root, "brand")) || existsSync(join(env.root, "reels")) || existsSync(join(env.root, "characters")) || existsSync(join(env.root, "public"))).toBe(false); // nothing of a brand is written in the workspace
@@ -113,7 +113,7 @@ describe("brand.create from the form", () => {
     const wav = env.svc.uploads.put("voice", WAV);
     const r = await create({ brand: { ...formBrand(), instagram: { account: "a", userId: "1", profileDir: "/etc" } }, character: { mode: "import", id: "bun", name: "Bun" }, voice: { mode: "upload", wavUpload: wav.id, text: "My own words." } });
     const b = env.reg.get("acme-bakery");
-    expect(b?.instagram.profileDir).toBeNull();
+    expect(b?.instagram).toEqual({ account: "a", userId: "1" });
     expect(b?.character).toMatchObject({ enabled: true, id: "bun" });
     expect(read("mascot/bun.py")).toBe("# x");
     expect(existsSync(join(env.data, "brands/acme-bakery/mascot/movements/idle/f-0001.png"))).toBe(true);

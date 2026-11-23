@@ -5,6 +5,11 @@ import { audienceOf, aboutLine, languageName } from "../src/brands/wording.js";
 import { testBrand } from "./helpers/brand.js";
 
 describe("slug rules", () => {
+  it("a brand.json that still has the old instagram.profileDir stays valid, and the field is not kept", () => {
+    const v = validateBrand({ ...defaultBrandValues("acme", "Acme"), instagram: { account: "a", userId: "1", profileDir: "/data/chrome-profile" } });
+    expect(v.ok).toBe(true);
+    if (v.ok) expect(v.brand.instagram).toEqual({ account: "a", userId: "1" });
+  });
   it("accepts lowercase letters, digits and dashes", () => {
     for (const ok of ["acme", "my-brand", "a1", "0day", "x".repeat(40)]) expect(isValidSlug(ok)).toBe(true);
   });
@@ -31,7 +36,7 @@ describe("brand.json schema", () => {
     const v = validateBrand(base());
     expect(v.ok).toBe(true);
     if (!v.ok) return;
-    expect(v.brand).toMatchObject({ language: "en", readoutLanguage: "en", offer: { lastDay: null, regex: null }, instagram: { account: "", userId: "", profileDir: null }, character: { enabled: false }, sources: { blogDir: null } });
+    expect(v.brand).toMatchObject({ language: "en", readoutLanguage: "en", offer: { lastDay: null, regex: null }, instagram: { account: "", userId: "" }, character: { enabled: false }, sources: { blogDir: null } });
   });
   it("reports readable errors with the field path", () => {
     const v = validateBrand({ ...base(), colors: { background: "red", text: "#000000", accent: "#fff", secondary: "#123456" }, slug: "Bad Slug" });

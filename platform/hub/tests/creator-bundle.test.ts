@@ -43,7 +43,7 @@ describe("inspecting a brand folder", () => {
   });
   it("drops what belongs to another machine", () => {
     const r = run([file("brand.json", brandFile({ instagram: { account: "a", userId: "1", profileDir: "/srv/other/profile" }, sources: { blogDir: "/srv/other/blog" }, character: { enabled: true, id: "bun", name: "Bun" } }))]);
-    expect(r.preview.brand.instagram.profileDir).toBeNull();
+    expect(r.preview.brand.instagram).toEqual({ account: "a", userId: "1" }); // a profile folder of the other machine is not carried over
     expect(r.preview.brand.sources.blogDir).toBeNull();
     expect(r.preview.brand.character.enabled).toBe(false);
     expect(run([file("brand.json", brandFile({ character: { enabled: true, id: "bun", name: "Bun" } }))], [], true).preview.brand.character.enabled).toBe(true);

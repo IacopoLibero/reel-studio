@@ -25,7 +25,7 @@ const DEFAULT_BRAND = {
   colors: { background: "#f5f5f0", text: "#1a1a1a", accent: "#2f6fed", secondary: "#7a4dff" },
   fonts: { headline: "Oswald", body: "Inter" },
   closing: { A: { label: "Try it", line: "Try it today at example.com." }, B: { label: "Follow for tips", line: "Follow me for more tips." } },
-  offer: { lastDay: null, regex: null }, instagram: { account: "", userId: "", profileDir: null }, sources: { blogDir: null },
+  offer: { lastDay: null, regex: null }, instagram: { account: "", userId: "" }, sources: { blogDir: null },
   character: { enabled: false, id: "character", name: "" }, voice: { engine: "voxcpm2", sample: null, sampleText: null },
 };
 

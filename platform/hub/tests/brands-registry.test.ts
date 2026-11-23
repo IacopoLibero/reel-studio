@@ -78,7 +78,7 @@ describe("paths", () => {
     expect(brandPaths("_template", { dataDir: "/d" }).brandDir).toBe("/d/brands/_template");
   });
   it("brandCtx and the registry agree, and a profile folder named in an old brand.json is ignored", () => {
-    const b = writeTestBrand(root, "acme", { instagram: { account: "a", userId: "1", profileDir: "/data/chrome-profile" } });
+    const b = writeTestBrand(root, "acme", { instagram: { account: "a", userId: "1" } });
     expect(reg().paths("acme").profileDir).toBe(join(data, "brands/acme/profile"));
     expect(brandCtx(reg(), "acme")?.brand).toEqual(b);
     expect(brandCtx(reg(), "nope")).toBeNull();

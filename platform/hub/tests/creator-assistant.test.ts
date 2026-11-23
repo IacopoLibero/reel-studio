@@ -106,7 +106,7 @@ describe("the interview", () => {
     expect(r.done).toBe(true);
     expect(r.draft?.errors).toEqual([]);
     expect(r.draft?.brand).toMatchObject({ slug: "acme-bakery-2", name: "Acme Bakery", version: 1 });
-    expect((r.draft?.brand.instagram as { profileDir: unknown }).profileDir).toBeNull();
+    expect(r.draft?.brand.instagram).not.toHaveProperty("profileDir");
     expect(r.draft?.styleMd).toContain("# Style guide: Acme Bakery");
   });
   it("carries the proposed closing keywords into the draft, empty when none came", () => {

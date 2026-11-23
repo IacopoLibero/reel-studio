@@ -47,7 +47,7 @@ export function assembleBrand(req: CreateRequest, svc: CreatorServices, hasVoice
   const raw = { ...req.brand } as Record<string, unknown>;
   const name = typeof raw.name === "string" ? raw.name : "";
   const slug = typeof raw.slug === "string" && raw.slug ? raw.slug : uniqueSlug(name || "brand", svc.brands.slugs());
-  const instagram = { ...((raw.instagram as object | undefined) ?? {}), profileDir: null };
+  const instagram = (raw.instagram as object | undefined) ?? {};
   const c = req.character;
   const character = c.mode === "none" && req.source === "import" ? raw.character
     : c.mode === "import" ? { enabled: true, id: c.id ?? "character", name: c.name }

@@ -94,7 +94,7 @@ describe("jobs of a brand", () => {
     expect(buildSpec({ type: "claude.task", params: { move: "hop", request: "jumps high" } }, d).brand).toBe("acme");
   });
   it("the scheduler is given the brand's own profile folder, data folder and offer rule", () => {
-    const { ctx } = testRegistry(root, data, "acme", { offer: { lastDay: "2026-11-30", regex: "CODE" }, instagram: { account: "a", userId: "1", profileDir: "/data/chrome-profile" } });
+    const { ctx } = testRegistry(root, data, "acme", { offer: { lastDay: "2026-11-30", regex: "CODE" }, instagram: { account: "a", userId: "1" } });
     expect(targetOf(ctx)).toMatchObject({ slug: "acme", profileDir: join(data, "brands/acme/profile"), dataDir: join(data, "brands/acme"), offer: { lastDay: "2026-11-30" } });
     const plain = testRegistry(root, data, "beta").ctx;
     expect(targetOf(plain).profileDir).toBe(join(data, "brands/beta/profile"));
