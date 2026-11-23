@@ -4,6 +4,7 @@ import type { FastifyInstance } from "fastify";
 import { z } from "zod";
 import { FileError } from "../creator/files.js";
 import { readFileSync } from "node:fs";
+import { readChat } from "../reels/chat.js";
 import { runAssistant, scratchDir } from "../creator/assistant.js";
 import { characterTurn, characterTurnRequestSchema } from "../creator/character-interview.js";
 import { listPreviews, PREVIEW_FILE, patchState, readPlan, readState, saveSheet, sheetFile, studioDir } from "../creator/studio.js";
@@ -18,7 +19,7 @@ const fieldsBody = z.object({
 
 /** The character studio of one brand (<brand>/mascot/studio/): the reference sheet, the fields of the AI prompt, the previews of character.build and their approval. */
 export function studioRoutes(app: FastifyInstance, d: AppDeps, scope: Scope): void {
-  const view = (brandDir: string) => ({ state: readState(brandDir), sheet: sheetFile(brandDir), previews: listPreviews(brandDir), plan: readPlan(brandDir) });
+  const view = (brandDir: string) => ({ state: readState(brandDir), sheet: sheetFile(brandDir), previews: listPreviews(brandDir), plan: readPlan(brandDir), chat: readChat(studioDir(brandDir)).messages });
 
   app.get("/character/studio", async (req) => view(scope(req).paths.brandDir));
 

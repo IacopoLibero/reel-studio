@@ -120,7 +120,7 @@ Copy button), takes the reference sheet (PNG or JPG up to 10 MB, stored in `<bra
 only through `bash scripts/slot.sh blender 1 --`, no network, no credentials) reads the sheet, writes `plan.json` (parts, shapes,
 colours, expressions, and a plain "limits" field) and `build.py` (Blender Python, flat colours, Workbench engine, flat lighting,
 transparent background), runs it through the `blender-run` wrapper or the flatpak, and previews land in `<brand>/mascot/studio/previews/`.
-The Character page shows them with the plan and an Approve button, and a notes box that reruns the job with all notes so far. The
+The Character page shows them with the plan and a **chat with Claude**: each message is kept in `studio/chat.json` (with the Claude session, resumed on the next message), and the job edits the existing `build.py` instead of starting again and renders the previews again. When you are happy, **Approve and use this character** approves the version and starts `character.moves`. The builder prompt asks for rounded shapes, real depth, joined parts, thick limbs and a face from the sheet, and for a self-check against the sheet. The
 public tree holds no builder of its own (the Pip builder is private): the job asks Claude to write one from the sheet, and may read a
 `brand/*/mascot/*.py` of the machine as a method example only. Approval marks the state; **Make the moves** (`character.moves`, `src/creator/moves-job.ts`) then turns the approved preview into the moves reels use.
 

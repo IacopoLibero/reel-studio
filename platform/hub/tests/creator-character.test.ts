@@ -5,6 +5,7 @@ import { buildCharacterPrompt, characterBuild, characterTools } from "../src/cre
 import { buildSpec, createSchema } from "../src/jobs/create.js";
 import { brandCtx } from "../src/brands/context.js";
 import { DEFAULT_SETTINGS } from "../src/settings.js";
+import { readChat } from "../src/reels/chat.js";
 import { listPreviews, patchState, readState, saveSheet, sheetFile } from "../src/creator/studio.js";
 import { blenderCommand } from "../src/character/prompt.js";
 import { adaptStyle, emptyQuestions } from "../src/creator/style.js";
@@ -18,8 +19,10 @@ let env: Env;
 beforeEach(() => { env = makeEnv({ claudeBin: FAKE }); writeTestBrand(env.root, "acme", { name: "Acme" }, undefined, env.data); });
 /** The folder of the brand "acme": the character studio is its mascot/studio. */
 const dir = () => join(env.data, "brands", "acme");
-afterEach(() => { delete process.env.FAKE_MODE; rmSync(env.tmp, { recursive: true, force: true }); });
-const run = (params: Record<string, unknown> = {}) => characterBuild(job("character.build", "acme", params), env.ctx(job("character.build", "acme", params)));
+afterEach(() => { delete process.env.FAKE_MODE; delete process.env.FAKE_ARGS_FILE; rmSync(env.tmp, { recursive: true, force: true }); });
+let n = 0;
+/** Every call is its own job (a message is kept once per job). */
+const run = (params: Record<string, unknown> = {}) => { const j = { ...job("character.build", "acme", params), id: `00000000-0000-0000-0000-${String(++n).padStart(12, "0")}` }; return characterBuild(j, env.ctx(j)); };
 
 describe("the character studio files", () => {
   it("keeps the sheet, the state and the previews under brand/<slug>/mascot/studio", () => {
@@ -50,6 +53,23 @@ describe("character.build with a fake claude", () => {
     expect(second.summary).toBe("Built again with your notes.");
     expect(readState(dir()).notes).toEqual(["Make the arms shorter", "Bigger eyes"]);
     expect(readState(dir()).builds).toBe(2);
+  });
+  it("keeps the conversation: the message, Claude's answer and the session, and edits the existing builder on the next message", async () => {
+    const argsFile = join(env.tmp, "args.jsonl");
+    process.env.FAKE_ARGS_FILE = argsFile;
+    await run();
+    expect(readChat(join(env.data, "brands/acme/mascot/studio")).messages).toEqual([]);
+    await run({ notes: "Attach the arms" });
+    await run({ notes: "Rounder head" });
+    const chat = readChat(join(env.data, "brands/acme/mascot/studio"));
+    expect(chat.messages.map((m) => [m.role, m.text])).toEqual([["user", "Attach the arms"], ["claude", "Built again with your notes."], ["user", "Rounder head"], ["claude", "Built again with your notes."]]);
+    expect(chat.sessionId).toBe("sess-1");
+    const calls = readFileSync(argsFile, "utf8").trim().split("\n").map((l) => JSON.parse(l) as { args: string[]; prompt: string });
+    expect(calls[0]?.args).not.toContain("--resume");
+    expect(calls[1]?.prompt).toContain("The person says: Attach the arms");
+    expect(calls[2]?.args).toEqual(expect.arrayContaining(["--resume", "sess-1"]));
+    expect(calls[2]?.prompt).toContain("Change /");
+    expect(calls[2]?.prompt).toContain("Quality rules");
   });
   it("fails clearly when there is no sheet, no plan, no preview, or Claude errors", async () => {
     rmSync(join(env.data, "brands/acme/mascot/studio/reference-sheet.png"));

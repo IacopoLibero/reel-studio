@@ -68,10 +68,11 @@ export interface CreateRequest {
 export interface VoiceCandidate { id: string; label: string; instruct: string; text: string; seconds: number }
 export interface VoiceRequest { brand: { name: string; language: string; about: string; audience: string; tone: string }; character?: { name: string; description: string }; avoid?: string[] }
 export interface StudioView {
-  state: { status: "draft" | "preview" | "approved"; name: string; fields: CharacterFields; notes: string[]; builds: number; updatedAt: string };
+  state: { status: "draft" | "preview" | "approved" | "built"; name: string; fields: CharacterFields; notes: string[]; builds: number; updatedAt: string };
   sheet: string | null;
   previews: string[];
   plan: { summary?: string; parts?: unknown[]; limits?: string } | null;
+  chat: { role: "user" | "claude"; text: string; at: string; jobId: string }[];
 }
 
 export interface BrandList { brands: BrandSummary[]; default: string | null }
