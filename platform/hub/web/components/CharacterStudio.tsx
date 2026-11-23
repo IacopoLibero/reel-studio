@@ -37,7 +37,7 @@ export function CharacterStudio({ jobs, brand }: { jobs: Job[]; brand: BrandSumm
     setBusy(true); setMsg(null);
     try { await save(); await api.createJob(BUILD, notes.trim() ? { notes: notes.trim() } : {}); setNotes(""); setMsg("Started. This can take several minutes. Follow it below."); } catch (e) { setMsg((e as Error).message); } finally { setBusy(false); }
   };
-  const useCharacter = async () => {
+  const approveAndMakeMoves = async () => {
     setBusy(true); setMsg(null);
     try {
       if (data?.state.status !== "built") await api.approveCharacter();
@@ -85,7 +85,7 @@ export function CharacterStudio({ jobs, brand }: { jobs: Job[]; brand: BrandSumm
           {data.plan?.summary && <p className="muted"><strong>Claude's plan:</strong> {data.plan.summary}{data.plan.limits ? ` Not matched: ${data.plan.limits}` : ""}</p>}
           <StudioChat messages={data.chat} running={builds.find((j) => j.status === "queued" || j.status === "running")} disabled={busy || moveJobs.some((j) => j.status === "queued" || j.status === "running")} onSent={reload} />
           <div className="row" style={{ marginTop: 12 }}>
-            <button type="button" className="btn primary" disabled={busy || active} onClick={() => void useCharacter()}>{st?.status === "built" ? "Approve and make the moves again" : "Approve and use this character"}</button>
+            <button type="button" className="btn primary" disabled={busy || active} onClick={() => void approveAndMakeMoves()}>{st?.status === "built" ? "Approve and make the moves again" : "Approve and use this character"}</button>
             {st?.status === "built" && <span className="badge done">character in use</span>}
             <span className="muted">Claude then rigs the character and Blender renders idle, talk, wave, point, thumbs up, jump and the expressions. When it is done reels can use it.</span>
           </div>
