@@ -8,7 +8,8 @@ import { brandExists } from "../ideas/service.js";
 import { countSchema } from "../ideas/schema.js";
 import { validMoveName } from "../character/moves-parser.js";
 import { CHARACTER_STEPS } from "../creator/character-job.js";
-import { sheetFile } from "../creator/studio.js";
+import { readState, sheetFile } from "../creator/studio.js";
+import { MOVES_STEPS } from "../creator/moves-job.js";
 import { minutesAhead, MIN_LEAD_MINUTES } from "../slots.js";
 import { folderOfKey, readScheduled, reelDirOf, resolveReelFile, scanReels } from "../reels/scanner.js";
 import type { Job, Settings } from "../shared/types.js";
@@ -30,6 +31,7 @@ export const createSchema = z.discriminatedUnion("type", [
   z.object({ type: z.literal("claude.task"), params: z.object({ request: z.string().trim().min(5, "Describe the move in a few words.").max(4000), move }) }),
   z.object({ type: z.literal("blender.render"), params: z.object({ move }) }),
   z.object({ type: z.literal("character.build"), params: z.object({ notes: z.string().trim().max(1000).optional() }).default({}) }),
+  z.object({ type: z.literal("character.moves"), params: z.object({}).default({}) }),
   ...analyticsJobSchemas,
 ]);
 export type CreateBody = z.infer<typeof createSchema>;
@@ -84,6 +86,12 @@ export function buildSpec(body: CreateBody, d: Deps): JobSpec {
     if (!sheetFile(d.brand.paths.brandDir)) throw new JobRequestError("Upload the reference sheet first.");
     if (d.jobs.some((j) => j.type === "character.build" && j.brand === d.brand.slug && (j.status === "queued" || j.status === "running"))) throw new JobRequestError("A character build is already running for this brand.");
     return { type: body.type, brand: d.brand.slug, title: `Build the character (experimental)${body.params.notes ? ": with your notes" : ""}`, steps: CHARACTER_STEPS, params: body.params };
+  }
+  if (body.type === "character.moves") {
+    const status = readState(d.brand.paths.brandDir).status;
+    if (status !== "approved" && status !== "built") throw new JobRequestError("Approve a preview first.");
+    if (d.jobs.some((j) => j.type === "character.moves" && j.brand === d.brand.slug && (j.status === "queued" || j.status === "running"))) throw new JobRequestError("The moves are already being made for this brand.");
+    return { type: body.type, brand: d.brand.slug, title: "Make the character's moves (experimental)", steps: MOVES_STEPS, params: body.params };
   }
   if (body.type === "claude.task") {
     return { type: body.type, brand: d.brand.slug, title: `Add ${d.brand.brand.character.name || "character"} move: ${body.params.move}`, steps: ["Reading the code", "Writing the move", "Registering it", "Rendering with Blender", "Summary"], params: body.params };

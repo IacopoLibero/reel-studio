@@ -27,9 +27,7 @@ Nothing blocks the use of the app. These are the things that were not tried or n
 
 ## After the app (big, born with the final structure)
 
-- **Character from a picture** (`character.build`): built as an experiment (plan, Blender script, flat previews with approval and notes) and only run with a
-  stand-in Claude so far. Not done: running it for real with Claude and Blender on a real sheet, and turning an approved preview into the moves reels use
-  (talk, wave, expressions, `mascot/movements/<move>/` frames, the Remotion component). A fully automatic character from any picture is future work.
+- **Character from a picture** (`character.build`, `character.moves`): both ran for real with Claude and Blender (23 Nov), from a sheet to the moves reels use. The result is rough: blocky parts, thin arms not joined to the body, no real side view. Next: better builder prompts (joined limbs, round shapes), a reel made with a generated character to judge it, and a Remotion check of the moves in a real render. A fully automatic, polished character from any picture is future work.
 - **Assistants `codex` and custom command** for the brand interview follow the generic stdin and stdout interface and were tested only with a stand-in command.
   They get no tool limits from the hub. Try them with the real tools and fix the default `codex exec -` if needed.
 - **Full-width `Stage` variant of the Remotion kit** and a generic scene toolkit: `src/kit` has only the theme and captions. Reels for a brand without a character rely on the

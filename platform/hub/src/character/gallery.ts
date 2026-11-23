@@ -1,5 +1,5 @@
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 import type { MoveInfo } from "../shared/types.js";
 import { classify, parseCharacterPy, parseMascotTs } from "./moves-parser.js";
 
@@ -7,7 +7,8 @@ const read = (f: string) => { try { return readFileSync(f, "utf8"); } catch { re
 
 /** The Blender script of a character: brand/<slug>/mascot/<id>.py, given the brand's mascot folder. */
 export const characterScript = (mascotDir: string, id: string): string => join(mascotDir, `${id}.py`);
-export const mascotTs = (root: string): string => join(root, "src/mascot/Mascot.tsx");
+/** The brand's own Mascot component (frame counts and loop points): brand/<slug>/code/mascot/Mascot.tsx, given the brand's mascot folder. */
+export const mascotTs = (mascotDir: string): string => join(dirname(mascotDir), "code", "mascot", "Mascot.tsx");
 /** Where the rendered PNG sequence of one move is: brand/<slug>/mascot/movements/<move>/. */
 export const moveDir = (mascotDir: string, move: string): string => join(mascotDir, "movements", move);
 
@@ -22,7 +23,7 @@ export function readMoveFrames(mascotDir: string, id: string, move: string): num
   return parseCharacterPy(read(characterScript(mascotDir, id))).moves[move]?.frames ?? null;
 }
 
-export function listMoves(root: string, mascotDir: string, id: string): MoveInfo[] {
+export function listMoves(mascotDir: string, id: string): MoveInfo[] {
   const base = join(mascotDir, "movements");
   const rendered: Record<string, { frames: number; count: number }> = {};
   if (existsSync(base)) {
@@ -33,7 +34,7 @@ export function listMoves(root: string, mascotDir: string, id: string): MoveInfo
       rendered[e.name] = { frames, count: countPngs(join(base, e.name)) };
     }
   }
-  return classify({ script: parseCharacterPy(read(characterScript(mascotDir, id))), mascot: parseMascotTs(read(mascotTs(root))), rendered })
+  return classify({ script: parseCharacterPy(read(characterScript(mascotDir, id))), mascot: parseMascotTs(read(mascotTs(mascotDir))), rendered })
     .sort((a, b) => a.name.localeCompare(b.name));
 }
 

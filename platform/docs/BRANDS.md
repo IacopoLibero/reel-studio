@@ -118,11 +118,20 @@ colours, expressions, and a plain "limits" field) and `build.py` (Blender Python
 transparent background), runs it through the `blender-run` wrapper or the flatpak, and previews land in `<brand>/mascot/studio/previews/`.
 The Character page shows them with the plan and an Approve button, and a notes box that reruns the job with all notes so far. The
 public tree holds no builder of its own (the Pip builder is private): the job asks Claude to write one from the sheet, and may read a
-`brand/*/mascot/*.py` of the machine as a method example only. Approval only marks the state; it does not turn the preview into moves.
+`brand/*/mascot/*.py` of the machine as a method example only. Approval marks the state; **Make the moves** (`character.moves`, `src/creator/moves-job.ts`) then turns the approved preview into the moves reels use.
+
+`character.moves` (experimental): after approval, headless Claude (writes only inside `<brand>/mascot/`, Blender only through `slot.sh`) rigs the
+approved geometry and writes `mascot/<id>.py` to a fixed contract: a pivot per moving part, one `m_<name>(f)` per move, the literal dicts `MOVES`
+(`name: (function, frames)`) and `LOOP_FROM`, a mouth with two states, and the commands `move <name>|all`, `still`, `blend`. It renders `idle` and `talk`
+first and looks at them, then everything: idle, talk, wave, point, thumbs up, jump, and a holding face for each expression of the plan, as
+`movements/<move>/f-NNNN.png` (mouth closed), `o-NNNN.png` (mouth open) and `info.json`. The hub then checks that `idle` and `talk` have all
+their frames, sets `character` in `brand.json`, moves a voice sample from `identity/` to `mascot/<id>-voice.*`, writes
+`<brand>/code/mascot/Mascot.tsx` (never over an existing one; frame counts and the `mouthOpen` helper) and adds the character to `style.md`.
 
 ## 7. Honest scope
 Generating a good 3D-style rig from any image is hard (Pip took many iterations by hand). What exists: the multi-brand hub, the creator
 (form, AI interview, import), the folder scaffolding, brands without a character fully working, the AI image prompt, the reference
-upload, and `character.build` as an experiment that gives flat previews and a plan, not a finished character. Not verified here:
-`character.build` with a real Claude and a real Blender (only a stand-in Claude was run), and `codex` or a custom command as the
-interview assistant. A fully automatic character from any picture, with moves, is future work (TODO.md).
+upload, `character.build` (flat previews and a plan) and `character.moves` (the moves). Both were run for real on 23 Nov 2026 with Claude and
+Blender on a reference sheet of a fork character: the result is recognisable and every move renders, but it is rough (blocky parts, thin
+arms not joined to the body, no real side view). Expect to give notes and run the build again, or to finish the character by hand. Not verified here:
+`codex` or a custom command as the interview assistant. A fully automatic, polished character from any picture is future work (TODO.md).

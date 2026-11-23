@@ -39,7 +39,7 @@ export const reelMake: Handler = async (job, ctx) => {
   ctx.update({ log: `Folder ${alloc.path}, closing ${p.closing}`, step: MAKE_STEPS[0], progress: MAKE_MARKS[0] });
   const brandDir = ctx.dataDir;
   const character = ctx.brand?.brand.character;
-  const moves = character?.enabled && ctx.brand ? listMoves(ctx.root, ctx.brand.paths.mascotDir, character.id).filter((m) => m.rendered).map((m) => m.name) : [];
+  const moves = character?.enabled && ctx.brand ? listMoves(ctx.brand.paths.mascotDir, character.id).filter((m) => m.rendered).map((m) => m.name) : [];
   const prompt = buildReelPrompt({ root: ctx.root, brandDir, moves, brand: p.brand, question: p.question, closing: p.closing, source: p.source, sourceKind: p.sourceKind, folder: alloc.folder, blogDir: ctx.blogDir, ...(ctx.brand ? { brandInfo: ctx.brand.brand } : {}), ...(typeof job.params.note === "string" ? { note: job.params.note } : {}) });
   const args = ["-p", "--output-format", "stream-json", "--verbose", "--permission-mode", "acceptEdits", "--allowedTools", MAKE_ALLOWED_TOOLS, "--disallowedTools", MAKE_DENIED_TOOLS, "--add-dir", brandDir];
   if (ctx.settings.claudeModel) args.push("--model", ctx.settings.claudeModel);

@@ -75,7 +75,7 @@ Every page is for the brand chosen in the switcher; the address is `#/<brand>/<p
 | **Analytics** | Results of the reels (Composio, read-only), a chart, a table, a plain-language readout. |
 | **Series** | Recurring formats, plan a series, assign questions. |
 | **Reels** | Every reel folder with its files and Instagram state; Schedule opens a slot picker and creates an `instagram.schedule` job. A click opens the page of one reel (`#/<brand>/reels/<folder>`): video (served with `Range`, so it seeks), cover, caption, script, plan, files, and the chat that edits it (see *Editing a reel by chat*). |
-| **Character** | The moves of the brand's character (PNG sequences in `<brand>/mascot/movements/<move>/`), add a move with Claude and Blender, re-render one. For a brand without one: the experimental character-from-a-picture steps. |
+| **Character** | The moves of the brand's character (PNG sequences in `<brand>/mascot/movements/<move>/`), add a move with Claude and Blender, re-render one. For a brand without one: the experimental character-from-a-picture steps (previews, then the moves). |
 | **Settings** | Per brand: Instagram login, posting schedule, daily loop, factory rules, voice, delete brand. Global: Blender device, Claude model, brand assistant, which content skills are on. |
 | **New brand** | The brand creator (see BRANDS.md). |
 
@@ -84,7 +84,7 @@ Every page is for the brand chosen in the switcher; the address is `#/<brand>/<p
 All long work is a job. Fields: `id`, `type`, `brand`, `title`, `status` (`queued|running|done|failed|cancelled`), `progress` (0 to 1), `step`,
 `steps`, `stepIndex`, `log`, `params`, `result`, `error`, timestamps. Types: `instagram.schedule`, `instagram.reschedule`, `instagram.delete`,
 `reel.make`, `reel.edit` (one turn of the chat that changes a reel), `reel.ideas`, `daily.run`, `analytics.collect`, `reel.insights`, `series.plan`, `schedule.suggest`, `brand.create`,
-`character.build`, `blender.render`, `claude.task` (`voice.generate` is declared but not used by the hub).
+`character.build`, `character.moves`, `blender.render`, `claude.task` (`voice.generate` is declared but not used by the hub).
 
 API: `GET /api/jobs`, `GET /api/jobs/:id`, `POST /api/jobs`, `POST /api/jobs/:id/cancel`, `GET /api/events` (SSE), all behind
 `Authorization: Bearer <HUB_TOKEN>` or the login cookie `hub_token`. `GET /api/health` needs no token. Brand-scoped routes are

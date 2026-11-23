@@ -51,7 +51,7 @@ export const reelEdit: Handler = async (job, ctx) => {
   const dir = reelDirOf(brand.paths.reelsDir, p.folder);
   if (!existsSync(dir)) throw new Error(`Reel ${p.folder} not found.`);
   const schedule = readScheduled(brand.paths.scheduledFile)[`${brand.slug}/${p.folder}`];
-  const moves = brand.brand.character.enabled ? listMoves(ctx.root, brand.paths.mascotDir, brand.brand.character.id).filter((m) => m.rendered).map((m) => m.name) : [];
+  const moves = brand.brand.character.enabled ? listMoves(brand.paths.mascotDir, brand.brand.character.id).filter((m) => m.rendered).map((m) => m.name) : [];
 
   const chat = readChat(dir);
   appendMessage(dir, { role: "user", text: p.message, jobId: job.id });

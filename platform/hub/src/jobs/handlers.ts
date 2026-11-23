@@ -14,6 +14,7 @@ import { analyticsCollect, reelInsights, scheduleSuggest, seriesPlan } from "../
 import { instagramDelete, instagramReschedule } from "../calendar/handlers.js";
 import { brandCreate } from "../creator/create-job.js";
 import { characterBuild } from "../creator/character-job.js";
+import { characterMoves } from "../creator/moves-job.js";
 import { voiceGenerate } from "../creator/voice-job.js";
 import type { CreatorServices } from "../creator/services.js";
 
@@ -127,5 +128,6 @@ export const HANDLERS: Partial<Record<Job["type"], Handler>> = {
   "schedule.suggest": scheduleSuggest,
   "brand.create": brandCreate,
   "character.build": characterBuild,
+  "character.moves": characterMoves,
   "voice.generate": voiceGenerate,
 };

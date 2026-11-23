@@ -20,6 +20,7 @@ export const renderCommand = (script: string, move: string, pathVar?: string) =>
 export function buildAddMovePrompt(root: string, mascotDir: string, character: { id: string; name: string }, move: string, request: string, pathVar?: string): string {
   const { id, name } = character;
   const script = `${mascotDir}/${id}.py`;
+  const mascotTs = `${mascotDir.replace(/\/mascot\/?$/, "")}/code/mascot/Mascot.tsx`;
   const render = renderCommand(script, move, pathVar).text;
   return `You are working in the reel-studio project at ${root}. Add a new move for the character ${name || id}.
 
@@ -27,10 +28,10 @@ What the user wants:
 ${request.trim()}
 
 Rules for adding a move:
-1. Read ${script} and ${root}/src/mascot/Mascot.tsx first, and follow how the existing moves are written.
+1. Read ${script} and ${mascotTs} first, and follow how the existing moves are written.
 2. Name the move \`${move}\`. Write it as a new function \`m_${move}(f)\` in ${script}, next to the other m_* functions.
 3. Register it in MOVES in ${script} (name: (function, frames)). If it holds a pose and loops, also add it to LOOP_FROM in both files.
-4. Register its frame count in MOVE_FRAMES in src/mascot/Mascot.tsx (keep it in step with ${script}).
+4. Register its frame count in MOVE_FRAMES in ${mascotTs} (keep it in step with ${script}).
 5. Render it with this exact command (absolute script path, Blender has no window):
    ${render}
    Do not render other moves. Wait for it to finish.

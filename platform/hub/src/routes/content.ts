@@ -100,7 +100,7 @@ export function contentRoutes(app: FastifyInstance, d: AppDeps, scope: Scope): v
     return { ...b.brand.character, mascotDir: b.paths.mascotDir };
   };
 
-  app.get("/character", async (req) => { const c = characterOf(scope(req)); return listMoves(d.config.root, c.mascotDir, c.id); });
+  app.get("/character", async (req) => { const c = characterOf(scope(req)); return listMoves(c.mascotDir, c.id); });
 
   app.get<{ Params: { move: string; file: string } }>("/character/:move/frame/:file", async (req, reply) => {
     const c = characterOf(scope(req));
