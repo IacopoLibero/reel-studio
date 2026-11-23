@@ -29,7 +29,7 @@ export function ClaudePage() {
   return (
     <>
       <div className="row"><h1 className="grow">Terminal</h1><span className="muted">{status}</span></div>
-      <p className="sub">{tool === "codex" ? "Codex (not tested)" : "Claude Code"} in the project folder (the tool chosen in Settings > AI tool). The session survives page reloads.</p>
+      <p className="sub">{tool === "codex" ? "Codex (not tested)" : "Claude Code"} in the project folder (the tool chosen in Settings &gt; AI tool). The session survives page reloads.</p>
       <div className="term" ref={host} />
     </>
   );
