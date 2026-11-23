@@ -17,14 +17,12 @@ import { SettingsPage } from "./pages/Settings";
 import { NewBrandPage } from "./pages/NewBrand";
 import { SetupPage } from "./pages/Setup";
 import { AiUsage } from "./components/AiUsage";
+import { NavIcon } from "./components/NavIcon";
+import { PAGES, PAGE_IDS } from "./nav";
 import { NextSteps, markWelcome } from "./components/NextSteps";
 import { BRANDS_CHANGED } from "./hooks";
 import type { Created } from "./creator/useCreate";
 
-const PAGES = [
-  ["jobs", "Jobs"], ["daily", "Daily"], ["calendar", "Calendar"], ["claude", "Claude"], ["factory", "Factory"], ["analytics", "Analytics"], ["series", "Series"], ["reels", "Reels"], ["character", "Character"], ["settings", "Settings"],
-] as const;
-const PAGE_IDS: readonly string[] = PAGES.map(([id]) => id);
 
 export function App() {
   const [authed, setAuthed] = useState<boolean | null>(null);
@@ -81,10 +79,10 @@ function Shell({ onLogout }: { onLogout: () => void }) {
         {current && PAGES.map(([id, label]) => (
           <NavLink key={id} brand={current.slug} id={id} label={label} on={route.page === id} />
         ))}
-        <div className="spacer" />
+        <div className="nav-sep" role="separator" />
         <AiUsage brand={current?.slug ?? null} />
-        <a href="#/setup">Setup</a>
-        <a href="#/jobs" onClick={(e) => { e.preventDefault(); onLogout(); }}>Sign out</a>
+        <a href="#/setup" className={window.location.hash === "#/setup" ? "on" : ""}><NavIcon name="setup" />Setup</a>
+        <a href="#/jobs" onClick={(e) => { e.preventDefault(); onLogout(); }}><NavIcon name="signout" />Sign out</a>
       </nav>
       <main>
         {route.brand === NEW_BRAND && <NewBrandPage onCreated={created} />}
@@ -96,7 +94,7 @@ function Shell({ onLogout }: { onLogout: () => void }) {
 }
 
 function NavLink({ brand, id, label, on }: { brand: string; id: string; label: string; on: boolean }) {
-  return <a href={routeHash(brand, id)} className={on ? "on" : ""}>{label}<JobCount page={id} /></a>;
+  return <a href={routeHash(brand, id)} className={on ? "on" : ""}><NavIcon name={id} /><span>{label}<JobCount page={id} /></span></a>;
 }
 
 /** The count of running jobs next to "Jobs" comes from the page below, so the nav stays a plain list. */

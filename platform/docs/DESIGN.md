@@ -61,6 +61,8 @@ A web platform that is up while the app is open or in the tray. Everything lives
 
 ## The hub: pages
 
+The sidebar is fixed (it does not scroll with the page; in a window too short for it, it scrolls by itself). It has the brand switcher, one entry with an icon for each page (`web/nav.ts` lists the pages and draws their icons as plain strokes, with a test that none is missing), then a separator and the Claude usage block, Setup and Sign out, right below Settings.
+
 Every page is for the brand chosen in the switcher; the address is `#/<brand>/<page>`.
 
 | Page | What it does |

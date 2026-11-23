@@ -9,12 +9,17 @@ a { color: inherit; }
 button, input, select, textarea { font: inherit; color: inherit; }
 .shell { display: flex; min-height: 100vh; }
 nav { width: 200px; padding: 20px 12px; border-right: 1px solid var(--line); display: flex; flex-direction: column; gap: 2px; flex-shrink: 0; }
+/* The sidebar of the app stays where it is while the page scrolls; when the window is too short for it, it scrolls by itself. */
+.shell > nav { position: sticky; top: 0; align-self: flex-start; height: 100vh; overflow-y: auto; box-sizing: border-box; }
 nav .brand { font-weight: 700; font-size: 16px; padding: 0 10px 16px; }
 nav .brand span { color: var(--accent); }
 nav a { padding: 8px 10px; border-radius: 6px; text-decoration: none; color: var(--muted); }
 nav a:hover { background: var(--panel); color: var(--text); }
 nav a.on { background: var(--panel2); color: var(--text); box-shadow: inset 2px 0 var(--accent); }
-nav .spacer { flex: 1; }
+.shell > nav .nav-sep { height: 1px; background: var(--line); margin: 10px 4px; flex-shrink: 0; }
+.shell > nav a { display: flex; align-items: center; gap: 10px; }
+.shell > nav .nav-icon { flex-shrink: 0; opacity: .85; }
+.shell > nav a.on .nav-icon, .shell > nav a:hover .nav-icon { opacity: 1; }
 main { flex: 1; min-width: 0; padding: 28px 32px; }
 h1 { font-size: 20px; margin: 0 0 4px; font-weight: 650; }
 h2 { font-size: 14px; margin: 24px 0 10px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; }
