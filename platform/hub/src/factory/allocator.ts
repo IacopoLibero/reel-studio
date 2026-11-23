@@ -34,14 +34,14 @@ export function shortName(question: string): string {
 const SAFE_BRAND = /^[A-Za-z0-9_-]+$/;
 
 /** Picks the next free reel number for a brand and creates its folder, so parallel jobs never share a number. */
-export async function allocateReelFolder(reelsDir: string, question: string, lockDir: string, brand: string): Promise<{ n: number; folder: string; path: string }> {
+export async function allocateReelFolder(reelsDir: string, question: string, lockDir: string, brand: string, kind: "reel" | "carousel" = "reel"): Promise<{ n: number; folder: string; path: string }> {
   if (!SAFE_BRAND.test(brand)) throw new Error("Invalid brand name.");
-  return withFileLock(join(lockDir, `alloc-${brand}.lock`), async () => {
+  return withFileLock(join(lockDir, kind === "reel" ? `alloc-${brand}.lock` : `alloc-${kind}-${brand}.lock`), async () => {
     const base = reelsDir;
     mkdirSync(base, { recursive: true });
     const used = readdirSync(base).map((f) => /^(\d+)-/.exec(f)?.[1]).filter((x): x is string => !!x).map(Number);
     const n = used.length ? Math.max(...used) + 1 : 0;
-    const folder = `${n}-${shortName(question)}`;
+    const folder = `${n}-${shortName(question)}`.replace(/-reel$/, kind === "carousel" ? "-carousel" : "-reel");
     const path = join(base, folder);
     mkdirSync(path);
     return { n, folder, path };

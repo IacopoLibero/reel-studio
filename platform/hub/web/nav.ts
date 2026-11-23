@@ -1,6 +1,6 @@
 /** The pages of a brand, in the order of the sidebar: [address, label]. */
 export const PAGES = [
-  ["jobs", "Jobs"], ["daily", "Daily"], ["calendar", "Calendar"], ["claude", "Terminal"], ["factory", "Factory"], ["analytics", "Analytics"], ["series", "Series"], ["reels", "Reels"], ["character", "Character"], ["settings", "Settings"],
+  ["jobs", "Jobs"], ["daily", "Daily"], ["calendar", "Calendar"], ["claude", "Terminal"], ["factory", "Factory"], ["analytics", "Analytics"], ["series", "Series"], ["reels", "Reels"], ["carousels", "Carousels"], ["character", "Character"], ["settings", "Settings"],
 ] as const;
 export const PAGE_IDS: readonly string[] = PAGES.map(([id]) => id);
 
@@ -20,6 +20,7 @@ export const NAV_ICONS: Readonly<Record<string, readonly string[]>> = {
   analytics: ["M4 20V10", "M10 20V4", "M16 20v-7", "M22 20H2"],
   series: ["M4 7h16", "M6 3h12", "M4 11h16v9H4z"],
   reels: ["M4 5h16a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1z", "M10 9l5 3-5 3z"],
+  carousels: ["M4 6h10a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1z", "M18 8h1a1 1 0 0 1 1 1v6a1 1 0 0 1-1 1h-1", "M9 11l-2 2 2 2"],
   character: ["M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8z", "M4 21a8 8 0 0 1 16 0"],
   settings: ["M4 6h10", "M18 6h2", "M4 12h2", "M10 12h10", "M4 18h12", "M20 18h0", "M16 4v4", "M8 10v4", "M18 16v4"],
   setup: ["M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.4 2.4-2.6-.6-.6-2.6z"],

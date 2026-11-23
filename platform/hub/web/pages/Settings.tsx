@@ -5,6 +5,7 @@ import { useLoad } from "../hooks";
 import { SkillsSection } from "../components/SkillsSection";
 import { SetupVoice } from "./SetupVoice";
 import { VoiceLanguage } from "../components/VoiceLanguage";
+import { ProductFolder } from "../components/ProductFolder";
 import { AiAccess } from "../components/AiAccess";
 import { InstagramAccess } from "../components/InstagramAccess";
 import { DeleteBrand } from "../components/DeleteBrand";
@@ -21,6 +22,7 @@ const SECTIONS = [
   ["set-ai", "Claude and Codex"],
   ["set-skills", "Skills"],
   ["set-instagram", "Instagram"],
+  ["set-product", "Product"],
   ["set-voice", "Voice"],
   ["set-assistant", "Brand assistant"],
   ["set-danger", "Delete brand"],
@@ -140,6 +142,10 @@ export function SettingsPage({ brand }: { brand: BrandSummary }) {
 
           <Section id="set-instagram" title="Instagram" intro="Reels are scheduled in Instagram's own scheduler, through a Chromium browser that this brand logs in to once. The login stays in the brand's folder.">
             <InstagramAccess account={s.accountName} />
+          </Section>
+
+          <Section id="set-product" title="Product" intro="The brand's own product, read-only: carousels show its real screens, images and copy from it. A folder on this computer (its source code or its screenshots).">
+            <ProductFolder key={brand.slug + (brand.productDir ?? "")} current={brand.productDir ?? ""} brandName={brand.name} />
           </Section>
 
           <Section id="set-voice" title="Voice" intro="The voice models VoiceStudio uses for the narration of every brand. Download one, choose the one to use, or remove the ones you do not need to free the disk.">

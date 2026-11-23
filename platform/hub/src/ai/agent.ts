@@ -13,6 +13,8 @@ export interface AgentOptions {
   deniedTools?: string;
   /** Folders besides the working folder the tool may use (Claude `--add-dir`, Codex `--add-dir`). */
   addDirs?: readonly string[];
+  /** Folders it may only read (the product of a brand). Claude gets them with `--add-dir` (the caller denies writes there); Codex reads outside its working folder by default and is not given write access to them. */
+  readDirs?: readonly string[];
   /** A session to continue: Claude's session id or Codex's thread id. */
   resume?: string | null;
   /** Claude's permission mode (default acceptEdits). */
@@ -50,7 +52,7 @@ export function agentCommand(ctx: AgentContext, o: AgentOptions): AgentCommand {
   }
   const args = ["-p", "--output-format", "stream-json", "--verbose", ...(o.resume ? ["--resume", o.resume] : []), "--permission-mode", o.permissionMode ?? "acceptEdits", "--allowedTools", o.allowedTools];
   if (o.deniedTools) args.push("--disallowedTools", o.deniedTools);
-  for (const d of dirs) args.push("--add-dir", d);
+  for (const d of [...dirs, ...(o.readDirs ?? [])]) args.push("--add-dir", d);
   if (ctx.settings?.claudeModel) args.push("--model", ctx.settings.claudeModel);
   return { tool: "claude", cmd: ctx.claudeBin, args, parse: parseStreamLine, prompt: (t) => t };
 }

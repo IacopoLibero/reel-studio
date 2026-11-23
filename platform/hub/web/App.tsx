@@ -10,6 +10,8 @@ import { FactoryPage } from "./pages/Factory";
 import { DailyPage } from "./pages/Daily";
 import { ReelsPage } from "./pages/Reels";
 import { ReelPage } from "./pages/ReelPage";
+import { CarouselsPage } from "./pages/Carousels";
+import { CarouselPage } from "./pages/CarouselPage";
 import { CharacterPage } from "./pages/Character";
 import { AnalyticsPage } from "./pages/Analytics";
 import { SeriesPage } from "./pages/Series";
@@ -148,6 +150,8 @@ function BrandPages({ brand, page, item }: { brand: BrandSummary; page: string; 
       {page === "series" && <SeriesPage jobs={jobs} />}
       {page === "reels" && !item && <ReelsPage jobs={jobs} />}
       {page === "reels" && item && <ReelPage key={item} folder={item} jobs={jobs} />}
+      {page === "carousels" && !item && <CarouselsPage jobs={jobs} brand={brand} />}
+      {page === "carousels" && item && <CarouselPage key={item} folder={item} jobs={jobs} />}
       {page === "character" && <CharacterPage jobs={jobs} brand={brand} />}
       {page === "settings" && <SettingsPage key={brand.slug} brand={brand} />}
     </>

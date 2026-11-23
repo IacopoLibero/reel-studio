@@ -87,7 +87,7 @@ export class BrandRegistry {
     if (existsSync(p.brandJson)) throw new BrandError(`The brand "${brand.slug}" already exists.`);
     const created: string[] = [];
     const ensureDir = (d: string) => { if (!existsSync(d)) { mkdirSync(d, { recursive: true }); created.push(d); } };
-    for (const d of [p.brandDir, p.identityDir, p.reelsDir, p.dataDir, p.dailyDir, p.analyticsDir, p.ideasDir, p.locksDir]) ensureDir(d);
+    for (const d of [p.brandDir, p.identityDir, p.reelsDir, p.carouselsDir, p.dataDir, p.dailyDir, p.analyticsDir, p.ideasDir, p.locksDir]) ensureDir(d);
     const style = join(this.templateDir, "style.md");
     if (existsSync(style) && !existsSync(p.styleMd)) {
       writeFileSync(p.styleMd, fillTemplate(readFileSync(style, "utf8"), brand));

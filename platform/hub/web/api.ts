@@ -117,6 +117,11 @@ export interface AiState {
   codex: { access: AccessState };
 }
 
+export interface Carousel { key: string; brand: string; folder: string; n: number; name: string; style: "2d" | "3d"; topic: string; title: string; slides: string[]; hasCaption: boolean; captionStart: string; hasPlan: boolean }
+export interface CarouselDetail extends Carousel { caption: string; plan: string; files: { name: string; size: number; dir: boolean }[] }
+export interface CarouselPageData { carousel: CarouselDetail; busy: boolean }
+export const carouselFileUrl = (folder: string, name: string): string => scoped(`/carousels/file?folder=${encodeURIComponent(folder)}&name=${encodeURIComponent(name)}`);
+
 export interface ReelFile { name: string; size: number; dir: boolean }
 export interface ReelDetail {
   key: string; brand: string; folder: string; n: number; name: string; mp4: string | null; version: string;
@@ -169,6 +174,9 @@ export const api = {
   job: (id: string) => call<Job>("GET", `/api/jobs/${id}`),
   cancelJob: (id: string) => call<Job>("POST", `/api/jobs/${id}/cancel`),
   reels: () => call<Reel[]>("GET", scoped("/reels")),
+  carousels: () => call<Carousel[]>("GET", scoped("/carousels")),
+  carousel: (folder: string) => call<CarouselPageData>("GET", scoped(`/carousels/${encodeURIComponent(folder)}`)),
+  setProductDir: (productDir: string) => call<{ productDir: string | null }>("PUT", scoped("/sources"), { productDir }),
   slots: (count = 14) => call<Slot[]>("GET", scoped(`/slots?count=${count}`)),
   instagram: (fresh = false) => call<InstagramInfo>("GET", scoped(`/instagram${fresh ? "?fresh=1" : ""}`)),
   loginWindow: () => call<Record<string, unknown>>("POST", scoped("/instagram/login-window")),

@@ -25,6 +25,8 @@ export interface BrandPaths {
   movementsDir: string;
   /** <brand>/reels/<n>-<name>/: one folder per reel, with its audio in audio/. */
   reelsDir: string;
+  /** <brand>/carousels/<n>-<name>/: one folder per carousel (its slides as PNG, caption, plan and code). */
+  carouselsDir: string;
   /** The same folder as brandDir (kept as its own field: it is what a job gets as its data folder). */
   dataDir: string;
   /** The question list (data/brands/<slug>/reel-questions.md): hub data, not part of the brand's identity. */
@@ -82,7 +84,7 @@ export function brandPaths(slug: string, o: BrandPathOptions = {}): BrandPaths {
     slug, brandDir, identityDir,
     brandJson: join(identityDir, "brand.json"), styleMd: join(identityDir, "style.md"), logo: join(identityDir, "logo.png"),
     mascotDir: join(brandDir, "mascot"), movementsDir: join(brandDir, "mascot", "movements"),
-    reelsDir: join(brandDir, "reels"),
+    reelsDir: join(brandDir, "reels"), carouselsDir: join(brandDir, "carousels"),
     questionsMd: questionsFile(data),
     dataDir: data, settingsFile: join(data, "settings.json"), scheduledFile: join(data, "scheduled.json"),
     dailyDir: join(data, "daily"), analyticsDir: join(data, "analytics"), ideasDir: join(data, "ideas"),

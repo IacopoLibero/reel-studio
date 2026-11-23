@@ -85,8 +85,8 @@
   {
    "name": "carousel-builder",
    "risk": "safe",
-   "reason": "Planned: carousels need their own pipeline (see TODO.md).",
-   "defaultEnabled": false,
+   "reason": "Used by the carousel job (the structure and the words of every slide).",
+   "defaultEnabled": true,
    "hidden": false,
    "group": "kept"
   },
@@ -405,8 +405,8 @@
   {
    "name": "viral-carousel",
    "risk": "safe",
-   "reason": "Planned: carousels need their own pipeline (see TODO.md).",
-   "defaultEnabled": false,
+   "reason": "Used by the carousel job (the structure and the words of every slide).",
+   "defaultEnabled": true,
    "hidden": false,
    "group": "kept"
   },

@@ -13,7 +13,7 @@ import { logoRoutes } from "./logo.js";
 import { checkFont, loadFontList } from "../creator/fonts.js";
 
 export const summaryOf = (b: Brand, hasLogo = false): BrandSummary => ({
-  slug: b.slug, name: b.name, language: b.language, website: b.website, accent: b.colors.accent, background: b.colors.background, colors: b.colors,
+  productDir: b.sources.productDir, slug: b.slug, name: b.name, language: b.language, website: b.website, accent: b.colors.accent, background: b.colors.background, colors: b.colors,
   instagramAccount: b.instagram.account, hasInstagramUserId: b.instagram.userId !== "", hasLogo,
   character: { enabled: b.character.enabled, id: b.character.id, name: b.character.name },
 });
@@ -54,6 +54,18 @@ export function brandRoutes(app: FastifyInstance, d: AppDeps): void {
     const md = b.paths.styleMd;
     if (existsSync(md)) { const text = readFileSync(md, "utf8"), next = withLanguageLine(text, language); if (next !== text) writeFileSync(md, next); }
     return { language, name: voiceLanguageName(language) };
+  });
+
+  // The brand's own product (its screens, images and copy), read-only: carousels show the real thing from it. A folder on this machine, or empty to clear it.
+  app.put<{ Params: { slug: string } }>("/api/brands/:slug/sources", async (req, reply) => {
+    const b = scope(req);
+    const p = z.object({ productDir: z.string().trim().max(400).refine((v) => v === "" || (v.startsWith("/") && !v.includes("\0")), "Use a full folder path, such as /home/me/product.") }).safeParse(req.body);
+    if (!p.success) return reply.code(400).send({ error: p.error.issues[0]?.message ?? "Use a full folder path." });
+    if (p.data.productDir && !existsSync(p.data.productDir)) return reply.code(400).send({ error: "That folder does not exist on this machine." });
+    const fresh = readBrand(d.config.dataDir, b.slug);
+    if (!fresh) return reply.code(404).send({ error: "That brand does not exist." });
+    writeBrand(d.config.dataDir, { ...fresh, sources: { ...fresh.sources, productDir: p.data.productDir || null } });
+    return { productDir: p.data.productDir || null };
   });
 
   const stores = () => d.brands.slugs().map((slug) => NotificationStore.at(d.brands.paths(slug).dataDir));

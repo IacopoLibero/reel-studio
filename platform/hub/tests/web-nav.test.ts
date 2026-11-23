@@ -13,6 +13,6 @@ describe("sidebar entries", () => {
     }
   });
   it("keeps the order of the pages, with Settings last", () => {
-    expect(PAGES.map(([id]) => id)).toEqual(["jobs", "daily", "calendar", "claude", "factory", "analytics", "series", "reels", "character", "settings"]);
+    expect(PAGES.map(([id]) => id)).toEqual(["jobs", "daily", "calendar", "claude", "factory", "analytics", "series", "reels", "carousels", "character", "settings"]);
   });
 });

@@ -304,3 +304,10 @@ textarea.tall { width: 100%; }
 .ai-bar.bad i { background: var(--accent); }
 .ai-num { text-align: right; font-variant-numeric: tabular-nums; }
 .ai-foot { display: flex; justify-content: space-between; align-items: center; margin-top: 6px; font-size: 11px; }
+
+/* Carousels: the slides side by side in swipe order, and a full-size view on click. */
+.carousel-strip { display: flex; gap: 10px; overflow-x: auto; padding: 4px 0 12px; margin-bottom: 12px; }
+.carousel-strip img { height: 380px; width: auto; border-radius: 8px; border: 1px solid var(--border, #3a3f4a); flex-shrink: 0; cursor: zoom-in; background: var(--panel2); }
+.lightbox { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.82); display: flex; align-items: center; justify-content: center; z-index: 50; cursor: zoom-out; }
+.lightbox img { max-height: 94vh; max-width: 94vw; border-radius: 10px; }
+.thumb.wide { width: 77px; height: 96px; }

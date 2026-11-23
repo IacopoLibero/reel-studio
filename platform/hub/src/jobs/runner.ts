@@ -8,7 +8,7 @@ import type { JobStore } from "./store.js";
 import type { CreatorServices } from "../creator/services.js";
 
 /** Lanes run one job at a time each: Instagram on its own, character work (Claude and Blender) on another. Other types run alone. */
-const laneOf = (j: Job): string => (j.type.startsWith("instagram.") ? "instagram" : j.type === "voice.generate" ? "voice" : j.type === "reel.make" ? "factory" : j.type === "reel.edit" ? "edit" : j.type === "reel.ideas" ? "ideas" : j.type === "daily.run" ? "daily" : ["analytics.collect", "reel.insights", "series.plan", "schedule.suggest"].includes(j.type) ? "analytics" : j.type === "brand.create" ? "brand" : "character");
+const laneOf = (j: Job): string => (j.type.startsWith("instagram.") ? "instagram" : j.type === "voice.generate" ? "voice" : j.type === "reel.make" ? "factory" : j.type === "carousel.make" ? "carousel" : j.type === "reel.edit" ? "edit" : j.type === "reel.ideas" ? "ideas" : j.type === "daily.run" ? "daily" : ["analytics.collect", "reel.insights", "series.plan", "schedule.suggest"].includes(j.type) ? "analytics" : j.type === "brand.create" ? "brand" : "character");
 
 export class JobRunner {
   private controllers = new Map<string, AbortController>();

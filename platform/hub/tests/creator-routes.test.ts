@@ -285,3 +285,40 @@ describe("the character studio routes", () => {
     expect((await get("/api/brands/acme/character")).statusCode).toBe(404);
   });
 });
+
+describe("the carousel routes and the product folder", () => {
+  const seed = () => {
+    const d = join(data, "brands/acme/carousels/0-qr-menu"); mkdirSync(d, { recursive: true });
+    writeFileSync(join(d, "slide-1.png"), PNG); writeFileSync(join(d, "slide-2.png"), PNG); writeFileSync(join(d, "caption.md"), "Hook 👇\n\nmore"); writeFileSync(join(d, "plan.md"), "# Plan");
+    writeFileSync(join(d, "carousel.json"), JSON.stringify({ style: "3d", topic: "QR menu", title: "QR" })); writeFileSync(join(d, "secret.txt"), "no");
+  };
+  it("lists carousels, gives one with its caption and plan, and serves its slides and caption only", async () => {
+    seed();
+    const list = (await get("/api/brands/acme/carousels")).json();
+    expect(list).toHaveLength(1);
+    expect(list[0]).toMatchObject({ folder: "0-qr-menu", style: "3d", slides: ["slide-1.png", "slide-2.png"], hasCaption: true });
+    const one = (await get("/api/brands/acme/carousels/0-qr-menu")).json();
+    expect(one).toMatchObject({ busy: false, carousel: { caption: "Hook 👇\n\nmore", plan: "# Plan" } });
+    const png = await get("/api/brands/acme/carousels/file?folder=0-qr-menu&name=slide-1.png");
+    expect(png.statusCode).toBe(200); expect(png.headers["content-type"]).toContain("image/png");
+    expect((await get("/api/brands/acme/carousels/file?folder=0-qr-menu&name=caption.md")).headers["content-disposition"]).toContain("attachment");
+    for (const q of ["folder=0-qr-menu&name=secret.txt", "folder=..&name=slide-1.png", "folder=0-none&name=slide-1.png"]) expect((await get(`/api/brands/acme/carousels/file?${q}`)).statusCode).toBe(404);
+    expect((await get("/api/brands/acme/carousels/9-none")).statusCode).toBe(404);
+  });
+  it("sets and clears the product folder, only for a folder that exists", async () => {
+    const put = (productDir: string) => app.inject({ method: "PUT", url: "/api/brands/acme/sources", headers: auth, payload: { productDir } });
+    const folder = join(tmp, "product"); mkdirSync(folder);
+    expect((await put(folder)).json()).toEqual({ productDir: folder });
+    expect((await get("/api/brands/acme")).json().productDir).toBe(folder);
+    expect((await put("relative/path")).statusCode).toBe(400);
+    expect((await put(join(tmp, "missing"))).statusCode).toBe(400);
+    expect((await put("")).json()).toEqual({ productDir: null });
+    expect((await get("/api/brands/acme")).json().productDir).toBeNull();
+  });
+  it("starts a carousel job through the jobs route", async () => {
+    const r = await post("/api/brands/acme/jobs", { type: "carousel.make", params: { topic: "Why a QR menu", style: "2d", slides: 4 } });
+    expect(r.statusCode).toBeLessThan(300);
+    expect(r.json()).toMatchObject({ type: "carousel.make", brand: "acme", params: { style: "2d", slides: 4 } });
+    expect((await post("/api/brands/acme/jobs", { type: "carousel.make", params: { topic: "no" } })).statusCode).toBe(400);
+  });
+});

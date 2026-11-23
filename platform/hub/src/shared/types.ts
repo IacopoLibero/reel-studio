@@ -1,4 +1,4 @@
-export type JobType = "daily.run" | "reel.make" | "reel.edit" | "reel.ideas" | "instagram.reschedule" | "instagram.delete" | "instagram.schedule" | "blender.render" | "claude.task" | "voice.generate" | "analytics.collect" | "reel.insights" | "series.plan" | "schedule.suggest" | "brand.create" | "character.build" | "character.moves";
+export type JobType = "daily.run" | "reel.make" | "reel.edit" | "reel.ideas" | "instagram.reschedule" | "instagram.delete" | "instagram.schedule" | "blender.render" | "claude.task" | "voice.generate" | "analytics.collect" | "reel.insights" | "series.plan" | "schedule.suggest" | "brand.create" | "character.build" | "character.moves" | "carousel.make";
 export type JobStatus = "queued" | "running" | "done" | "failed" | "cancelled";
 
 export interface Job {
@@ -163,6 +163,8 @@ export interface CalendarData {
 
 /** What the web app knows about a brand (GET /api/brands). */
 export interface BrandSummary {
+  /** The brand's product folder (read-only), or null. */
+  productDir: string | null;
   slug: string;
   name: string;
   language: string;
