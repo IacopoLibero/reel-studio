@@ -88,7 +88,7 @@ export function InterviewEntry({ options, onCreated }: { options: CreatorOptions
   return (
     <>
       <p className="muted">
-        Assistant: <strong>{a.kind === "codex" ? "Codex" : "Claude"}</strong>. {a.kind === "claude" ? "It can read and search the web, but cannot change files, run commands or read your credentials or other brands." : "It runs in a read-only sandbox: it cannot change files, but it can read what you can read."} Change it in Settings.
+        Assistant: <strong>{a.kind === "codex" ? "Codex (not tested)" : "Claude"}</strong>. {a.kind === "claude" ? "It can read and search the web, but cannot change files, run commands or read your credentials or other brands." : "It runs in a read-only sandbox: it cannot change files, but it can read what you can read."} Change it in Settings.
       </p>
       <div className="interview">
         <div className="chat" role="log" aria-live="polite" aria-label="Conversation">

@@ -1,3 +1,4 @@
+import { toolOf } from "../ai/agent.js";
 import { tmpdir } from "node:os";
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
@@ -27,6 +28,7 @@ const provider = (v: string): Provider => {
  */
 export function aiRoutes(app: FastifyInstance, d: AppDeps, ai: AiServices): void {
   const view = () => ({
+    tool: toolOf({ settings: d.settings.get() }),
     claude: { access: ai.access.claude.state(), usage: ai.usage.view() },
     codex: { access: ai.access.codex.state() },
   });

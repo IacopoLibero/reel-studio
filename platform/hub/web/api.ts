@@ -112,6 +112,7 @@ export interface VoiceSetup { running: boolean; message?: string; models: VoiceM
 export interface AccessState { mode: "login" | "api-key"; hasKey: boolean; keyHint: string }
 export interface LimitWindow { utilization: number; resetsAt: number | null; status: string }
 export interface AiState {
+  tool: "claude" | "codex";
   claude: { access: AccessState; usage: { limits: { session: LimitWindow | null; week: LimitWindow | null; updatedAt: string } | null; cost: { today: number; week: number; month: number } } };
   codex: { access: AccessState };
 }

@@ -65,7 +65,7 @@ export const reelEdit: Handler = async (job, ctx) => {
     const agent = agentCommand(ctx, { access: "edit", allowedTools: MAKE_ALLOWED_TOOLS, deniedTools: MAKE_DENIED_TOOLS, addDirs: [brand.paths.brandDir], resume: sessionId });
     const r: RunResult = { code: null, sessionId: sessionId, summary: "", failed: false, lastError: "", stderr: "", sawInit: false };
     r.code = await runProcess({
-      cmd: agent.cmd, args: agent.args, cwd: ctx.root, env: jobEnv(ctx.settings, brand.slug), stdin: prompt, signal: ctx.signal,
+      cmd: agent.cmd, args: agent.args, cwd: ctx.root, env: jobEnv(ctx.settings, brand.slug), stdin: agent.prompt(prompt), signal: ctx.signal,
       onLine: (line, stream) => {
         if (stream === "err") { if (line.trim()) { r.stderr = line.slice(0, 300); ctx.update({ log: `[stderr] ${r.stderr}` }); } return; }
         for (const ev of agent.parse(line)) {

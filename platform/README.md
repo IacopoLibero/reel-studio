@@ -126,7 +126,7 @@ None is needed. These change where the app looks, for the hub it starts (set the
 | `CHROME_PATH` | system Chromium or Chrome | The browser for Instagram. |
 | `HUB_SCHEDULER` | on | `off` runs without the Instagram scheduler (tests). |
 | `HUB_WEB_DIR` | built web app | Folder of the built web app. |
-| `HUB_TERMINAL_CMD` | `claude` in tmux | The command of the Claude page. |
+| `HUB_TERMINAL_CMD` | `claude` or `codex` in tmux | The command of the Terminal page (default: the tool chosen in Settings > AI tool). |
 | `HUB_LOG_LEVEL` | `info` | Log level. |
 
 ## One GPU, one VoiceStudio

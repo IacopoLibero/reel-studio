@@ -70,7 +70,7 @@ Every page is for the brand chosen in the switcher; the address is `#/<brand>/<p
 | **Jobs** | The job list with a progress bar each (live through server-sent events), a log, cancel. |
 | **Daily** | The daily loop: readout, proposals, three ideas to approve, review of each finished reel. See DAILY.md. |
 | **Calendar** | Posts scheduled on Instagram (read by the scheduler), free slots of the pattern, drag to reschedule, delete, best-time suggestion. |
-| **Claude** | xterm.js over WebSocket, backed by node-pty running `claude` in the project folder inside tmux, so it survives reloads. |
+| **Terminal** | xterm.js over WebSocket, backed by node-pty running `claude` (or `codex`, the tool chosen in Settings) in the project folder inside tmux, so it survives reloads. |
 | **Factory** | Questions from `reel-questions.md`, make reels, find new ideas. See below. |
 | **Analytics** | Results of the reels (Composio, read-only), a chart, a table, a plain-language readout. |
 | **Series** | Recurring formats, plan a series, assign questions. |
@@ -180,7 +180,8 @@ The page of one reel has a conversation with Claude that changes the reel. Each 
 
 - **Claude:** `claude -p --output-format stream-json` with the allow and deny lists, as before.
 - **Codex:** `codex exec --json --skip-git-repo-check --sandbox <read-only|workspace-write> [-c sandbox_workspace_write.network_access=true] [--add-dir ...] [resume <thread>] -` (OpenAI's non-interactive mode). `access: "edit"` jobs get `workspace-write` with network on (the voice server and the renders are local); `read` jobs get `read-only`. The lists of Claude tools do not exist for Codex, so the credential and command denials do not apply: the sandbox is the limit.
-- **Events:** `codex-stream.ts` turns Codex's JSON Lines (`thread.started`, `item.started`, `item.completed`, `turn.completed`, `turn.failed`, `error`) into the same events Claude's stream gives (`init`, `text`, `tool`, `result`), so the handlers do not change. A command that reads a `skills/<name>/SKILL.md` is reported as a `Skill` call; `requireSkill` makes a missing call an error for Claude and a warning for Codex.
+- **Events:** `codex-stream.ts` turns Codex's JSON Lines (`thread.started`, `item.started`, `item.completed`, `turn.completed`, `turn.failed`, `error`) into the same events Claude's stream gives (`init`, `text`, `tool`, `result`), so the handlers do not change. A command that reads a `skills/<name>/SKILL.md` is reported as a `Skill` call; `requireSkill` makes a missing call an error for Claude and for Codex. For Codex the prompt gets a note that tells it to open the SKILL.md of every skill it uses (`cat .agents/skills/<name>/SKILL.md`), and the hub counts a skill as called when such a command is seen (also through the `skills/ootto/<x>/` source folder).
 - **Skills:** before a Codex job the runner links each `.claude/skills/<x>` into `.agents/skills/<x>` (never replacing anything), where Codex looks for skills.
 - **Environment:** `jobEnv` gives Codex the Codex access and no Anthropic key or hub token.
-- **Not done for Codex:** the Claude terminal page, the sidebar usage box (Codex reports no limits), the Claude model setting. Not verified against a real Codex (TODO.md).
+- **Terminal:** the Terminal page runs Claude Code or Codex (`HUB_CODEX_BIN`) in the project folder, whichever is chosen; changing the tool closes the old terminal (tmux sessions are `reel-claude` and `reel-codex`).
+- **Not done for Codex:** the sidebar usage box (Codex reports no limits) and the Claude model setting. **Codex is not tested**: nothing was ever run against a real Codex (TODO.md); the interface says so wherever Codex appears.

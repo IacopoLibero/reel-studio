@@ -3,7 +3,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { agentCommand, linkSkillsForCodex, requireSkill, toolOf } from "../src/ai/agent.js";
-import { createCodexParser } from "../src/ai/codex-stream.js";
+import { createCodexParser, skillOfCommand } from "../src/ai/codex-stream.js";
 import { jobEnv } from "../src/env.js";
 import { DEFAULT_SETTINGS } from "../src/settings.js";
 
@@ -97,12 +97,30 @@ describe("the environment of a job", () => {
 });
 
 describe("requireSkill", () => {
-  it("is an error for Claude and a warning in the log for Codex", () => {
-    const logs: string[] = [];
-    const c = (kind: "claude" | "codex") => ({ ...ctx(kind), update: (p: { log: string }) => { logs.push(p.log); } });
+  it("is an error for Claude and for Codex when the skill was not called", () => {
+    const c = (kind: "claude" | "codex") => ({ ...ctx(kind), update: () => undefined });
     expect(() => requireSkill(c("claude"), false, "no skill")).toThrow("no skill");
-    expect(() => requireSkill(c("codex"), false, "no skill")).not.toThrow();
-    expect(logs[0]).toMatch(/^Warning: no skill/);
-    requireSkill(c("claude"), true, "x");
+    expect(() => requireSkill(c("codex"), false, "no skill")).toThrow("no skill");
+    requireSkill(c("codex"), true, "x");
+  });
+});
+
+describe("how Codex is told about skills", () => {
+  it("adds a note for Codex only, and leaves a Claude prompt as it is", () => {
+    expect(agentCommand(ctx("claude"), { access: "read", ...opts }).prompt("do it")).toBe("do it");
+    const p = agentCommand(ctx("codex"), { access: "read", ...opts }).prompt("do it");
+    expect(p.startsWith("do it")).toBe(true);
+    expect(p).toContain(".agents/skills/<name>/SKILL.md");
+    expect(p).toContain("cat .agents/skills/<name>/SKILL.md");
+  });
+  it("recognises a skill read through its link, its folder or the ootto source folder", () => {
+    for (const [cmd, name] of [
+      ["cat .agents/skills/reel-hooks/SKILL.md", "reel-hooks"],
+      ["sed -n '1,200p' /w/.agents/skills/ootto-hook-mining/SKILL.md", "ootto-hook-mining"],
+      ["cat /usr/lib/reel-studio/platform/skills/ootto/hook-mining/SKILL.md", "ootto-hook-mining"],
+      ["head -50 .claude/skills/reel-research/SKILL.md", "reel-research"],
+    ] as const) expect(skillOfCommand(cmd)).toBe(name);
+    expect(skillOfCommand("ls .agents/skills")).toBeNull();
+    expect(skillOfCommand("cat package.json")).toBeNull();
   });
 });

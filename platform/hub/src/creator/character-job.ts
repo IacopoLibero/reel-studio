@@ -123,7 +123,7 @@ export const characterBuild: Handler = async (job, ctx) => {
     const agent = agentCommand(ctx, { access: "edit", allowedTools: tools.allowed, deniedTools: tools.denied, addDirs: [studio], resume });
     sawInit = false; sessionId = resume;
     return runProcess({
-    cmd: agent.cmd, args: agent.args, cwd: root, env: jobEnv(ctx.settings, slug), stdin: prompt, signal: ctx.signal,
+    cmd: agent.cmd, args: agent.args, cwd: root, env: jobEnv(ctx.settings, slug), stdin: agent.prompt(prompt), signal: ctx.signal,
     onLine: (line, stream) => {
       if (stream === "err") { if (line.trim()) { stderrLast = line.slice(0, 300); ctx.update({ log: `[stderr] ${stderrLast}` }); } return; }
       for (const ev of agent.parse(line)) {

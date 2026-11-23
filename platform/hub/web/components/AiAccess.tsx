@@ -28,7 +28,7 @@ function Access({ provider, state, onChanged }: { provider: "claude" | "codex"; 
   const needsKey = mode === "api-key" && !state.hasKey && !key.trim();
   return (
     <div className="card" style={{ margin: 0 }}>
-      <strong>{t.name}</strong>
+      <strong>{t.name}</strong>{provider === "codex" && <span className="badge" title="Written from OpenAI's documentation and tried only with a stand-in, never with a real Codex" style={{ marginLeft: 8 }}>not tested</span>}
       <div role="radiogroup" aria-label={`${t.name} access`} style={{ margin: "8px 0" }}>
         <label style={{ display: "block", margin: "4px 0" }}><input type="radio" name={`${provider}-mode`} checked={mode === "login"} onChange={() => setMode("login")} /> Login <span className="muted">· {t.login}</span></label>
         <label style={{ display: "block", margin: "4px 0" }}><input type="radio" name={`${provider}-mode`} checked={mode === "api-key"} onChange={() => setMode("api-key")} /> API key <span className="muted">· {t.key}</span></label>
@@ -58,7 +58,7 @@ export function AiAccess() {
     <div style={{ display: "grid", gap: 12 }}>
       <Access provider="claude" state={data.claude.access} onChanged={reload} />
       <Access provider="codex" state={data.codex.access} onChanged={reload} />
-      <p className="muted" style={{ fontSize: 12, margin: 0 }}>Claude runs the jobs (scripts, ideas, readouts, reel changes). Codex is only an option for the brand interview (Settings, Brand assistant; not tested). A change applies to the next job; a job that is running keeps what it started with.</p>
+      <p className="muted" style={{ fontSize: 12, margin: 0 }}>One of the two does all the AI work: choose it in "AI tool" below (Claude is the default; Codex is not tested, it has never been tried with a real Codex). A change applies to the next job; a job that is running keeps what it started with.</p>
     </div>
   );
 }

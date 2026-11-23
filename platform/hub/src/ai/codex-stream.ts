@@ -1,7 +1,12 @@
 import type { StreamEvent } from "../character/claude-stream.js";
 
 /** The `Skill` tool of Claude has no twin in Codex: a skill is used when its SKILL.md is read, so a command that mentions one is reported as that skill. */
-const SKILL_PATH = /(?:^|[\s/"'])skills\/([a-z0-9][a-z0-9_-]*)\/(?:SKILL\.md|[A-Za-z0-9._-]+\.md)/;
+const SKILL_PATH = /(?:^|[\s/"'])skills\/(?:(ootto)\/)?([a-z0-9][a-z0-9_-]*)\/(?:SKILL\.md|[A-Za-z0-9._-]+\.md)/;
+/** The skill a command reads: `skills/<name>/...`, or `skills/ootto/<x>/...` (where the `ootto-<x>` skills are linked from). */
+export const skillOfCommand = (command: string): string | null => {
+  const m = SKILL_PATH.exec(command);
+  return m ? (m[1] ? `ootto-${m[2]}` : (m[2] as string)) : null;
+};
 
 const asRecord = (v: unknown): Record<string, unknown> => (v && typeof v === "object" && !Array.isArray(v) ? (v as Record<string, unknown>) : {});
 const str = (v: unknown): string => (typeof v === "string" ? v : "");
@@ -31,7 +36,7 @@ export function createCodexParser(): (line: string) => StreamEvent[] {
     if (type !== "item.started") return [];
     if (kind === "command_execution") {
       const command = str(item.command);
-      const skill = SKILL_PATH.exec(command)?.[1];
+      const skill = skillOfCommand(command);
       return [{ kind: "tool", name: "Bash", input: { command } }, ...(skill ? [{ kind: "tool" as const, name: "Skill", input: { skill } }] : [])];
     }
     if (kind === "file_change") {

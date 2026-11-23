@@ -148,9 +148,9 @@ export function SettingsPage({ brand }: { brand: BrandSummary }) {
           </Section>
 
           <Section id="set-assistant" title="AI tool" intro="The tool that does all the AI work for every brand: making and changing reels, ideas, the daily loop, the readouts, the character, and the brand assistant in New brand. One tool for everything.">
-            <Row label="Tool" htmlFor="s-asst" help="Claude is the default and the one everything was tried with. Codex runs `codex exec` (installed and signed in: `codex login`, or an API key in the Codex section above); it was written from OpenAI's documentation and has not been tried with a real Codex. With Codex the hub cannot limit single commands, only the sandbox: the jobs that make things write in their own folders, and the rest only read. Use the Test button of Codex above first.">
+            <Row label="Tool" htmlFor="s-asst" help="Claude is the default and the one everything was tried with. Codex is NOT TESTED: it was written from OpenAI\'s documentation and tried only with a stand-in, never with a real Codex. It runs `codex exec` (installed and signed in: `codex login`, or an API key in the Codex section above); it was written from OpenAI's documentation and has not been tried with a real Codex. With Codex the hub cannot limit single commands, only the sandbox: the jobs that make things write in their own folders, and the rest only read. Use the Test button of Codex above first.">
               <select id="s-asst" value={s.assistant.kind} onChange={(e) => set({ assistant: { kind: e.target.value as Settings["assistant"]["kind"] } })}>
-                <option value="claude">Claude (default)</option><option value="codex">Codex</option>
+                <option value="claude">Claude (default, tested)</option><option value="codex">Codex (not tested)</option>
               </select>
             </Row>
             {s.assistant.kind !== "claude" && <p className="warn-box">This assistant gets no tool limits from the hub, because the hub cannot set them. Only claude runs with read-only tools and no access to credentials.</p>}

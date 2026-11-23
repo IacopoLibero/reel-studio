@@ -20,7 +20,15 @@ export interface AgentOptions {
 }
 
 export interface AgentContext { settings: Pick<Settings, "claudeModel" | "assistant">; claudeBin: string; /** Default `codex`. */ codexBin?: string }
-export interface AgentCommand { tool: AssistantKind; cmd: string; args: string[]; parse: (line: string) => StreamEvent[] }
+export interface AgentCommand {
+  tool: AssistantKind; cmd: string; args: string[]; parse: (line: string) => StreamEvent[];
+  /** The text to send on stdin: the prompt, and for Codex a note on how skills are used here (the hub checks the calls by watching the SKILL.md being opened). */
+  prompt: (text: string) => string;
+}
+
+const CODEX_SKILL_NOTE = `
+
+How to use a skill here: the skills are folders in .agents/skills/<name>/ with a SKILL.md. To use one, open its SKILL.md with a shell command (for example: cat .agents/skills/<name>/SKILL.md) before you rely on it, and follow it. When this task names a skill, open that skill's SKILL.md first. The hub checks that the required skills were really opened.`;
 
 /** The tool all the jobs use: one choice for everything, Claude or Codex (Settings > Brand assistant). */
 export const toolOf = (ctx: Pick<AgentContext, "settings">): AssistantKind => (ctx.settings?.assistant?.kind === "codex" ? "codex" : "claude");
@@ -38,13 +46,13 @@ export function agentCommand(ctx: AgentContext, o: AgentOptions): AgentCommand {
     for (const d of dirs) args.push("--add-dir", d);
     if (o.resume) args.push("resume", o.resume);
     args.push("-");
-    return { tool: "codex", cmd: ctx.codexBin ?? "codex", args, parse: createCodexParser() };
+    return { tool: "codex", cmd: ctx.codexBin ?? "codex", args, parse: createCodexParser(), prompt: (t) => `${t}${CODEX_SKILL_NOTE}` };
   }
   const args = ["-p", "--output-format", "stream-json", "--verbose", ...(o.resume ? ["--resume", o.resume] : []), "--permission-mode", o.permissionMode ?? "acceptEdits", "--allowedTools", o.allowedTools];
   if (o.deniedTools) args.push("--disallowedTools", o.deniedTools);
   for (const d of dirs) args.push("--add-dir", d);
   if (ctx.settings?.claudeModel) args.push("--model", ctx.settings.claudeModel);
-  return { tool: "claude", cmd: ctx.claudeBin, args, parse: parseStreamLine };
+  return { tool: "claude", cmd: ctx.claudeBin, args, parse: parseStreamLine, prompt: (t) => t };
 }
 
 /**
@@ -66,11 +74,9 @@ export function linkSkillsForCodex(root: string): string[] {
 }
 
 /**
- * A job that must call a skill checks it afterwards. With Claude a missing call is an error (the Skill tool says exactly what was called).
- * Codex has no such tool: a skill is only noticed when its SKILL.md is read, which may be missed, so with Codex a missing call is a warning in the log.
+ * A job that must call a skill checks it afterwards, with Claude and with Codex: a missing call is an error. Claude's Skill tool says exactly what was
+ * called; for Codex a skill counts as called when its SKILL.md was opened by a command (the prompt tells it to do so).
  */
-export function requireSkill(ctx: AgentContext & { update: (p: { log: string }) => void }, ok: boolean, message: string): void {
-  if (ok) return;
-  if (toolOf(ctx) === "codex") { ctx.update({ log: `Warning: ${message} (Codex does not report skill calls reliably, so the job goes on).` }); return; }
-  throw new Error(message);
+export function requireSkill(_ctx: AgentContext & { update: (p: { log: string }) => void }, ok: boolean, message: string): void {
+  if (!ok) throw new Error(message);
 }

@@ -1,3 +1,4 @@
+import { toolOf } from "./ai/agent.js";
 import { moveVoicesToCharacters } from "./brands/voice-move.js";
 import { join } from "node:path";
 import fastify, { type FastifyInstance } from "fastify";
@@ -141,7 +142,7 @@ export async function buildApp(config: Config): Promise<{ app: FastifyInstance; 
     });
     setupRoutes(api, deps, installer, checkContext);
     setupVoiceRoutes(api, () => new VoiceClient(`http://127.0.0.1:${Number(process.env.VOICE_PORT ?? 3900)}`));
-    const terminal = new Terminal(config);
+    const terminal = new Terminal(config, () => toolOf({ settings: settings.get() }));
     api.get("/ws/terminal", { websocket: true }, (socket, req) => {
       if (!sameOrigin(req)) { socket.close(1008, "origin"); return; }
       const q = z.object({ cols: z.coerce.number().int().min(10).max(500).default(100), rows: z.coerce.number().int().min(3).max(200).default(30) }).parse(req.query);

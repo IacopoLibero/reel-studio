@@ -149,7 +149,7 @@ Click a reel in **Reels** to watch it and change it by talking to Claude; the la
 - Blender device, Claude model, which content skills are on, the brand assistant, and deleting a brand (it goes to a trash folder).
 - **Claude and Codex:** how each signs in, with its own login or with an API key (saved in a file only you can read; the page shows the last four characters), and a **Test** button. The **sidebar** shows the Claude usage: session and week bars with their reset times, or the cost with an API key.
 
-The hub also has **Claude** (a terminal in the page running Claude Code), the login to Instagram (in **Settings**: its state, and a button that opens a Chromium window to log in) and
+The hub also has **Terminal** (a terminal in the page running Claude Code, or Codex if you chose it), the login to Instagram (in **Settings**: its state, and a button that opens a Chromium window to log in) and
 **Character** (the moves of a brand's character).
 
 ## How it works
@@ -314,7 +314,7 @@ The other variables of the hub are in [platform/README.md](platform/README.md).
 
 **Can I run two brands?** Yes, as many as you like. Each has its own Instagram login, settings and daily loop; browser jobs run one at a time.
 
-**Can I use another AI than Claude?** Yes, Codex, as one choice for everything (Settings > AI tool): either Claude or Codex does all the AI work (reels, ideas, the daily loop, readouts, the character, the brand assistant). The hub runs `codex exec --json` (the prompt on stdin, `--sandbox workspace-write` for the jobs that make things, `read-only` for the others) as OpenAI documents for non-interactive use. It was written from that documentation and tested only with a stand-in Codex, never a real one, and the hub cannot limit single commands for Codex (it can for Claude): only its sandbox. Skills are linked into `.agents/skills`, where Codex looks for them. Codex needs to be installed and signed in (`codex login`, or an API key in Settings).
+**Can I use another AI than Claude?** Yes, Codex, as one choice for everything (Settings > AI tool): either Claude or Codex does all the AI work (reels, ideas, the daily loop, readouts, the character, the brand assistant). The hub runs `codex exec --json` (the prompt on stdin, `--sandbox workspace-write` for the jobs that make things, `read-only` for the others) as OpenAI documents for non-interactive use. It was written from that documentation and tested only with a stand-in Codex, never a real one, and the hub cannot limit single commands for Codex (it can for Claude): only its sandbox. Skills are linked into `.agents/skills`, where Codex looks for them, and a job that must use a skill fails if Codex did not open its SKILL.md, as it does with Claude. The Terminal page runs Codex too. **Codex is not tested**: the interface says so wherever it appears. Codex needs to be installed and signed in (`codex login`, or an API key in Settings).
 
 **Where is my data?** In your studio folder, `~/ReelStudio` by default: `data/brands/<name>/` (one folder per brand: identity, character, reels, question list, Instagram login) and `workspace/` (the Remotion project the program fills; your reels' code is in the brand folders). The voice engine, Blender and their models are in `data/tools/` (the setup installs them again if you delete it). To back up, copy `~/ReelStudio` ([platform/README.md](platform/README.md)).
 

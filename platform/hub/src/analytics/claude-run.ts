@@ -16,7 +16,7 @@ export async function runClaudeText(ctx: HandlerCtx, prompt: string, onActivity:
   let stderrLast = "";
   const skills: string[] = [];
   const code = await runProcess({
-    cmd: agent.cmd, args: agent.args, cwd: ctx.root, env: jobEnv(ctx.settings, ctx.brand?.slug ?? null), stdin: prompt, signal: ctx.signal,
+    cmd: agent.cmd, args: agent.args, cwd: ctx.root, env: jobEnv(ctx.settings, ctx.brand?.slug ?? null), stdin: agent.prompt(prompt), signal: ctx.signal,
     onLine: (line, stream) => {
       if (stream === "err") { if (line.trim()) { stderrLast = line.slice(0, 300); ctx.update({ log: `[stderr] ${stderrLast}` }); } return; }
       for (const ev of agent.parse(line)) {

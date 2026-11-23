@@ -1,10 +1,13 @@
 import { useEffect, useRef, useState } from "react";
 import { Terminal } from "@xterm/xterm";
 import { FitAddon } from "@xterm/addon-fit";
+import { api } from "../api";
 
 export function ClaudePage() {
   const host = useRef<HTMLDivElement>(null);
   const [status, setStatus] = useState("Connecting");
+  const [tool, setTool] = useState<"claude" | "codex" | null>(null);
+  useEffect(() => { api.ai().then((d) => setTool(d.tool)).catch(() => setTool("claude")); }, []);
   useEffect(() => {
     if (!host.current) return;
     const term = new Terminal({ fontFamily: "ui-monospace, 'JetBrains Mono', monospace", fontSize: 13, cursorBlink: true, theme: { background: "#000000", cursor: "#d94a3d" } });
@@ -25,8 +28,8 @@ export function ClaudePage() {
   }, []);
   return (
     <>
-      <div className="row"><h1 className="grow">Claude</h1><span className="muted">{status}</span></div>
-      <p className="sub">Claude Code in the project folder. The session survives page reloads.</p>
+      <div className="row"><h1 className="grow">Terminal</h1><span className="muted">{status}</span></div>
+      <p className="sub">{tool === "codex" ? "Codex (not tested)" : "Claude Code"} in the project folder (the tool chosen in Settings > AI tool). The session survives page reloads.</p>
       <div className="term" ref={host} />
     </>
   );

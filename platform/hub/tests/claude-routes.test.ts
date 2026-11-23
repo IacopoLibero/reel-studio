@@ -29,6 +29,7 @@ describe("GET /api/ai", () => {
   it("needs the login", async () => { expect((await app.inject({ url: "/api/ai" })).statusCode).toBe(401); });
   it("starts with the subscription login, no key and no usage yet", async () => {
     expect((await get("/api/ai")).json()).toEqual({
+      tool: "claude",
       claude: { access: { mode: "login", hasKey: false, keyHint: "" }, usage: { limits: null, cost: { today: 0, week: 0, month: 0 } } },
       codex: { access: { mode: "login", hasKey: false, keyHint: "" } },
     });

@@ -107,7 +107,7 @@ export const characterMoves: Handler = async (job, ctx) => {
   let answer = "", ok = true, stderrLast = "", cost: number | null = null, at = 0;
   const go = (i: number) => { if (i > at) { at = i; ctx.update({ step: MOVES_STEPS[i], stepIndex: i, progress: MARKS[i] as number }); } };
   const code = await runProcess({
-    cmd: agent.cmd, args: agent.args, cwd: root, env: jobEnv(ctx.settings, brand.slug), stdin: prompt, signal: ctx.signal,
+    cmd: agent.cmd, args: agent.args, cwd: root, env: jobEnv(ctx.settings, brand.slug), stdin: agent.prompt(prompt), signal: ctx.signal,
     onLine: (line, stream) => {
       if (stream === "err") { if (line.trim()) { stderrLast = line.slice(0, 300); ctx.update({ log: `[stderr] ${stderrLast}` }); } return; }
       for (const ev of agent.parse(line)) {

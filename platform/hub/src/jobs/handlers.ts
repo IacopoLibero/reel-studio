@@ -98,7 +98,7 @@ export const claudeTask: Handler = async (job, ctx) => {
   };
   try {
     const code = await runProcess({
-      cmd: agent.cmd, args: agent.args, cwd: ctx.root, env: jobEnv(ctx.settings, ctx.brand?.slug ?? null), stdin: prompt, signal: ctx.signal,
+      cmd: agent.cmd, args: agent.args, cwd: ctx.root, env: jobEnv(ctx.settings, ctx.brand?.slug ?? null), stdin: agent.prompt(prompt), signal: ctx.signal,
       onLine: (line, stream) => {
         if (stream === "err") { if (line.trim()) ctx.update({ log: `[stderr] ${line.slice(0, 300)}` }); return; }
         for (const ev of agent.parse(line)) {

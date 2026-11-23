@@ -1,6 +1,6 @@
 /** The pages of a brand, in the order of the sidebar: [address, label]. */
 export const PAGES = [
-  ["jobs", "Jobs"], ["daily", "Daily"], ["calendar", "Calendar"], ["claude", "Claude"], ["factory", "Factory"], ["analytics", "Analytics"], ["series", "Series"], ["reels", "Reels"], ["character", "Character"], ["settings", "Settings"],
+  ["jobs", "Jobs"], ["daily", "Daily"], ["calendar", "Calendar"], ["claude", "Terminal"], ["factory", "Factory"], ["analytics", "Analytics"], ["series", "Series"], ["reels", "Reels"], ["character", "Character"], ["settings", "Settings"],
 ] as const;
 export const PAGE_IDS: readonly string[] = PAGES.map(([id]) => id);
 
