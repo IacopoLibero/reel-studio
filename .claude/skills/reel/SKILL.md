@@ -235,6 +235,28 @@ and rules in `style.md` to match, so the next reel starts from their taste. Tell
   right 140 px.
 - Everything reads on a phone. If a frame could belong to any video, make it belong to this one.
 
+## Props and 3D with Blender (accuracy first)
+
+When a reel or a cover needs a real object (a phone, a menu, a plate, a QR card), build it in Blender and render it with a transparent background,
+then place it in Remotion. Blender is only as good as its details, so work like this:
+
+- **Model, do not approximate.** Rounded rectangles for slabs (a real corner radius and a small bevel on every edge that catches light), a lathe
+  (spin a profile) for anything round (glasses, plates, domes, cups), a curve with a bevel for handles and wires. No bare cubes and spheres where
+  the real object has an edge, a lip, a handle or a foot.
+- **Every part is joined and sits on something.** Nothing floats: a stand reaches the floor, a knob touches the dome (a floating knob is the usual
+  mistake), a handle overlaps the body. Objects rest on the floor (lowest point at z = 0).
+- **One solid, one surface.** Never build a shape from two overlapping pieces (a cross made of two bars has a dirty centre where they overlap; cut it as one outline
+  and extrude it). A glass is one closed wall with a thick base and the liquid inside it, not two shells.
+- **Real details that read at phone size:** a phone has a frame, a camera island, three lenses, side buttons; a tablet has a stand and a camera; a card has thickness and a rounded corner.
+- **Materials:** glass and water use transmission (IOR 1.5 and 1.33), metal is metallic with low roughness, paper is rough with a very fine bump, ceramic and fruit have a clear coat. Screens and printed
+  faces use the real image as the texture (the brand's own screens, QR codes, logo): crop it to the exact shape of the face first so nothing is squeezed.
+- **Light like a photographer:** a soft key from the front side, a fill from the other, a strip light behind for the rim, dark cards off to the sides so metal has something to reflect. Cycles with the GPU
+  (OptiX), denoise, a shadow catcher for the floor when the render goes on a coloured background.
+- **Colour:** add colour with real things (a tomato, a lemon, a purple plate, a green bottle), not grey and white only. The brand's colours come from `brand.json`.
+- **Check every object before using it, with numbers and with eyes.** Render four views (front, three-quarter, back, top) in one grid, then close-ups of the small details (a lens, a knob, a corner, a rim).
+  Print each object's size and lowest point and flag what floats, sinks or has faces of zero area. Fix what shows up and render again. Look at the close-ups: that is where the floating knob and the dirty centres are found.
+- **Depth.** One hero object per picture in front, two or three more behind it at different depths, slightly out of focus (depth of field), and one scene across all the slides of a carousel so objects can cross the edge between two slides.
+
 ## Make it land
 
 Rules taken from the /brag launch-video method (MIT, github.com/latent-spaces/brag), adapted to reels with a voice. They sit on top of

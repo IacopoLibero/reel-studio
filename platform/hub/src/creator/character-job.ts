@@ -42,6 +42,7 @@ export const BUILD_QUALITY = `Quality rules (they matter more than speed):
 - Limbs have thickness like the drawing (a stick drawn thin is thin, a sausage arm is thick), not hair-thin lines.
 - Face: eyes, brows and mouth are separate flat shapes placed just in front of the head surface, with the colours and proportions of the sheet. Build the neutral expression.
 - Structure for later animation: give every part a clear name, and parent the parts that move together (a hand to its arm, an arm to its shoulder point at the body, everything to one root) so a rig can be made from this script.
+- Accuracy: look at the preview close up before you finish: every part must touch the part it is attached to, no two parts may overlap in the same plane (cut one outline and extrude it, do not lay two bars over each other), and the whole character must stand on the floor.
 - Look: flat colours from the sheet, Workbench engine, flat lighting. No textures, no outlines in 3D unless the sheet has them (then a slightly larger black copy of the part, behind it, flipped normals).`;
 
 export function buildCharacterPrompt(i: CharacterPromptInput): string {
