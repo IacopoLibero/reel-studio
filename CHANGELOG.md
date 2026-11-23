@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-- **Reels are made with the /brag method** (`reel` skill, "Make it land"): a brief first (what, for whom, the hook, the real thing to show), a kind for every scene (hook, reveal, proof, highlight, closing), things that appear one by one, a reading time for every line, no muddy crossfades, and frames that are worth posting. A brand can name its **product folder** (`brand.json` `sources.productDir`, read-only): the reel then shows the product's real screens, copy and flow instead of an invented drawing.
+- **Reels are made with the /brag method** (`reel` skill, "Make it land"): a brief first (what, for whom, the hook, the real thing to show, drawn: never screenshots of the brand's platform), a kind for every scene (hook, reveal, proof, highlight, closing), things that appear one by one, a reading time for every line, no muddy crossfades, and frames that are worth posting.
 
 ## 1.0.1 (2026-11-23)
 

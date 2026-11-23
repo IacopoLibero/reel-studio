@@ -78,10 +78,10 @@ they want to switch first.
 4. **Plan.** Write `plan.md`: one scene per sentence, with its words, its start and end from the word times, and what
    is on screen. Check the plan against "Make it look good" and "Make it land" before drawing anything.
    - **Start `plan.md` with a short brief** (from the /brag video method, see "Make it land"): what the reel is about in one
-     sentence; who it is for and what they get; the hook (the first two seconds); the real thing it shows (a screen, a flow, an
-     object, a number: and where it comes from); the one beat that makes people keep watching; the one thing to do at the end.
-   - Give every scene a **kind**: hook, reveal, proof (the real product or number), highlight, or closing. A reel that is all
-     highlights with no proof is weak: at least one scene is proof when the brand has a product to show.
+     sentence; who it is for and what they get; the hook (the first two seconds); the real thing it shows (an object, a moment, a
+     number: and where it comes from); the one beat that makes people keep watching; the one thing to do at the end.
+   - Give every scene a **kind**: hook, reveal, proof (a true number, the real object drawn, a before and after), highlight, or closing. A reel that is all
+     highlights with no proof is weak: at least one scene is proof (a true number, the real object or moment drawn, a before and after).
    - The last scene is the closing hook: the brand logo (`staticFile("logo.png")`: Remotion finds it by itself in the brand's
      `identity/` folder; a brand with no logo file has no logo: leave it out, and never copy files into a `public/` folder), the website large in the accent colour, and the
      call to action, landing on the spoken words. It stays on screen for at least 2 seconds and keeps moving
@@ -225,7 +225,7 @@ and rules in `style.md` to match, so the next reel starts from their taste. Tell
 - Moves are short and land with weight: things arrive fast and settle. No slow fades, no spinning, no drifting.
 - Numbers count up. Lines draw themselves. When the words are about an app, draw its screen and make it move.
 - One font, the colours in `style.md`, the accent only on what matters. No gradients, glows, emoji or stock icons.
-- When the words are about the brand's own product, show the real product (see "Make it land"), not a drawing of it.
+- Draw the real object or moment, not an abstract shape (see "Make it land"); never use screenshots of the brand's platform.
 - The first frame already shows the hook as text, and something is moving. **The first frame must show the question
   itself** (the reel's opening question, in words a person can read), fully visible and not mid-animation, because
   Instagram uses it as the preview. In the check (step 10), look at frame 0 and say whether the question is readable.
@@ -242,10 +242,10 @@ Rules taken from the /brag launch-video method (MIT, github.com/latent-spaces/br
   specific to this reel, not a generic opener.
 - **Clear to a stranger.** After one viewing, someone who has never heard of the brand knows what the reel is about, who it is for
   and what to do next. Lead with that, not with how it works.
-- **Show the real thing.** When the brand has a product (its folder is in the job prompt, or `brand.json` `sources.productDir`),
-  show it doing its job: its real screens, copy and flow, as an image of the real screen in a phone or window frame, or the screen
-  redrawn from its real components. A reel about a menu shows the menu; one about ordering shows the order arriving in the kitchen. Prefer
-  this to an abstract drawing of the idea. Rebuild only what you cannot reuse, and never invent a feature, a screen or a number.
+- **Show the real thing, drawn.** Show the idea as the actual object or moment, not as an abstract shape: a reel about a menu shows a
+  menu with its price being crossed out; one about ordering shows the order arriving on a kitchen ticket. Never use screenshots or
+  recordings of the brand's platform or app in a reel: draw what is needed in code, with the brand's colours and fonts. Use real
+  numbers only when the source gives them, and never invent a feature or a number.
 - **Specific, never generic.** Use the product's own words and claims. No empty phrases ("streamline your workflow", "boost your business").
   If a frame could belong to any brand's reel, redo it.
 - **Make it alive.** Things that appear one by one (a list, three steps, the cards of a screen), a tap or a click drawn on a button,

@@ -51,13 +51,3 @@ describe("buildReelPrompt", () => {
   });
 });
 
-describe("the product folder", () => {
-  it("is named in the prompt as read-only, with where to look and no invention", () => {
-    const p = buildReelPrompt({ ...base, productDir: "/p/Easy Restaurant" });
-    expect(p).toContain("The brand's product is in /p/Easy Restaurant");
-    expect(p).toMatch(/never change anything in it/);
-    expect(p).toMatch(/screenshots and images/);
-    expect(p).toMatch(/do not invent features, screens or numbers/);
-  });
-  it("is left out when the brand has none", () => { expect(buildReelPrompt(base)).not.toContain("product is in"); });
-});

@@ -100,8 +100,7 @@ export function inspectBundle(files: Map<string, Buffer>, o: InspectOptions): { 
   const v = validateBrand(candidate);
   if (!v.ok) throw new BundleError(`brand.json is not valid: ${v.errors.join("; ")}`);
   let brand = v.brand;
-  if (brand.sources.blogDir) { brand = { ...brand, sources: { ...brand.sources, blogDir: null } }; warnings.push("The folder of source texts belongs to the other machine and was dropped."); }
-  if (brand.sources.productDir) { brand = { ...brand, sources: { ...brand.sources, productDir: null } }; warnings.push("The product folder belongs to the other machine and was dropped."); }
+  if (brand.sources.blogDir) { brand = { ...brand, sources: { blogDir: null } }; warnings.push("The folder of source texts belongs to the other machine and was dropped."); }
   if (brand.character.enabled && !(o.hasMascot?.(brand.character.id) ?? false)) {
     brand = { ...brand, character: { ...brand.character, enabled: false } };
     warnings.push(`The character "${brand.character.id}" is not set up on this machine, so the brand starts without a character.`);

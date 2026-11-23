@@ -60,7 +60,7 @@ export const brandSchema = z.object({
     account: z.string().regex(/^[A-Za-z0-9._]{0,40}$/, "Account name has invalid characters").default(""),
     userId: z.string().regex(/^\d{0,30}$/, "The Instagram user id is only digits").default(""),
   }).default({ account: "", userId: "" }),
-  sources: z.object({ blogDir: z.string().max(400).nullable(), /** The brand's own product (its source code, screens, assets), read-only: the reels show the real thing from it. */ productDir: z.string().max(400).nullable().default(null) }).default({ blogDir: null, productDir: null }),
+  sources: z.object({ blogDir: z.string().max(400).nullable() }).default({ blogDir: null }),
   character: z.object({
     enabled: z.boolean(),
     id: z.string().regex(/^[a-z][a-z0-9_-]{0,39}$/).default("character"),

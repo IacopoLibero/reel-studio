@@ -8,7 +8,6 @@ import { jobEnv } from "../env.js";
 import type { Handler } from "../jobs/handlers.js";
 import { runProcess } from "../jobs/process.js";
 import { allocateReelFolder, withFileLock } from "./allocator.js";
-import { join as joinTools } from "../jobs/claude-safety.js";
 import { MAKE_ALLOWED_TOOLS, MAKE_DENIED_TOOLS, buildReelPrompt } from "./make-prompt.js";
 import { MAKE_MARKS, MAKE_STEPS, initialMakeState, missingOutputs, reduceMake, type MakeState } from "./make-stream.js";
 import { tickQuestion, type SourceKind } from "./questions.js";
@@ -39,11 +38,10 @@ export const reelMake: Handler = async (job, ctx) => {
   }
   ctx.update({ log: `Folder ${alloc.path}, closing ${p.closing}`, step: MAKE_STEPS[0], progress: MAKE_MARKS[0] });
   const brandDir = ctx.dataDir;
-  const productDir = ctx.brand?.brand.sources.productDir?.trim() || null;
   const character = ctx.brand?.brand.character;
   const moves = character?.enabled && ctx.brand ? listMoves(ctx.brand.paths.mascotDir, character.id).filter((m) => m.rendered).map((m) => m.name) : [];
-  const prompt = buildReelPrompt({ root: ctx.root, brandDir, moves, brand: p.brand, question: p.question, closing: p.closing, source: p.source, sourceKind: p.sourceKind, folder: alloc.folder, blogDir: ctx.blogDir, ...(productDir ? { productDir } : {}), ...(ctx.brand ? { brandInfo: ctx.brand.brand } : {}), ...(typeof job.params.note === "string" ? { note: job.params.note } : {}) });
-  const agent = agentCommand(ctx, { access: "edit", allowedTools: MAKE_ALLOWED_TOOLS, deniedTools: productDir ? joinTools([MAKE_DENIED_TOOLS], [`Write(/${productDir}/**)`, `Edit(/${productDir}/**)`]) : MAKE_DENIED_TOOLS, addDirs: [brandDir], ...(productDir ? { readDirs: [productDir] } : {}) });
+  const prompt = buildReelPrompt({ root: ctx.root, brandDir, moves, brand: p.brand, question: p.question, closing: p.closing, source: p.source, sourceKind: p.sourceKind, folder: alloc.folder, blogDir: ctx.blogDir, ...(ctx.brand ? { brandInfo: ctx.brand.brand } : {}), ...(typeof job.params.note === "string" ? { note: job.params.note } : {}) });
+  const agent = agentCommand(ctx, { access: "edit", allowedTools: MAKE_ALLOWED_TOOLS, deniedTools: MAKE_DENIED_TOOLS, addDirs: [brandDir] });
 
   let state: MakeState = initialMakeState();
   const skills: string[] = [];
