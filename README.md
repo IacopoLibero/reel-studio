@@ -143,6 +143,8 @@ Click a reel in **Reels** to watch it and change it by talking to Claude; the la
 
 ### Carousels
 
+![Carousels page: the form with the 2D and 3D choice, and the carousels made](docs/images/carousels-list.png)
+
 Swipe posts for Instagram, 1080 × 1350 (4:5). On the **Carousels** page you write what the carousel is about, choose **2D or 3D**, the number of slides (4 to 8) and the last slide (the brand's offer, or follow for tips), and press the button.
 
 - **2D:** built in Remotion only: the product's real screens in drawn tablet and phone frames, paper and surface textures from real images, layered soft shadows, a fine grain, and a colourful background that continues across the slides.
@@ -150,6 +152,8 @@ Swipe posts for Instagram, 1080 × 1350 (4:5). On the **Carousels** page you wri
 - **Built on two Ootto skills,** both called every time: `ootto-viral-carousel` (which structure carousels in the niche save, never copying slides) and `ootto-carousel-builder` (the words of every slide: a scroll stopper, one idea per slide, a slide worth saving, one ask). A job fails if the AI did not call them.
 - **The product:** set the brand's **product folder** in Settings > Product (a folder on this computer). It is read-only: the AI looks there for the real screens, images and words, and never changes anything in it. Without one, the slides draw the idea. Reels do not use it.
 - **The result** is in `data/brands/<slug>/carousels/<n>-<name>/`: `slide-1.png` ... , `caption.md`, `plan.md`, `carousel.json` and the code. Click a carousel to see the slides side by side, copy the caption, download the slides, or make it again with a note. **Scheduling a carousel on Instagram from the Calendar is not available yet:** download the slides and post them.
+
+![One carousel: the slides side by side, the caption to copy, download and make it again](docs/images/carousel-page.png)
 
 ### Settings
 

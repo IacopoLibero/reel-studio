@@ -48,10 +48,10 @@ export function CarouselsPage({ jobs, brand }: { jobs: Job[]; brand: BrandSummar
           ))}
         </div>
         <div className="row wrap">
-          <label htmlFor="car-slides" className="muted">Slides</label>
-          <select id="car-slides" value={slides} onChange={(e) => setSlides(Number(e.target.value))}>{[4, 5, 6, 7, 8].map((n) => <option key={n} value={n}>{n}</option>)}</select>
-          <label htmlFor="car-closing" className="muted">Last slide</label>
-          <select id="car-closing" value={closing} onChange={(e) => setClosing(e.target.value as "A" | "B")}>
+          <label htmlFor="car-slides" className="muted" style={{ display: "inline", margin: 0 }}>Slides</label>
+          <select id="car-slides" style={{ width: "auto" }} value={slides} onChange={(e) => setSlides(Number(e.target.value))}>{[4, 5, 6, 7, 8].map((n) => <option key={n} value={n}>{n}</option>)}</select>
+          <label htmlFor="car-closing" className="muted" style={{ display: "inline", margin: "0 0 0 8px" }}>Last slide</label>
+          <select id="car-closing" style={{ width: "auto" }} value={closing} onChange={(e) => setClosing(e.target.value as "A" | "B")}>
             <option value="B">Follow for tips</option><option value="A">The brand's offer</option>
           </select>
           <span className="grow" />
