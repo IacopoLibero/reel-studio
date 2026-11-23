@@ -1,3 +1,4 @@
+import { moveVoicesToCharacters } from "./brands/voice-move.js";
 import { join } from "node:path";
 import fastify, { type FastifyInstance } from "fastify";
 import cookie from "@fastify/cookie";
@@ -52,6 +53,8 @@ export interface AppDeps {
 
 export async function buildApp(config: Config): Promise<{ app: FastifyInstance; deps: AppDeps }> {
   const brands = new BrandRegistry({ root: config.root, dataDir: config.dataDir });
+  // A brand that got a character by hand keeps its voice with the character (mascot/<id>-voice.*).
+  moveVoicesToCharacters(config.dataDir, brands.slugs(), (slug, e) => console.error(`voice move failed for ${slug}:`, e));
   const store = new JobStore(join(config.dataDir, "jobs.json"));
   const settings = new SettingsStore(join(config.dataDir, "settings.json"), {
     brandFile: (slug) => brands.paths(slug).settingsFile,

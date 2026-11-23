@@ -3,6 +3,7 @@
 ## Unreleased
 
 - **Language of the reels** can be chosen per brand in Settings > Voice (it also updates the brand's style guide). The voice script and Whisper now use the brand's language, and Whisper word pieces are merged so non-English captions match the script.
+- A brand that gets a character later (`character.enabled` edited in `brand.json`) has its voice moved from `identity/voice.*` to `mascot/<id>-voice.*` when the hub starts; nothing is overwritten.
 - The hub has a linter (`npm run lint`, oxlint); errors fail CI. Unused code found by it was removed.
 - README screenshots retaken (sidebar with icons and usage box, setup screen, reel page).
 

@@ -6,7 +6,6 @@ What is still open, on purpose. Move an item out of this file when it is done; w
 
 Nothing blocks the use of the app. These are the things that were not tried or not finished.
 
-- **Voice.** OmniVoice (CC-BY-NC) is not installed on purpose (non-commercial). A character added to a brand later (there is no screen for it) should move the brand's own voice from `identity/` to `mascot/<id>-voice.*`.
 - **Small things.** A cover without a logo has its kicker not looked at.
 
 ## Paused
