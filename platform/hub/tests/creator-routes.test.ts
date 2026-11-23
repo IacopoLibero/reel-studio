@@ -205,6 +205,10 @@ describe("the interview route", () => {
     expect(put.statusCode).toBe(200);
     expect((await get("/api/brand-creator/options")).json().assistant).toMatchObject({ kind: "custom", tested: false });
     expect((await post("/api/brand-creator/interview", { messages: [{ role: "user", text: "hello there" }] })).json().say).toContain("Heard");
+    const ch = await post("/api/brand-creator/character-interview", { messages: [{ role: "user", text: "a loaf" }], brand: { name: "Acme", about: "bread" } });
+    expect(ch.statusCode).toBe(200);
+    expect(ch.json()).toMatchObject({ say: expect.stringContaining("Heard"), character: { name: "", what: "" }, done: false });
+    expect((await post("/api/brand-creator/character-interview", { messages: [{ role: "robot", text: "x" }] })).statusCode).toBe(400);
   });
 });
 

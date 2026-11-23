@@ -8,7 +8,7 @@ export const PREVIEW_FILE = /^[a-z0-9][a-z0-9_-]{0,40}\.png$/;
 const stateSchema = z.object({
   status: z.enum(["draft", "preview", "approved", "built"]).default("draft"),
   name: z.string().max(80).default(""),
-  fields: z.object({ what: z.string().max(500).default(""), personality: z.string().max(500).default(""), extra: z.string().max(500).default("") }).default({ what: "", personality: "", extra: "" }),
+  fields: z.object({ what: z.string().max(1500).default(""), personality: z.string().max(1500).default(""), extra: z.string().max(1500).default("") }).default({ what: "", personality: "", extra: "" }),
   notes: z.array(z.string().max(1000)).max(50).default([]),
   builds: z.number().int().min(0).default(0),
   updatedAt: z.string().default(""),

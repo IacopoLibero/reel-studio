@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { api, type CreatorOptions, type InterviewMessage, type InterviewTurn } from "../api";
 import { Card, ClosingKeywords } from "./fields";
 import { Extras } from "./Extras";
-import { voiceBrandOf } from "./FormEntry";
+import { characterBrandOf, voiceBrandOf } from "./FormEntry";
 import { brandToDraft, closingRulesOf, keywordsToText } from "./draft";
 import { emptyExtras, extrasProblems, extrasToRequest, type ExtrasState } from "./extras";
 import { CreateStatus, useCreate, type Created } from "./useCreate";
@@ -118,7 +118,7 @@ export function InterviewEntry({ options, onCreated }: { options: CreatorOptions
           <Card title="Which closing a reel gets" intro="The assistant proposed these words from what the brand sells. A question with a word from A ends with closing A, the others with B. Add or remove words.">
             <ClosingKeywords value={keywords} onChange={setKeywords} />
           </Card>
-          <Extras value={extras} onChange={setExtras} options={options} brandName={draft?.name ?? ""} colors={draft?.colors ?? { background: "#ffffff", text: "#000000", accent: "#2f6fed", secondary: "#7a4dff" }} problems={problems} {...(draft ? { voiceBrand: voiceBrandOf(draft) } : {})} />
+          <Extras value={extras} onChange={setExtras} options={options} brandName={draft?.name ?? ""} colors={draft?.colors ?? { background: "#ffffff", text: "#000000", accent: "#2f6fed", secondary: "#7a4dff" }} problems={problems} {...(draft ? { voiceBrand: voiceBrandOf(draft), characterBrand: characterBrandOf(draft, { styleMd: style, earlier: messages }) } : {})} />
           <div className="create-bar"><span className="muted">Creates brand/{draft?.slug || "…"}/ and everything around it.</span><span className="grow" /><button type="button" className="btn primary" disabled={create.busy} onClick={() => void submit()}>{create.busy ? "Creating" : "Create brand"}</button></div>
           <CreateStatus job={create.job} error={create.error} />
         </>

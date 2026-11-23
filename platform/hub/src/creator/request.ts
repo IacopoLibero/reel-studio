@@ -23,7 +23,7 @@ export const createRequestSchema = z.object({
     name: z.string().trim().max(80).default(""),
     /** For "import": the id of a character already on this machine (mascot/<id>.py). */
     id: z.string().regex(/^[a-z][a-z0-9_-]{0,39}$/).optional(),
-    fields: z.object({ what: z.string().max(500), personality: z.string().max(500), extra: z.string().max(500) }).optional(),
+    fields: z.object({ what: z.string().max(1500), personality: z.string().max(1500), extra: z.string().max(1500) }).optional(),
     sheetUpload: uploadId.optional(),
   }).default({ mode: "none", name: "" }),
   /** Words that make a reel close with A (the brand's offer, `product`) or B (follow for tips, `general`). Empty or missing: every reel gets B until Settings > Factory has some. */

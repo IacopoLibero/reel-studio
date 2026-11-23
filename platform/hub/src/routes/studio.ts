@@ -10,7 +10,7 @@ import { HttpError, type Scope } from "./scope.js";
 
 const fieldsBody = z.object({
   name: z.string().trim().max(80),
-  fields: z.object({ what: z.string().max(500), personality: z.string().max(500), extra: z.string().max(500) }),
+  fields: z.object({ what: z.string().max(1500), personality: z.string().max(1500), extra: z.string().max(1500) }),
 });
 
 /** The character studio of one brand (<brand>/mascot/studio/): the reference sheet, the fields of the AI prompt, the previews of character.build and their approval. */

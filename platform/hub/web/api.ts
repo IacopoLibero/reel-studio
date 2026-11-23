@@ -49,6 +49,8 @@ export interface ImportPreview {
   importId: string;
   preview: { brand: Record<string, unknown> & { slug: string; name: string }; styleMd: boolean; questions: boolean; logo: "png" | null; voice: boolean; warnings: string[] };
 }
+export interface CharacterBrand { name: string; about: string; audience: string; tone: string; language?: string; website?: string; colors?: { background: string; text: string; accent: string; secondary: string }; fonts?: { headline: string; body: string }; styleMd?: string; earlier?: InterviewMessage[] }
+export interface CharacterTurn { say: string; character: { name: string; what: string; personality: string; extra: string }; done: boolean }
 export interface InterviewMessage { role: "user" | "assistant"; text: string }
 export interface InterviewSummary { [key: string]: unknown }
 export interface InterviewTurn { say: string; summary: InterviewSummary; done: boolean; draft: { brand: Record<string, unknown>; styleMd: string; errors: string[]; closingRules: { product: string[]; general: string[] } } | null }
@@ -191,6 +193,7 @@ export const api = {
   upload: (kind: "logo" | "voice" | "sheet", blob: Blob) => callRaw<Uploaded>("POST", `/api/brand-creator/uploads/${kind}`, blob),
   importZip: (blob: Blob) => callRaw<ImportPreview>("POST", "/api/brand-creator/import/zip", blob),
   importFolder: (files: { path: string; data: string }[]) => call<ImportPreview>("POST", "/api/brand-creator/import/folder", { files }),
+  characterInterview: (messages: InterviewMessage[], brand: CharacterBrand) => call<CharacterTurn>("POST", "/api/brand-creator/character-interview", { messages, brand }),
   interview: (messages: InterviewMessage[]) => call<InterviewTurn>("POST", "/api/brand-creator/interview", { messages }),
   proposeVoices: (r: VoiceRequest) => call<{ job: Job }>("POST", "/api/brand-creator/voices", r),
   createBrand: (r: CreateRequest) => call<{ job: Job; slug: string }>("POST", "/api/brands", r),

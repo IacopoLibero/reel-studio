@@ -8,6 +8,7 @@ import { runAssistant, scratchDir } from "../creator/assistant.js";
 import { checkFont, loadFontList } from "../creator/fonts.js";
 import { FileError, LIMITS, MB, type UploadKind } from "../creator/files.js";
 import { interviewTurn, turnRequestSchema } from "../creator/interview.js";
+import { characterTurn, characterTurnRequestSchema } from "../creator/character-interview.js";
 import { CREATE_STEPS, createRequestSchema } from "../creator/request.js";
 import { VOICE_STEPS, voiceParamsSchema } from "../creator/voice-job.js";
 import { UPLOAD_ID } from "../creator/uploads.js";
@@ -95,6 +96,20 @@ export function creatorRoutes(app: FastifyInstance, d: AppDeps, svc: CreatorServ
   });
 
   let interviewing = false;
+  /** The character step: the assistant designs the mascot with the person and fills the fields of the image prompt. Shares the lock of the brand interview (one assistant answer at a time). */
+  app.post(`${prefix}/character-interview`, async (req) => {
+    const body = characterTurnRequestSchema.safeParse(req.body);
+    if (!body.success) throw new HttpError(400, body.error.issues[0]?.message ?? "Invalid conversation.");
+    if (interviewing) throw new HttpError(409, "The assistant is still answering. Wait a moment.");
+    interviewing = true;
+    try {
+      const g = d.settings.getGlobal();
+      return await characterTurn(body.data, (prompt) => runAssistant({ config: g.assistant, claudeBin: d.config.claudeBin, model: g.claudeModel, prompt, root: d.config.root, scratch: scratchDir(d.config.dataDir), dataDir: d.config.dataDir, env: process.env }));
+    } catch (e) {
+      throw new HttpError(424, `The assistant could not answer: ${(e as Error).message}`);
+    } finally { interviewing = false; }
+  });
+
   app.post(`${prefix}/interview`, async (req) => {
     const body = turnRequestSchema.safeParse(req.body);
     if (!body.success) throw new HttpError(400, body.error.issues[0]?.message ?? "Invalid conversation.");

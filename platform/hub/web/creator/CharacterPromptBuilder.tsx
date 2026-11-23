@@ -13,11 +13,11 @@ export function CharacterPromptBuilder({ brandName, colors, fields, onChange, on
   return (
     <div className="prompt-builder">
       <label htmlFor="cp-what">What is the character?</label>
-      <input id="cp-what" type="text" value={fields.what} maxLength={500} placeholder="a friendly loaf of bread with arms and legs" onChange={(e) => set("what", e.target.value)} onBlur={onBlur} />
+      <textarea id="cp-what" rows={3} value={fields.what} maxLength={1500} placeholder="a friendly loaf of bread with arms and legs" onChange={(e) => set("what", e.target.value)} onBlur={onBlur} />
       <label htmlFor="cp-pers">Personality</label>
-      <input id="cp-pers" type="text" value={fields.personality} maxLength={500} placeholder="cheerful, a little clumsy" onChange={(e) => set("personality", e.target.value)} onBlur={onBlur} />
+      <textarea id="cp-pers" rows={3} value={fields.personality} maxLength={1500} placeholder="cheerful, a little clumsy" onChange={(e) => set("personality", e.target.value)} onBlur={onBlur} />
       <label htmlFor="cp-extra">Anything else (accessories, things to avoid)</label>
-      <input id="cp-extra" type="text" value={fields.extra} maxLength={500} placeholder="wears a small chef hat" onChange={(e) => set("extra", e.target.value)} onBlur={onBlur} />
+      <textarea id="cp-extra" rows={3} value={fields.extra} maxLength={1500} placeholder="wears a small chef hat" onChange={(e) => set("extra", e.target.value)} onBlur={onBlur} />
       <label htmlFor="cp-prompt">Prompt for your AI image tool</label>
       <textarea id="cp-prompt" className="mono" rows={11} readOnly value={prompt} onFocus={(e) => e.currentTarget.select()} />
       <div className="row">

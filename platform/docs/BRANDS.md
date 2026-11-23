@@ -107,7 +107,11 @@ calls `startDailyLoops(...).ensure(slug)`. The profile folder in `brand.json` is
 path). On failure every folder this run created is removed; the same request run again returns the first summary and changes nothing.
 After it, the page lands on the brand's hub with a short "next steps" checklist.
 
-Character step (optional: none / create / import): **create** shows the prompt for an AI image tool (`src/shared/character-prompt.ts`: flat
+Character step (optional: none / create / import): **create** starts with **Design the character with the assistant** (form and interview modes; not in the
+zip or folder import): a chat (`POST /api/brand-creator/character-interview`, `src/creator/character-interview.ts`) where the assistant is given everything
+decided about the brand so far (name, what it does, audience, tone, language, colours, fonts, and in the interview mode the style guide and the earlier
+conversation) and asks only what is open about the character: what it is, body, face, the colour of each part, clothes, a signature detail, personality
+and movement, its role, what to avoid. It fills the name and the three fields (up to 1500 characters each) after every answer, and you can edit them. It then shows the prompt for an AI image tool (`src/shared/character-prompt.ts`: flat
 2D vector, brand colours inserted, front, three-quarter and side views and eight expressions on a plain background, editable fields,
 Copy button), takes the reference sheet (PNG or JPG up to 10 MB, stored in `<brand>/mascot/studio/`) and later runs `character.build`.
 **import** copies a character that another brand on the machine has (its `mascot/<id>.py` and files, and its moves). The same studio is on the Character page of any brand.

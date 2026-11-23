@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- **The character is designed in a conversation.** In the brand creator (form and interview, not the zip or folder import) an assistant that knows what was decided about the brand asks about the look and the personality and fills the fields of the prompt for the image tool, so the prompt is detailed. The three fields hold up to 1500 characters. The brand interview now only asks whether you want a character.
 - **Character from a picture, step 2:** after you approve a preview, **Make the moves** (`character.moves`) has Claude rig the character and Blender render idle, talk (with a closed and an open mouth), wave, point, thumbs up, jump and the expressions of the plan. The character then becomes the brand's (`brand.json`, voice, `code/mascot/Mascot.tsx`, style guide). Both steps were run for real; the result is rough but complete.
 - The Character page read `Mascot.tsx` from the old workspace path; it now reads the brand's own `code/mascot/Mascot.tsx`.
 - **Language of the reels** can be chosen per brand in Settings > Voice (it also updates the brand's style guide). The voice script and Whisper now use the brand's language, and Whisper word pieces are merged so non-English captions match the script.

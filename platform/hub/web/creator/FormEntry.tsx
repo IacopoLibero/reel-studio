@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import type { CreatorOptions, FontList } from "../api";
+import type { CharacterBrand, CreatorOptions, FontList } from "../api";
 import { Card, ClosingKeywords, ClosingPreview, ColorField, FontField, Text } from "./fields";
 import { Extras } from "./Extras";
 import { Row } from "../components/SettingsParts";
@@ -66,6 +66,12 @@ export function BrandFields({ draft, onChange, options, fonts, problems }: { dra
 /** What the voice step needs to know about a brand typed so far. */
 export const voiceBrandOf = (d: BrandDraft) => ({ name: d.name.trim(), language: d.language, about: d.about.trim(), audience: d.audience.trim(), tone: d.tone.trim() });
 
+/** What the character conversation is told about the brand typed so far (and, in the interview, the style guide and the earlier talk). */
+export const characterBrandOf = (d: BrandDraft, more: { styleMd?: string; earlier?: { role: "user" | "assistant"; text: string }[] } = {}): CharacterBrand => ({
+  name: d.name.trim(), about: d.about.trim(), audience: d.audience.trim(), tone: d.tone.trim(), language: d.language, website: d.website.trim(),
+  colors: d.colors, fonts: d.fonts, ...(more.styleMd ? { styleMd: more.styleMd } : {}), ...(more.earlier ? { earlier: more.earlier } : {}),
+});
+
 /** Entry 1: the form. */
 export function FormEntry({ options, fonts, onCreated }: { options: CreatorOptions; fonts: FontList; onCreated: (c: Created) => void }) {
   const [draft, setDraft] = useState<BrandDraft>(() => withName({ ...emptyDraftValue() }, "", options.slugs));
@@ -83,7 +89,7 @@ export function FormEntry({ options, fonts, onCreated }: { options: CreatorOptio
   return (
     <>
       <BrandFields draft={draft} onChange={setDraft} options={options} fonts={fonts} problems={shown} />
-      <Extras value={extras} onChange={setExtras} options={options} brandName={draft.name} colors={draft.colors} problems={shown} voiceBrand={voiceBrandOf(draft)} />
+      <Extras value={extras} onChange={setExtras} options={options} brandName={draft.name} colors={draft.colors} problems={shown} voiceBrand={voiceBrandOf(draft)} characterBrand={characterBrandOf(draft)} />
       <div className="create-bar">
         <span className={count && tried ? "error" : "muted"}>{count && tried ? `${count} ${count === 1 ? "field needs" : "fields need"} fixing.` : SLUG_OK.test(draft.slug) ? `Creates brand/${draft.slug}/, reels/${draft.slug}/ and the hub's data folder for it.` : "Fill in the name to begin."}</span>
         <span className="grow" />

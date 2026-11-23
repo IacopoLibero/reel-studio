@@ -1,9 +1,10 @@
 import { useState } from "react";
-import { api, type CreatorOptions } from "../api";
+import { api, type CharacterBrand, type CreatorOptions } from "../api";
 import { Row } from "../components/SettingsParts";
 import type { PromptColors } from "../../src/shared/character-prompt";
 import { Card } from "./fields";
 import { CharacterPromptBuilder } from "./CharacterPromptBuilder";
+import { CharacterChat } from "./CharacterChat";
 import type { ExtrasScope, ExtrasState } from "./extras";
 import { VoiceDesigner, type VoiceBrand } from "./VoiceDesigner";
 
@@ -17,6 +18,8 @@ interface Props {
   scope?: ExtrasScope;
   /** What the voice step tells the assistant about the brand typed so far. */
   voiceBrand?: VoiceBrand;
+  /** What is decided about the brand, for the character conversation. Without it (a zip or folder import) there is no conversation. */
+  characterBrand?: CharacterBrand;
 }
 
 /** An upload field: sends the file to the hub at once and keeps the id. */
@@ -31,7 +34,7 @@ function useUpload(kind: "logo" | "voice" | "sheet") {
   return { send, error, busy };
 }
 
-export function Extras({ value: v, onChange, options, brandName, colors, problems, scope = {}, voiceBrand }: Props) {
+export function Extras({ value: v, onChange, options, brandName, colors, problems, scope = {}, voiceBrand, characterBrand }: Props) {
   const logo = useUpload("logo"), wav = useUpload("voice"), sheet = useUpload("sheet");
   const set = (patch: Partial<ExtrasState>) => onChange({ ...v, ...patch });
   return (
@@ -102,6 +105,7 @@ export function Extras({ value: v, onChange, options, brandName, colors, problem
             <Row label="Name">
               <input type="text" aria-label="Character name" value={v.character.name} maxLength={80} placeholder="Bun" onChange={(e) => set({ character: { ...v.character, name: e.target.value } })} />
             </Row>
+            {characterBrand && <CharacterChat brand={characterBrand} name={v.character.name} fields={v.character.fields} onFill={(name, fields) => set({ character: { ...v.character, name, fields } })} />}
             <CharacterPromptBuilder brandName={brandName} colors={colors} fields={v.character.fields} onChange={(fields) => set({ character: { ...v.character, fields } })} />
             <Row label="Reference sheet" help="PNG or JPG, up to 10 MB." {...(sheet.error ? { problem: sheet.error } : {})}>
               <input type="file" aria-label="Reference sheet" accept="image/png,image/jpeg,.png,.jpg,.jpeg" onChange={(e) => { const f = e.target.files?.[0]; void sheet.send(f).then((u) => { if (u || !f) set({ character: { ...v.character, sheet: u } }); }); }} />
