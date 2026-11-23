@@ -252,6 +252,12 @@ then place it in Remotion. Blender is only as good as its details, so work like 
   faces use the real image as the texture (the brand's own screens, QR codes, logo): crop it to the exact shape of the face first so nothing is squeezed.
 - **Light like a photographer:** a soft key from the front side, a fill from the other, a strip light behind for the rim, dark cards off to the sides so metal has something to reflect. Cycles with the GPU
   (OptiX), denoise, a shadow catcher for the floor when the render goes on a coloured background.
+- **Texture, like in reality.** A flat colour looks like a base shape, not like a thing. Every surface gets the texture of its real material, and you check it in a close-up:
+  paper has fibres and slight tonal drift; brushed aluminium and titanium have fine lines along one direction (a stretched noise as bump); chrome and screens have soft smudges
+  (large patches that change the roughness); ceramic has a glaze with a faint orange-peel bump; a lemon has dimpled pores (cells as bump) and a tomato has a skin that is a
+  little darker in places; fabric, wood and card show their weave and grain. Vary the roughness and the base colour with low-frequency noise so no large area is one flat value.
+  Tables are never flat: use wood with long planks, grain, small colour differences between planks and thin seams, and a soft sheen. Judge texture at the size the object has in the final
+  picture: a pattern too fine to see there is wasted, so make it as large as it would look on a real photo.
 - **Colour:** add colour with real things (a tomato, a lemon, a purple plate, a green bottle), not grey and white only. The brand's colours come from `brand.json`.
 - **Check every object before using it, with numbers and with eyes.** Render four views (front, three-quarter, back, top) in one grid, then close-ups of the small details (a lens, a knob, a corner, a rim).
   Print each object's size and lowest point and flag what floats, sinks or has faces of zero area. Fix what shows up and render again. Look at the close-ups: that is where the floating knob and the dirty centres are found.
