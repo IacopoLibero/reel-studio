@@ -38,6 +38,8 @@ package() {
   # Leftovers of the build that point at the build folder, and test fixtures with names that are not plain ASCII.
   rm -rf "$lib/platform/hub/node_modules/@fastify/send/test"
   find "$lib/platform/hub/node_modules/node-pty/build" -mindepth 1 -maxdepth 1 ! -name Release -exec rm -rf {} +
+  # Files the node-gyp build wrote with the path of the build folder in them.
+  find "$lib/platform/hub/node_modules" \( -name '*.target.mk' -o -name 'config.gypi' \) -delete
   cp -a platform/skills "$lib/platform/skills"
   cp -a platform/desktop "$lib/platform/desktop"
   cp -a sfx scripts src brand .claude package.json package-lock.json tsconfig.json remotion.config.ts "$lib/"
