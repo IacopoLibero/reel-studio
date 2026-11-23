@@ -16,6 +16,7 @@ import { SeriesPage } from "./pages/Series";
 import { SettingsPage } from "./pages/Settings";
 import { NewBrandPage } from "./pages/NewBrand";
 import { SetupPage } from "./pages/Setup";
+import { AiUsage } from "./components/AiUsage";
 import { NextSteps, markWelcome } from "./components/NextSteps";
 import { BRANDS_CHANGED } from "./hooks";
 import type { Created } from "./creator/useCreate";
@@ -81,6 +82,7 @@ function Shell({ onLogout }: { onLogout: () => void }) {
           <NavLink key={id} brand={current.slug} id={id} label={label} on={route.page === id} />
         ))}
         <div className="spacer" />
+        <AiUsage brand={current?.slug ?? null} />
         <a href="#/setup">Setup</a>
         <a href="#/jobs" onClick={(e) => { e.preventDefault(); onLogout(); }}>Sign out</a>
       </nav>

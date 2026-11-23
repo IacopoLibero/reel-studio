@@ -106,6 +106,13 @@ export interface VoiceEngine { id: string; available: boolean; reason: string }
 export interface VoicePlan { repoId: string; ready: boolean; blockers: string[]; planId: string; planDigest: string; components: { id: string; revision: string; license: string; url: string }[]; documents: { id: string; title: string; url: string }[]; acknowledgement: string }
 export interface VoiceSetup { running: boolean; message?: string; models: VoiceModelRow[]; status: unknown; active: string; engines: VoiceEngine[] }
 
+export interface AccessState { mode: "login" | "api-key"; hasKey: boolean; keyHint: string }
+export interface LimitWindow { utilization: number; resetsAt: number | null; status: string }
+export interface AiState {
+  claude: { access: AccessState; usage: { limits: { session: LimitWindow | null; week: LimitWindow | null; updatedAt: string } | null; cost: { today: number; week: number; month: number } } };
+  codex: { access: AccessState };
+}
+
 export interface ReelFile { name: string; size: number; dir: boolean }
 export interface ReelDetail {
   key: string; brand: string; folder: string; n: number; name: string; mp4: string | null; version: string;
@@ -116,6 +123,9 @@ export interface ReelVersion { name: string; at: string; hasVideo: boolean }
 export interface ReelPageData { reel: ReelDetail; chat: { sessionId: string | null; messages: ChatMessage[] }; busy: boolean; versions: ReelVersion[] }
 
 export const api = {
+  ai: () => call<AiState>("GET", "/api/ai"),
+  aiAccess: (provider: "claude" | "codex", body: { mode: "login" | "api-key"; apiKey?: string; removeKey?: boolean }) => call<{ access: AccessState }>("PUT", `/api/ai/${provider}/access`, body),
+  aiCheck: (provider: "claude" | "codex") => call<{ ok: boolean; error?: string }>("POST", `/api/ai/${provider}/check`),
   reelPage: (folder: string) => call<ReelPageData>("GET", scoped(`/reels/${encodeURIComponent(folder)}`)),
   restoreReel: (folder: string, version: string) => call<{ restored: string }>("POST", scoped(`/reels/${encodeURIComponent(folder)}/restore`), { version }),
   editReel: (folder: string, message: string) => call<Job>("POST", scoped("/jobs"), { type: "reel.edit", params: { folder, message } }),

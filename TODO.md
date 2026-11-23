@@ -94,6 +94,8 @@ then the app, then the big features, which are born with the final structure and
 1. **Install from zero: done on 23 Nov (a new studio folder `~/ReelStudio-cleantest`, your data untouched; the installed package's hub on port 4400).** See the entry below for the result.
 2. **Small things**: the names `r7`, `a1`... in the moved code (explained in the answer of 23 Nov: `r7`..`r24` are the reels 7 to 24, `a1`..`f3` the first hand-made reel designs; they work and stay).
 
+- **Claude and Codex access, and the Claude usage in the sidebar (2026-11-23).** Settings > Claude and Codex: login or API key for each (key in `data/<tool>-api-key`, mode 600, shown as its last four characters, put only in that tool's runs; for Claude with `CLAUDE_CODE_SUBPROCESS_ENV_SCRUB=1`), a Test button, and the sidebar block with the session (5 h) and week (7 d) bars read from Claude's own `rate_limit_event`, or the cost with an API key. Tried: the real Claude in login mode (Check read session 88% and week 48%, matching what Claude reported earlier); the API-key mode and the Codex path only with a stand-in (no key was given, and Codex is not installed here: its Test says so). Not done: a Codex usage display; a usage reading before any run (it needs a call); a second API-key check against a real key.
+
 ### 3. After the app (big, born with the final structure)
 
 - **Character from a picture** (`character.build`): built as an experiment (plan, Blender script, flat previews with approval and notes) and only run with a

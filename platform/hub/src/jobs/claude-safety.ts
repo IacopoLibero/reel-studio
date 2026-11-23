@@ -14,6 +14,10 @@ export const SECRET_PATHS: readonly string[] = [
   "**/.env",
   "**/.env.*",
   "**/.credentials.json",
+  // the hub's own secrets in the data folder: its token and the API keys saved in Settings
+  "**/dev-token",
+  "**/claude-api-key",
+  "**/codex-api-key",
   `${HOME}/.claude/**`,
   `${HOME}/.claude.json`,
   `${HOME}/.composio/**`,

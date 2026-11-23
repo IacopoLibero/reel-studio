@@ -1,6 +1,12 @@
 import { spawn } from "node:child_process";
 import { createInterface } from "node:readline";
 
+type Tap = (line: string) => void;
+let tap: Tap | null = null;
+/** Called with every stdout line that may carry Claude usage (a rate-limit event or the cost of a result), whichever job it comes from. */
+export const setProcessTap = (fn: Tap | null): void => { tap = fn; };
+const mayCarryUsage = (line: string): boolean => line.includes("rate_limit_event") || line.includes("total_cost_usd");
+
 export interface RunOpts {
   cmd: string;
   args: string[];
@@ -23,7 +29,10 @@ export function runProcess(o: RunOpts): Promise<number | null> {
     if (o.signal.aborted) kill(); else o.signal.addEventListener("abort", kill, { once: true });
     child.on("error", (e) => reject(new Error(`Could not start ${o.cmd}: ${e.message}`)));
     if (o.stdin !== undefined && child.stdin) { child.stdin.on("error", () => undefined); child.stdin.end(o.stdin); }
-    createInterface({ input: child.stdout! }).on("line", (l) => o.onLine(l, "out"));
+    createInterface({ input: child.stdout! }).on("line", (l) => {
+      if (tap && mayCarryUsage(l)) { try { tap(l); } catch { /* usage is a nicety: never break a job */ } }
+      o.onLine(l, "out");
+    });
     createInterface({ input: child.stderr! }).on("line", (l) => o.onLine(l, "err"));
     child.on("close", (code) => { o.signal.removeEventListener("abort", kill); resolve(code); });
   });

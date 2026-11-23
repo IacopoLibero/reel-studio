@@ -23,6 +23,11 @@ import { studioRoutes } from "./routes/studio.js";
 import { EntryNonces } from "./enter.js";
 import { setupVoiceRoutes } from "./routes/setup-voice.js";
 import { VoiceClient } from "./setup/voice-catalog.js";
+import { aiRoutes } from "./routes/ai.js";
+import { AccessStore } from "./claude/access.js";
+import { UsageStore } from "./claude/usage.js";
+import { setEnvLayer } from "./env.js";
+import { setProcessTap } from "./jobs/process.js";
 import { setupRoutes } from "./routes/setup.js";
 import { SetupInstaller } from "./setup/installer.js";
 import { blender, remotionSkills, whisper, workspacePackages } from "./setup/steps.js";
@@ -111,6 +116,13 @@ export async function buildApp(config: Config): Promise<{ app: FastifyInstance; 
       }, { prefix });
     }
     skillRoutes(api, config.root);
+    // How Claude and Codex sign in (login or API key) and the Claude usage: every run takes the access from here, and every Claude run reports its usage here.
+    const access = { claude: new AccessStore(config.dataDir, "claude"), codex: new AccessStore(config.dataDir, "codex") };
+    const usage = new UsageStore(join(config.dataDir, "claude-usage.json"));
+    setEnvLayer("claude", (env) => access.claude.apply(env));
+    setEnvLayer("codex", (env) => access.codex.apply(env));
+    setProcessTap((line) => { usage.record(line); });
+    aiRoutes(api, deps, { access, usage });
     const stepContext = { workspace: config.root, dataDir: config.dataDir, programRoot: defaultProgramRoot() };
     const installer = new SetupInstaller(config.dataDir, { "workspace-packages": workspacePackages(stepContext), whisper: whisper(stepContext), "remotion-skills": remotionSkills(stepContext), blender: async (log) => { await blender(stepContext)(log); ensureToolBin(config.dataDir); },
       voicestudio: async (log) => {

@@ -1,5 +1,6 @@
 import { mkdirSync } from "node:fs";
 import { join } from "node:path";
+import { applyEnvLayer } from "../env.js";
 import { parseStreamLine } from "../character/claude-stream.js";
 import { DESTRUCTIVE_BASH_DENIES, SECRET_READ_DENIES, join as joinTools } from "../jobs/claude-safety.js";
 import { runProcess } from "../jobs/process.js";
@@ -39,6 +40,9 @@ export function splitCommand(line: string): string[] {
 /** The environment variables an assistant process gets: how to run and find its own login, nothing else (no hub token, no Composio or other service keys). */
 const ENV_ALLOWED = /^(PATH|HOME|USER|LOGNAME|LANG|LC_[A-Z_]+|TERM|TMPDIR|SHELL|TZ|XDG_[A-Z_]+|CLAUDE_[A-Z_]+|ANTHROPIC_[A-Z_]+|OPENAI_[A-Z_]+|CODEX_[A-Z_]+|HTTPS?_PROXY|NO_PROXY|https?_proxy|no_proxy)$/;
 
+/** The environment without Anthropic credentials: what a codex or custom assistant command gets. */
+const withoutAnthropicKeys = (base: NodeJS.ProcessEnv): NodeJS.ProcessEnv => Object.fromEntries(Object.entries(base).filter(([k]) => k !== "ANTHROPIC_API_KEY" && k !== "ANTHROPIC_AUTH_TOKEN"));
+
 export function assistantEnv(base: NodeJS.ProcessEnv): NodeJS.ProcessEnv {
   return Object.fromEntries(Object.entries(base).filter(([k, v]) => v !== undefined && ENV_ALLOWED.test(k)));
 }
@@ -73,11 +77,13 @@ export async function runAssistant(o: AssistantRun): Promise<string> {
   const ac = new AbortController();
   const timer = setTimeout(() => ac.abort(), o.timeoutMs ?? TIMEOUT_MS);
   o.signal?.addEventListener("abort", () => ac.abort(), { once: true });
-  const env = { ...assistantEnv(o.env), ...(o.extraEnv ?? {}) };
+  // A codex command gets the Codex access (login or API key); a custom command gets neither, and none of them gets an Anthropic key.
+  const env = { ...assistantEnv(o.config.kind === "codex" ? applyEnvLayer(withoutAnthropicKeys(o.env), "codex") : withoutAnthropicKeys(o.env)), ...(o.extraEnv ?? {}) };
   let timedOut = false;
   ac.signal.addEventListener("abort", () => { timedOut = !o.signal?.aborted; }, { once: true });
   try {
-    if (o.config.kind === "claude") return await runClaude(o, env, ac.signal);
+    // Only Claude gets the Claude access (login or API key); a codex or custom command never receives an Anthropic key.
+    if (o.config.kind === "claude") return await runClaude(o, { ...assistantEnv(applyEnvLayer(o.env, "claude")), ...(o.extraEnv ?? {}) }, ac.signal);
     const line = o.config.command.trim() || (o.config.kind === "codex" ? DEFAULT_COMMANDS.codex : "");
     const [cmd, ...args] = splitCommand(line);
     if (!cmd) throw new Error("No assistant command is set. Open Settings and type it.");

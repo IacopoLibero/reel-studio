@@ -1,5 +1,6 @@
 import { existsSync } from "node:fs";
 import { delimiter } from "node:path";
+import { applyEnvLayer } from "./env.js";
 import * as pty from "node-pty";
 import type { WebSocket } from "ws";
 import { z } from "zod";
@@ -29,7 +30,7 @@ export class Terminal {
 
   private env() {
     const { HUB_TOKEN: _t, ...rest } = process.env;
-    return { ...rest, TERM: "xterm-256color" } as Record<string, string>;
+    return { ...applyEnvLayer(rest), TERM: "xterm-256color" } as Record<string, string>;
   }
 
   private spawn(cols: number, rows: number): pty.IPty {

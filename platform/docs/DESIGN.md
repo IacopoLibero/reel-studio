@@ -151,6 +151,15 @@ A workspace from before the one-folder-per-brand layout is moved with `scripts/m
 - `platform/hub/tests/` and `platform/hub/src/scheduler/test/` the tests (hub: 55 files, 498 tests; the scheduler is tested end to end against a mock page).
 - Test fixtures stand in for Claude and for the scheduler (`tests/fixtures/fake-*.mjs`); no test touches Instagram or Claude.
 
+## Claude and Codex access, and the Claude usage (2026-11-23)
+
+- **Access** (`src/claude/access.ts`, `src/routes/ai.ts`, `web/components/AiAccess.tsx`): per tool, `login` (default) or `api-key`. A key is validated by shape (`sk-ant-…`, `sk-…`), written to `data/<tool>-api-key` with mode 600 (atomically) and never returned (the state carries `keyHint`, the last four characters). `AccessStore.apply(env)` returns a new environment: the tool's credential variables removed, then the key set in API-key mode (Claude also gets `CLAUDE_CODE_SUBPROCESS_ENV_SCRUB=1`).
+- **Where it applies:** `env.ts` has one environment layer per tool (`setEnvLayer`). `jobEnv` (every Claude job: make, edit, ideas, daily, analytics, character) and the terminal apply the Claude layer; the brand assistant applies the Claude layer for `claude` and the Codex layer for `codex`, and a custom command gets no Anthropic key. The layers are set in `app.ts` from the two stores, so a change reaches the next run with no restart.
+- **Secrets are not readable by jobs:** `claude-safety.ts` denies `Read` of `**/dev-token`, `**/claude-api-key` and `**/codex-api-key`.
+- **Usage** (`src/claude/usage.ts`): `runProcess` calls a tap with every stdout line that contains `rate_limit_event` or `total_cost_usd` (whichever job it comes from; a failing tap never breaks a job). `parseUsageLine` reads the session (`unifiedWindows.five_hour`) and week (`seven_day`) windows (utilization 0 to 1, `resetsAt`) and the cost of a `result`; `UsageStore` keeps the latest windows (a window missing in a later event keeps its value) and the cost per day (35 days) in `data/claude-usage.json`. The sidebar block (`AiUsage`) polls `GET /api/ai` every 30 s.
+- **Check** (`POST /api/ai/:provider/check`): one small call in a neutral folder with the chosen access; for Claude it also refreshes the usage. One at a time, 90 s limit.
+- **Not available:** a usage reading for Codex (nothing in its output), and a reading without any run (the numbers come from Claude's own events).
+
 ## Editing a reel by chat
 
 The page of one reel has a conversation with Claude that changes the reel. Each message is one `reel.edit` job (`src/reels/edit-handler.ts`, lane `edit`, one at a time):

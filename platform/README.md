@@ -43,7 +43,8 @@ Your studio folder is `~/ReelStudio` (or `REEL_STUDIO_HOME`). This repository is
 | code the brand's reels share | `.../<slug>/code/` |
 | the hub's data of the brand: question list, settings, schedule, daily plans, analytics, ideas | `.../<slug>/` (`reel-questions.md`, `settings.json`, `scheduled.json`, ...) |
 | the Instagram login of the brand (a Chromium profile) | `.../<slug>/profile/` |
-| Hub state: jobs, settings, the token | `~/ReelStudio/data/` (`jobs.json`, `settings.json`, `dev-token`) |
+| Hub state: jobs, settings, the token, the Claude usage | `~/ReelStudio/data/` (`jobs.json`, `settings.json`, `dev-token`, `claude-usage.json`) |
+| API keys saved in Settings (only if you use them), mode 600 | `~/ReelStudio/data/claude-api-key`, `~/ReelStudio/data/codex-api-key` (and `claude-access.json`, `codex-access.json`: which access is chosen) |
 | Deleted brands | `~/ReelStudio/data/trash/<slug>-<time>/` |
 | What the setup installed: Blender, VoiceStudio and its models | `~/ReelStudio/data/tools/` (delete a folder and the setup offers to install it again) |
 | What the setup screen saved, and the log of each install step | `~/ReelStudio/data/setup.json`, `~/ReelStudio/data/setup/<step>.log` |
@@ -58,6 +59,17 @@ A reel's code is not in it: it lives with the brand (`<brand>/reels/<n>-<name>/c
 **Where a render finds its files.** Remotion reads the logo, sounds, character frames and the reels' audio with `staticFile()` from one `public` folder, but each brand keeps them in its own folder.
 `remotion.config.ts` builds a small public folder for the brand of the run, out of hard links, in `workspace/.reel-studio/public-<uid>/<brand>-<pid>/`: `logo.png` from `identity/`,
 `mascot/<move>/` from `mascot/movements/`, `sfx/` (from the program) and `<n>-<name>/<voice>.wav` from each reel's `audio/`. It is removed when the run ends. Nothing is copied by hand into a `public/` folder.
+
+## Claude and Codex: login or API key
+
+**Settings > Claude and Codex** chooses how each signs in.
+
+- **Login** (the default): the tool's own login on this computer: Claude Code with your Claude subscription (run `claude` once), Codex with your ChatGPT account (`codex login`). Any `ANTHROPIC_API_KEY` or `OPENAI_API_KEY` in the environment the app was started from is removed for the runs, so the login is what is used.
+- **API key:** an Anthropic key (`sk-ant-…`) for Claude, an OpenAI key (`sk-…`) for Codex. Jobs are then paid per use on your account. The key is written once to `data/<tool>-api-key` (readable only by you), never sent back to the page (it shows the last four characters), and put in the environment of the runs of that tool only. For Claude the app also sets `CLAUDE_CODE_SUBPROCESS_ENV_SCRUB=1`, so Claude Code does not hand the key on to the commands it runs; jobs are also forbidden to read the key files. Removing the key goes back to the login.
+- **Test** makes one small call with the chosen access and says whether it worked. A change applies to the next job; a job already running keeps what it started with.
+- Claude runs the jobs, the reel chat, the daily loop and the brand interview. Codex is only an option for the brand interview (Settings > Brand assistant) and is not tested with real tools; a custom assistant command receives neither key.
+
+**Usage in the sidebar.** With the login, the sidebar shows the **session** (the five-hour window) and the **week** (seven days) of the Claude subscription as bars, with the time they reset (yellow from 70%, red from 90%). The numbers are what Claude itself reports while it works (`rate_limit_event`, read from every Claude run and kept in `data/claude-usage.json`), so they are as fresh as the last run: *read 5 min ago*, with a **Check** button that makes one small call to read them again. With an API key the sidebar shows the cost of the jobs (today and the last 7 days, from the cost each run reports). Codex has no usage display: it reports no limits to the app.
 
 ## Setup and voices
 

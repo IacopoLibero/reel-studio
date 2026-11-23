@@ -4,6 +4,7 @@ import { api } from "../api";
 import { useLoad } from "../hooks";
 import { SkillsSection } from "../components/SkillsSection";
 import { SetupVoice } from "./SetupVoice";
+import { AiAccess } from "../components/AiAccess";
 import { InstagramAccess } from "../components/InstagramAccess";
 import { DeleteBrand } from "../components/DeleteBrand";
 import { BrandStyleSection } from "../components/BrandStyle";
@@ -16,6 +17,7 @@ const SECTIONS = [
   ["set-schedule", "Posting schedule"],
   ["set-daily", "Daily loop"],
   ["set-factory", "Reel factory"],
+  ["set-ai", "Claude and Codex"],
   ["set-skills", "Skills"],
   ["set-instagram", "Instagram"],
   ["set-voice", "Voice"],
@@ -127,6 +129,10 @@ export function SettingsPage({ brand }: { brand: BrandSummary }) {
             <Row label="Closing B words" help="General advice: ends with Follow for tips. The question text decides first, the source only when the question matches nothing. No match gives B.">
               <Chips items={draft.general} onChange={(general) => change({ general })} placeholder="Add a word and press Enter" label="Add a closing B word" />
             </Row>
+          </Section>
+
+          <Section id="set-ai" title="Claude and Codex" intro="How each one signs in: with its own login (your subscription) or with an API key. The sidebar shows how much of the Claude subscription is used.">
+            <AiAccess />
           </Section>
 
           <div id="set-skills" className="set-skills"><SkillsSection /></div>

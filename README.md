@@ -139,6 +139,7 @@ The daily loop ends its automatic part here and waits for you. Nothing is made b
 
 - Posting schedule (the default is 3 posts on Sunday, Tuesday and Thursday, 2 on the other days), the daily loop and the factory rules.
 - Blender device, Claude model, which content skills are on, the brand assistant, and deleting a brand (it goes to a trash folder).
+- **Claude and Codex:** how each signs in, with its own login or with an API key (saved in a file only you can read; the page shows the last four characters), and a **Test** button. The **sidebar** shows the Claude usage: session and week bars with their reset times, or the cost with an API key.
 
 The hub also has **Claude** (a terminal in the page running Claude Code), the login to Instagram (in **Settings**: its state, and a button that opens a Chromium window to log in) and
 **Character** (the moves of a brand's character).
@@ -188,7 +189,7 @@ Day-to-day operation (start, update, logs, ports, environment) is in [platform/R
 ## Requirements
 
 - **Arch Linux** (or a derivative) with `pacman`. The package depends on `nodejs`, `npm`, `git`, `ffmpeg`, `chromium`, `uv` and `electron`. The app is made for Arch Linux; other systems are not supported.
-- **A Claude subscription** (Claude Code) for the AI parts. Log in once with `claude`.
+- **Claude Code** for the AI parts, with a Claude subscription (log in once with `claude`) **or** an Anthropic API key (Settings > Claude and Codex).
 - **A GPU is recommended, not required.** An NVIDIA GPU with about 8 GB runs the voice engine (VoxCPM2) fast. Without it pick a processor mode in the setup:
   everything works, but making the voice of a 40 second reel can take many minutes instead of seconds. The hub, Blender (CPU rendering) and Remotion do not need a GPU.
 - **Disk:** about 40 GB free for the best-quality voice on a GPU (VoiceStudio with its packages and models is about 33 GB), much less with the light or processor modes.
@@ -237,7 +238,7 @@ Nothing is created before the first click and nothing is scheduled before the se
 
 - The hub listens on `127.0.0.1` only and needs a token (random, in `data/dev-token`, mode 600). The app window signs in with a one-time pass that the hub gives only to a request carrying the token, so the token never appears in a command line or an address. The hub contains a terminal and a
   browser logged in to your Instagram: do not expose it to a network without your own authentication and TLS.
-- **Credentials never leave the machine.** The Claude login (`~/.claude`) and the Composio login (`~/.composio`) stay in your home folder, the Instagram session lives in the brand's own folder (`data/brands/<brand>/profile/`), and you type your Instagram password yourself in the browser window (in the Docker setup, the noVNC window).
+- **Credentials never leave the machine.** The Claude login (`~/.claude`), the Composio login (`~/.composio`) and the API keys you save in Settings (`data/claude-api-key`, `data/codex-api-key`, mode 600) stay on your computer, the Instagram session lives in the brand's own folder (`data/brands/<brand>/profile/`), and you type your Instagram password yourself in the browser window (in the Docker setup, the noVNC window).
 - **What Claude jobs can read.** Jobs read untrusted web text, so `platform/hub/src/jobs/claude-safety.ts` denies them any read of `.env`,
   `~/.claude`, `~/.composio`, `~/.config` and the Instagram profile, and restricts research jobs to a few shell commands. The brand
   assistant has read-only tools and cannot see your other brands.
@@ -250,7 +251,7 @@ Full policy and how to report a problem: [SECURITY.md](SECURITY.md).
 
 ## Costs and limits
 
-- **Claude:** jobs use your Claude plan's usage. A reel is one long headless session; the daily loop adds a few more a day. Heavy use can hit your plan limits.
+- **Claude:** with the **login** (the default) jobs use your Claude subscription. A reel is one long headless session; a change in the reel chat is a shorter one; the daily loop adds a few more a day. Heavy use can hit your limits, so the sidebar shows how much of the **session** (five hours) and the **week** is used, with the time they reset. With an **API key** the jobs are paid per use on your Anthropic account instead and the sidebar shows what they cost (today and the last 7 days). Choose in **Settings > Claude and Codex**.
 - **Composio:** the Analytics page calls Composio's Instagram tools; its free plan has a monthly quota. Check your Composio account.
 - **Instagram scheduling:** Instagram accepts scheduled posts about **30 days ahead**, refuses a time **less than 20 minutes** away, and the video must be **9:16**.
   Scheduling uses the browser you log in to, not a paid API.

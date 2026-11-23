@@ -9,7 +9,7 @@ const split = (s: string): string[] => s.split(",");
 describe("headless Claude jobs that read the web cannot reach credentials", () => {
   it("every secret location is denied for reading, with Read() rules only (Grep/Glob rules are rejected by Claude Code)", () => {
     expect(SECRET_READ_DENIES.every((r) => r.startsWith("Read("))).toBe(true);
-    for (const needle of ["**/.env", ".claude/**", ".composio/**", "**/.credentials.json"]) {
+    for (const needle of ["**/.env", ".claude/**", ".composio/**", "**/.credentials.json", "**/dev-token", "**/claude-api-key", "**/codex-api-key"]) {
       expect(SECRET_READ_DENIES.some((r) => r.includes(needle))).toBe(true);
     }
   });
