@@ -23,6 +23,9 @@ if (!fs.existsSync(path.join(to, "main"))) {
   fs.rmSync(tmp, { recursive: true, force: true });
 }
 fs.writeFileSync(marker, "");
+// A model file of the wrong size is a download that was cut: remove it and download again.
+const MODEL_BYTES = 1_533_763_059;
+if (fs.existsSync(model) && fs.statSync(model).size !== MODEL_BYTES) fs.rmSync(model);
 if (!fs.existsSync(model)) {
   let lastTenth = -1;
   await downloadWhisperModel({

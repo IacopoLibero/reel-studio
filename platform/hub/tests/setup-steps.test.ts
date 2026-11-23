@@ -68,3 +68,30 @@ describe("countRemotionSkills", () => {
     expect(countRemotionSkills(tmp)).toBe(0);
   });
 });
+
+import { withRetries } from "../src/setup/steps.js";
+
+describe("withRetries", () => {
+  it("returns at once when the first try works", async () => {
+    let n = 0;
+    await withRetries(async () => { n++; }, 3, () => {}, async () => {});
+    expect(n).toBe(1);
+  });
+  it("tries again after a failure, says so in the log, and stops at the first success", async () => {
+    let n = 0; const lines: string[] = [];
+    await withRetries(async () => { if (++n < 3) throw new Error("socket closed"); }, 3, (l) => lines.push(l), async () => {});
+    expect(n).toBe(3);
+    expect(lines.filter((l) => /try 2 of 3|try 3 of 3/.test(l))).toHaveLength(2);
+    expect(lines.join("\n")).toContain("socket closed");
+  });
+  it("gives up after the last try with the last error", async () => {
+    let n = 0;
+    await expect(withRetries(async () => { n++; throw new Error(`fail ${n}`); }, 3, () => {}, async () => {})).rejects.toThrow("fail 3");
+    expect(n).toBe(3);
+  });
+  it("waits longer between tries", async () => {
+    const waits: number[] = [];
+    await expect(withRetries(async () => { throw new Error("x"); }, 3, () => {}, async (ms) => { waits.push(ms); })).rejects.toThrow();
+    expect(waits).toEqual([5000, 10000]);
+  });
+});

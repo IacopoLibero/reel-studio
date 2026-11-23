@@ -42,6 +42,18 @@ export function clearEmptyMountPoint(dir: string): boolean {
   } catch { return false; }
 }
 
+/** Runs `fn` up to `tries` times (a download that drops is the usual reason), waiting 5 s, 10 s... between tries. The last error is thrown. */
+export async function withRetries(fn: () => Promise<void>, tries: number, log: (l: string) => void, sleep: (ms: number) => Promise<void> = (ms) => new Promise((r) => setTimeout(r, ms))): Promise<void> {
+  for (let n = 1; ; n++) {
+    try { await fn(); return; } catch (e) {
+      if (n >= tries) throw e;
+      log(`${(e as Error).message.split("\n")[0]}`);
+      log(`trying again (try ${n + 1} of ${tries})`);
+      await sleep(5000 * n);
+    }
+  }
+}
+
 /** Puts the program's files in the workspace and installs its Node packages (Remotion). */
 export const workspacePackages = (c: StepContext): StepFn => async (log) => {
   mkdirSync(c.workspace, { recursive: true });
@@ -59,7 +71,7 @@ export const blender = (c: StepContext): StepFn => async (log) => {
   mkdirSync(dir, { recursive: true });
   const archive = join(dir, ".download.tar.xz");
   log(`downloading Blender ${BLENDER.version}`);
-  await download(BLENDER.url, archive, log);
+  await withRetries(() => download(BLENDER.url, archive, log), 3, log);
   log("checking the download");
   if ((await sha256File(archive)) !== BLENDER.sha256) { rmSync(archive, { force: true }); throw new Error("The Blender download is damaged (checksum does not match). Try again."); }
   const staging = join(dir, ".unpack");
@@ -80,7 +92,7 @@ export const whisper = (c: StepContext): StepFn => async (log) => {
   if (!existsSync(join(c.workspace, "node_modules", "@remotion", "install-whisper-cpp"))) throw new Error("Install the video packages first (the line above).");
   if (clearEmptyMountPoint(join(c.workspace, "whisper.cpp"))) log("removed an empty whisper.cpp folder left by the old Docker setup");
   log("building whisper.cpp and downloading its model (about 1.5 GB)");
-  await runCommand("node", [script], { cwd: c.workspace }, log);
+  await withRetries(() => runCommand("node", [script], { cwd: c.workspace }, log), 3, log);
 };
 
 /** How many Remotion agent skills the workspace has (folders `remotion-*` in `.claude/skills`). */
