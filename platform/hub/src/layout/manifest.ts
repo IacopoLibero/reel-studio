@@ -26,7 +26,7 @@ export const PROGRAM_ENTRIES: readonly string[] = [
 export const REPO_ONLY_PREFIXES: readonly string[] = [
   "platform/", "packaging/", "docs/", ".github/", "brand/_template/", "sfx/", ".gitignore", ".gitattributes", ".editorconfig", ".prettierrc", ".env.example",
   "eslint.config.mjs",
-  "README.md", "LICENSE", "SECURITY.md", "CODE_OF_CONDUCT.md", "CONTRIBUTING.md", "THIRD_PARTY_NOTICES.md", "TODO.md",
+  "README.md", "CHANGELOG.md", "LICENSE", "SECURITY.md", "CODE_OF_CONDUCT.md", "CONTRIBUTING.md", "THIRD_PARTY_NOTICES.md", "TODO.md",
 ];
 
 /** True when a path (relative to the project) is one of the program's own files. */
