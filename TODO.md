@@ -1,6 +1,6 @@
 # TODO
 
-What is still open, on purpose. Move an item out of this file when it is done; what is done is in [CHANGELOG.md](CHANGELOG.md). Last update: 2026-11-23, after the voice-language setting and the hub linter.
+What is still open, on purpose. Move an item out of this file when it is done; what is done is in [CHANGELOG.md](CHANGELOG.md). Last update: 2026-11-23, after 1.0.1.
 
 ## Open
 
@@ -29,8 +29,6 @@ Nothing blocks the use of the app. These are the things that were not tried or n
 
 - **Character from a picture** (`character.build`, `character.moves`): both ran for real with Claude and Blender (23 Nov), from a sheet to the moves reels use. The result is rough: blocky parts, thin arms not joined to the body, no real side view. A full reel was made with a generated character (23 Nov): voice, Whisper captions, scenes with the character's moves, MP4 with audio, all worked. The builder prompts now ask for joined limbs, rounded shapes and depth (real run on 23 Nov: connected silhouette, traced head, face; still blocky edges), and changes are a chat. Next: smoother outlines, and a larger character in the reel layout. A fully automatic, polished character from any picture is future work.
 - **Codex as the tool for everything** (`src/ai/agent.ts`, `codex-stream.ts`): written from OpenAI's documentation and tested only with a stand-in Codex. Try it with a real one: Settings > AI tool > Codex, then a reel. Unverified: the `--json` event shapes of `file_change` and `web_search`, `--add-dir` and `-c sandbox_workspace_write.network_access=true` on `exec`, `exec resume` with the sandbox flags, skills found through `.agents/skills`, web search in a read-only run, and that the voice server on localhost is reachable from the sandbox. A skill counts as called when Codex opens its SKILL.md with a command (the prompt tells it to), and a job that needs a skill fails otherwise, as with Claude: if a real Codex reads skills another way, those jobs will fail wrongly and the detection in `codex-stream.ts` needs to change. The Terminal page runs Codex (not tried); the sidebar usage box is Claude only.
-- **Full-width `Stage` variant of the Remotion kit** and a generic scene toolkit: `src/kit` has only the theme and captions. Reels for a brand without a character rely on the
-  `reel` skill composing full-width scenes from them.
 - **Stories** (`ootto-story-sequencer`), **carousels** (`ootto-carousel-builder`, `ootto-viral-carousel`) and **paid campaigns** (`ootto-paid-social-brief`,
   `ootto-utm-campaign-plan`): the skills are installed but the factory only makes reels. Each needs its own page, job and scheduler flow. They are visible in Settings and off.
 
@@ -42,4 +40,5 @@ Nothing blocks the use of the app. These are the things that were not tried or n
 - The offer rule only changes the Instagram copy of a caption (`caption.md` stays as it is). After a brand's last offer day, update the offer text in its `style.md` by hand and check the next closing-A reel.
 - Instagram scheduling: about 30 days ahead, at least 20 minutes of lead time, 9:16 only, one browser job at a time across all brands.
 - A reel already scheduled or posted can be changed in the chat, but Instagram keeps its own copy.
+- Reels for a brand without a character are composed fresh by the `reel` skill from the kit's theme and captions (`src/kit`). There is no fixed library of scenes, on purpose: a fixed set would make every reel look the same.
 - Names in a brand's moved code (`r7`, `a1`...) come from the order the reels were made in and stay as they are: they work, and the first reels of a brand render from its shared `code/` folder.

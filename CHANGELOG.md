@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 1.0.1 (2026-11-23)
 
 - **One AI tool for everything: Claude or Codex** (Settings > AI tool). Reels, edits, ideas, the daily loop, readouts, the character and the brand assistant all run on the chosen tool. Codex runs `codex exec --json` in a sandbox, its events are translated into the ones the jobs know, the skills are linked where Codex looks for them (a job that needs a skill fails if Codex did not open its SKILL.md, like Claude), and the Terminal page runs Codex when it is the chosen tool. The interface marks Codex as not tested. Written from OpenAI's documentation and tested with a stand-in only.
 - **The custom assistant command is gone.** The brand assistant is Claude or Codex. Codex now runs `codex exec --sandbox read-only --skip-git-repo-check --ephemeral -` (from OpenAI's non-interactive documentation), the command can be set with `HUB_CODEX_BIN`, and an old setting with a custom command falls back to Claude.
