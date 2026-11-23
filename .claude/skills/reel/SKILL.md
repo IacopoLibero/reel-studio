@@ -262,7 +262,10 @@ then place it in Remotion. Blender is only as good as its details, so work like 
   and as a roughness map: a wood image with planks, grain lines, pores and seams (repeat it every few units); a paper image with fibres, tonal clouds and specks; a leather or pebble height map
   for plastic, cases and tiles; speckles for ceramic. Keep the strength moderate: a texture that looks dirty or marbled is as wrong as none.
   **Judge texture at 100%.** Cut a crop of the final render at its real pixel size (not the contact sheet) and look at it: if the surface still looks like flat colour there, the texture is too fine or too weak.
-- **Colour:** add colour with real things (a tomato, a lemon, a purple plate, a green bottle), not grey and white only. The brand's colours come from `brand.json`.
+- **Choose props that a texture can carry.** Avoid fruit, vegetables and food unless you have a very well defined texture for them (skin pores, bloom, bruises, real colour
+  variation): without it they look like plastic toys. Prefer hard, printed and woven things whose texture is easy to make well: wooden objects (a pepper mill, a board), steel cutlery,
+  glass, ceramic, paper and card, cloth with a real weave image, leather.
+- **Colour:** add colour with real things (a purple plate, a red cloth napkin, a green glass bottle), not grey and white only. The brand's colours come from `brand.json`.
 - **Check every object before using it, with numbers and with eyes.** Render four views (front, three-quarter, back, top) in one grid, then close-ups of the small details (a lens, a knob, a corner, a rim).
   Print each object's size and lowest point and flag what floats, sinks or has faces of zero area. Fix what shows up and render again. Look at the close-ups: that is where the floating knob and the dirty centres are found.
 - **Depth.** One hero object per picture in front, two or three more behind it at different depths, slightly out of focus (depth of field), and one scene across all the slides of a carousel so objects can cross the edge between two slides.
