@@ -256,8 +256,12 @@ then place it in Remotion. Blender is only as good as its details, so work like 
   paper has fibres and slight tonal drift; brushed aluminium and titanium have fine lines along one direction (a stretched noise as bump); chrome and screens have soft smudges
   (large patches that change the roughness); ceramic has a glaze with a faint orange-peel bump; a lemon has dimpled pores (cells as bump) and a tomato has a skin that is a
   little darker in places; fabric, wood and card show their weave and grain. Vary the roughness and the base colour with low-frequency noise so no large area is one flat value.
-  Tables are never flat: use wood with long planks, grain, small colour differences between planks and thin seams, and a soft sheen. Judge texture at the size the object has in the final
-  picture: a pattern too fine to see there is wasted, so make it as large as it would look on a real photo.
+  Tables are never flat: use wood with long planks, grain, small colour differences between planks and thin seams, and a soft sheen.
+  **Use real texture images, not only shader noise.** Fine procedural noise vanishes at the size an object has in the final picture (a fibre of 0.3 px is invisible), and an object then
+  looks like a plain base shape. Generate the textures with a short script (numpy and PIL are enough) and apply them as the base colour (multiplied, so the print or the logo stays), as a bump
+  and as a roughness map: a wood image with planks, grain lines, pores and seams (repeat it every few units); a paper image with fibres, tonal clouds and specks; a leather or pebble height map
+  for plastic, cases and tiles; speckles for ceramic. Keep the strength moderate: a texture that looks dirty or marbled is as wrong as none.
+  **Judge texture at 100%.** Cut a crop of the final render at its real pixel size (not the contact sheet) and look at it: if the surface still looks like flat colour there, the texture is too fine or too weak.
 - **Colour:** add colour with real things (a tomato, a lemon, a purple plate, a green bottle), not grey and white only. The brand's colours come from `brand.json`.
 - **Check every object before using it, with numbers and with eyes.** Render four views (front, three-quarter, back, top) in one grid, then close-ups of the small details (a lens, a knob, a corner, a rim).
   Print each object's size and lowest point and flag what floats, sinks or has faces of zero area. Fix what shows up and render again. Look at the close-ups: that is where the floating knob and the dirty centres are found.
