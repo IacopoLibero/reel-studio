@@ -229,6 +229,8 @@ and rules in `style.md` to match, so the next reel starts from their taste. Tell
 - The first frame already shows the hook as text, and something is moving. **The first frame must show the question
   itself** (the reel's opening question, in words a person can read), fully visible and not mid-animation, because
   Instagram uses it as the preview. In the check (step 10), look at frame 0 and say whether the question is readable.
+- Use the whole safe height: the drawing and the character are big and sit in the middle of the picture, not squeezed into the top half
+  with an empty band under them. Text that has to be read is never light grey or low contrast: ink or the accent, always.
 - Instagram covers the edges. Keep everything that must be read out of the top 220 px, the bottom 420 px and the
   right 140 px.
 - Everything reads on a phone. If a frame could belong to any video, make it belong to this one.
