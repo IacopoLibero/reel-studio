@@ -37,6 +37,7 @@ All screenshots in this document show an invented demo brand, "Acme Bakery". No 
 - [Project layout](#project-layout)
 - [Contributing](#contributing)
 - [License and credits](#license-and-credits)
+- [Changelog](CHANGELOG.md)
 
 ## What it does
 
@@ -168,6 +169,8 @@ claude                       # once: log in to Claude Code, then quit
 cd packaging/arch && makepkg -si     # builds the package from this repository and installs it with pacman
 reel-studio                  # or open "Reel Studio" from your application menu
 ```
+
+Or take the prebuilt package of the [latest release](https://github.com/IacopoLibero/reel-studio/releases/latest) (check it against `SHA256SUMS` there) and install it with `sudo pacman -U reel-studio-1.0.0-1-x86_64.pkg.tar.zst`. What changed in each version: [CHANGELOG.md](CHANGELOG.md).
 
 The first start shows a **setup screen**. It checks what your computer has (Node, Claude Code, Chromium, FFmpeg, Git, uv, your graphics card) and
 installs what the app can install itself:

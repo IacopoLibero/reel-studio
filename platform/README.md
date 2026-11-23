@@ -92,7 +92,7 @@ All on `127.0.0.1` only.
 
 ## Update
 
-Pull or edit the repository and commit, close the app, then `cd packaging/arch && makepkg -si`. Your studio folder is never touched.
+Pull the repository (or take the package of a newer release), close the app, then `cd packaging/arch && makepkg -si` (or `sudo pacman -U` the new package). Your studio folder is never touched. What changed: [../CHANGELOG.md](../CHANGELOG.md).
 `makepkg` builds from the last commit. Pacman reinstalls a package of the same version without checking what changed: raise `pkgver` in `packaging/arch/PKGBUILD` for a release.
 
 ## Backup and restore

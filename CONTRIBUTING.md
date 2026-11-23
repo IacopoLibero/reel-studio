@@ -9,6 +9,10 @@ The hub runs on the host: `cd platform/hub && npm ci && npm run build`, then `RE
     git clone <your fork> && cd reel-studio
     cd platform/hub && npm ci
 
+## Releases
+
+The version is in `package.json` (root), `platform/hub/package.json` (and its lock file), `platform/desktop/package.json` and `pkgver` in `packaging/arch/PKGBUILD`: change them together, add the entry to `CHANGELOG.md`, build the package (`makepkg` in `packaging/arch`), tag `vX.Y.Z` and attach the package and its `SHA256SUMS` to the GitHub release.
+
 ## Before you open a pull request
 
     cd platform/hub
