@@ -2,28 +2,19 @@ import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { ASSISTANT_ALLOWED_TOOLS, assistantDenied, assistantEnv, runAssistant, splitCommand, type AssistantRun } from "../src/creator/assistant.js";
+import { ASSISTANT_ALLOWED_TOOLS, assistantDenied, assistantEnv, CODEX_ARGS, runAssistant, type AssistantRun } from "../src/creator/assistant.js";
 import { buildInterviewPrompt, interviewTurn, makeDraft, parseTurn } from "../src/creator/interview.js";
 
 const FX = join(import.meta.dirname, "fixtures");
 const CLAUDE = join(FX, "fake-claude-interview.mjs");
-const CMD = join(FX, "fake-assistant-cmd.mjs");
+const CODEX = join(FX, "fake-codex.mjs");
+const SLEEP = join(FX, "fake-codex-sleep.mjs");
 let tmp: string;
 beforeEach(() => { tmp = mkdtempSync(join(tmpdir(), "assist-")); });
 afterEach(() => { for (const k of ["FAKE_MODE", "FAKE_ARGS_FILE", "FAKE_STATE"]) delete process.env[k]; rmSync(tmp, { recursive: true, force: true }); });
 
 const base = (over: Partial<AssistantRun> = {}): AssistantRun => ({
-  config: { kind: "claude", command: "" }, claudeBin: CLAUDE, model: "", prompt: "hello there prompt", root: "/project", dataDir: "/hubdata", scratch: join(tmp, "scratch"), env: { ...process.env, HUB_TOKEN: "SECRET-TOKEN" }, extraEnv: Object.fromEntries(Object.entries(process.env).filter(([k]) => k.startsWith("FAKE_"))), ...over,
-});
-
-describe("splitCommand", () => {
-  it("splits words and honours quotes, without a shell", () => {
-    expect(splitCommand("codex exec -")).toEqual(["codex", "exec", "-"]);
-    expect(splitCommand(`my-tool --name "two words" 'a b' ""`)).toEqual(["my-tool", "--name", "two words", "a b", ""]);
-    expect(splitCommand("  ")).toEqual([]);
-    expect(splitCommand("a; rm -rf /")).toEqual(["a;", "rm", "-rf", "/"]);
-    expect(() => splitCommand('a "b')).toThrow(/quote/);
-  });
+  config: { kind: "claude" }, claudeBin: CLAUDE, model: "", prompt: "hello there prompt", root: "/project", dataDir: "/hubdata", scratch: join(tmp, "scratch"), env: { ...process.env, HUB_TOKEN: "SECRET-TOKEN" }, extraEnv: Object.fromEntries(Object.entries(process.env).filter(([k]) => k.startsWith("FAKE_"))), ...over,
 });
 
 describe("the claude adapter", () => {
@@ -59,7 +50,7 @@ describe("the claude adapter", () => {
     await expect(runAssistant(base({ claudeBin: "/nonexistent-bin" }))).rejects.toThrow(/Could not start/);
   });
   it("stops a turn that takes too long", async () => {
-    await expect(runAssistant(base({ claudeBin: "/bin/sh", config: { kind: "custom", command: "/bin/sh -c 'sleep 5'" }, timeoutMs: 100 }))).rejects.toThrow(/too long/);
+    await expect(runAssistant(base({ config: { kind: "codex" }, codexBin: SLEEP, timeoutMs: 100 }))).rejects.toThrow(/too long/);
   });
   it("exposes the deny list for credentials and other brands", () => {
     expect(assistantDenied("/p")).toContain("Read(/p/brand/**)");
@@ -72,37 +63,48 @@ describe("the claude adapter", () => {
   });
 });
 
-describe("the generic command adapter (codex and custom, tested with a fake command)", () => {
-  const custom = (command: string) => base({ config: { kind: "custom", command } });
-  it("sends the prompt on stdin and returns the printed text", async () => {
-    const text = await runAssistant(custom(`node ${CMD}`));
-    expect(JSON.parse(text).say).toContain("Heard the prompt");
+describe("the codex adapter (tested with a fake codex)", () => {
+  const codex = (over: Partial<AssistantRun> = {}) => base({ config: { kind: "codex" }, codexBin: CODEX, ...over });
+  it("sends the prompt on stdin and returns the printed answer", async () => {
+    expect(JSON.parse(await runAssistant(codex())).say).toContain("Heard the prompt");
   });
-  it("uses the codex default command when none is typed, and says what is missing for custom", async () => {
-    await expect(runAssistant(base({ config: { kind: "codex", command: "" } }))).rejects.toThrow(/Could not start codex/);
-    await expect(runAssistant(custom(""))).rejects.toThrow(/No assistant command/);
+  it("runs `codex exec` read-only, outside a git repo, without keeping a session", async () => {
+    const argsFile = join(tmp, "args");
+    await runAssistant(codex({ extraEnv: { FAKE_ARGS_FILE: argsFile } }));
+    const args = JSON.parse(readFileSync(argsFile, "utf8").trim()) as string[];
+    expect(args).toEqual([...CODEX_ARGS]);
+    expect(args).toEqual(expect.arrayContaining(["exec", "--sandbox", "read-only", "--skip-git-repo-check", "--ephemeral", "-"]));
   });
-  it("explains a failing or silent command", async () => {
-    await expect(runAssistant(custom(`node ${CMD} fail`))).rejects.toThrow(/exit code 3\. no network/);
-    await expect(runAssistant(custom(`node ${CMD} empty`))).rejects.toThrow(/printed nothing/);
+  it("takes the command from HUB_CODEX_BIN and says plainly when codex is missing", async () => {
+    expect(JSON.parse(await runAssistant(base({ config: { kind: "codex" }, env: { ...process.env, HUB_CODEX_BIN: CODEX } }))).say).toContain("Heard");
+    await expect(runAssistant(codex({ codexBin: "/nonexistent-codex" }))).rejects.toThrow(/Could not start/);
+  });
+  it("never gives codex an Anthropic key or the hub token", async () => {
+    const argsFile = join(tmp, "env");
+    await runAssistant(codex({ env: { ...process.env, ANTHROPIC_API_KEY: "sk-ant-x", HUB_TOKEN: "T" }, extraEnv: { FAKE_ARGS_FILE: argsFile, FAKE_MODE: "env" } }));
+    expect(readFileSync(argsFile, "utf8")).not.toMatch(/sk-ant-x|"T"/);
+  });
+  it("explains a failing or silent codex", async () => {
+    await expect(runAssistant(codex({ extraEnv: { FAKE_MODE: "fail" } }))).rejects.toThrow(/exit code 3.*codex login.*no network/s);
+    await expect(runAssistant(codex({ extraEnv: { FAKE_MODE: "empty" } }))).rejects.toThrow(/Codex printed nothing/);
   });
 });
 
 describe("the interview", () => {
   const run = (config: AssistantRun["config"], claudeBin = CLAUDE) => (prompt: string) => runAssistant(base({ config, claudeBin, prompt }));
   it("asks one question at a time and tracks the summary", async () => {
-    const first = await interviewTurn([], { run: run({ kind: "claude", command: "" }), takenSlugs: [] });
+    const first = await interviewTurn([], { run: run({ kind: "claude" }), takenSlugs: [] });
     expect(first).toMatchObject({ say: "Hi! What is your brand called?", done: false, draft: null });
-    const second = await interviewTurn([{ role: "assistant", text: first.say }, { role: "user", text: "Acme Bakery" }], { run: run({ kind: "claude", command: "" }), takenSlugs: [] });
+    const second = await interviewTurn([{ role: "assistant", text: first.say }, { role: "user", text: "Acme Bakery" }], { run: run({ kind: "claude" }), takenSlugs: [] });
     expect(second.summary).toMatchObject({ name: "Acme Bakery", colors: { accent: "#d94a3d" } });
   });
-  it("works through the generic command too", async () => {
-    const r = await interviewTurn([{ role: "user", text: "hi" }], { run: run({ kind: "custom", command: `node ${CMD}` }), takenSlugs: [] });
+  it("works through codex too", async () => {
+    const r = await interviewTurn([{ role: "user", text: "hi" }], { run: (prompt) => runAssistant(base({ config: { kind: "codex" }, codexBin: CODEX, prompt })), takenSlugs: [] });
     expect(r.say).toContain("Heard");
   });
   it("ends with a draft: brand.json over defaults, a free slug, no profile folder, and style.md", async () => {
     process.env.FAKE_MODE = "done";
-    const r = await interviewTurn([{ role: "user", text: "that is all" }], { run: run({ kind: "claude", command: "" }), takenSlugs: ["acme-bakery"] });
+    const r = await interviewTurn([{ role: "user", text: "that is all" }], { run: run({ kind: "claude" }), takenSlugs: ["acme-bakery"] });
     expect(r.done).toBe(true);
     expect(r.draft?.errors).toEqual([]);
     expect(r.draft?.brand).toMatchObject({ slug: "acme-bakery-2", name: "Acme Bakery", version: 1 });
@@ -122,9 +124,9 @@ describe("the interview", () => {
   });
   it("retries once when the answer is not JSON, then gives up with a clear message", async () => {
     process.env.FAKE_MODE = "retry"; process.env.FAKE_STATE = join(tmp, "state");
-    expect((await interviewTurn([], { run: run({ kind: "claude", command: "" }), takenSlugs: [] })).say).toContain("brand called");
+    expect((await interviewTurn([], { run: run({ kind: "claude" }), takenSlugs: [] })).say).toContain("brand called");
     process.env.FAKE_MODE = "prose";
-    await expect(interviewTurn([], { run: run({ kind: "claude", command: "" }), takenSlugs: [] })).rejects.toThrow(/expected format/);
+    await expect(interviewTurn([], { run: run({ kind: "claude" }), takenSlugs: [] })).rejects.toThrow(/expected format/);
   });
   it("keeps invalid drafts editable with the errors listed", () => {
     const d = makeDraft({ name: "Acme", colors: { accent: "red" } }, undefined, []);

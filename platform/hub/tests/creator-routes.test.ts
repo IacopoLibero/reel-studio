@@ -51,7 +51,7 @@ describe("creator options and validation", () => {
     mkdirSync(join(data, "brands/acme/mascot"), { recursive: true }); writeFileSync(join(data, "brands/acme/mascot/bun.py"), "");
     writeTestBrand(root, "voiced", { voice: { engine: "voxcpm2", sample: "identity/voice.wav", sampleText: "identity/voice.txt" } });
     const r = (await get("/api/brand-creator/options")).json();
-    expect(r).toMatchObject({ assistant: { kind: "claude", tested: true }, slugs: ["acme", "voiced"], voices: [{ slug: "voiced" }], characters: ["bun"] });
+    expect(r).toMatchObject({ assistant: { kind: "claude" }, slugs: ["acme", "voiced"], voices: [{ slug: "voiced" }], characters: ["bun"] });
   });
   it("serves the font list and validates a brand with readable errors", async () => {
     const f = (await get("/api/brand-creator/fonts")).json();
@@ -197,18 +197,16 @@ describe("the interview route", () => {
     expect(bad.json().error).toContain("could not answer");
     expect((await post("/api/brand-creator/interview", { messages: [{ role: "robot", text: "x" }] })).statusCode).toBe(400);
   });
-  it("uses a custom command saved in the settings", async () => {
+  it("uses codex when it is chosen in the settings, and a stored custom assistant falls back to Claude", async () => {
     const cur = (await get("/api/brands/acme/settings")).json();
-    expect(cur.assistant).toEqual({ kind: "claude", command: "" });
-    expect((await app.inject({ method: "PUT", url: "/api/brands/acme/settings", headers: auth, payload: { ...cur, assistant: { kind: "custom", command: "" } } })).statusCode).toBe(400);
-    const put = await app.inject({ method: "PUT", url: "/api/brands/acme/settings", headers: auth, payload: { ...cur, assistant: { kind: "custom", command: `node ${join(FX, "fake-assistant-cmd.mjs")}` } } });
+    expect(cur.assistant).toEqual({ kind: "claude" });
+    expect((await app.inject({ method: "PUT", url: "/api/brands/acme/settings", headers: auth, payload: { ...cur, assistant: { kind: "custom" } } })).json().assistant).toEqual({ kind: "claude" });
+    process.env.HUB_CODEX_BIN = join(FX, "fake-codex.mjs");
+    const put = await app.inject({ method: "PUT", url: "/api/brands/acme/settings", headers: auth, payload: { ...cur, assistant: { kind: "codex" } } });
     expect(put.statusCode).toBe(200);
-    expect((await get("/api/brand-creator/options")).json().assistant).toMatchObject({ kind: "custom", tested: false });
+    expect((await get("/api/brand-creator/options")).json().assistant).toEqual({ kind: "codex" });
     expect((await post("/api/brand-creator/interview", { messages: [{ role: "user", text: "hello there" }] })).json().say).toContain("Heard");
-    const ch = await post("/api/brand-creator/character-interview", { messages: [{ role: "user", text: "a loaf" }], brand: { name: "Acme", about: "bread" } });
-    expect(ch.statusCode).toBe(200);
-    expect(ch.json()).toMatchObject({ say: expect.stringContaining("Heard"), character: { name: "", what: "" }, done: false });
-    expect((await post("/api/brand-creator/character-interview", { messages: [{ role: "robot", text: "x" }] })).statusCode).toBe(400);
+    delete process.env.HUB_CODEX_BIN;
   });
 });
 
@@ -247,7 +245,8 @@ describe("deleting a brand", () => {
 describe("the character studio routes", () => {
   it("talks about the character with the brand's own context and what is already written", async () => {
     const cur = (await get("/api/brands/acme/settings")).json();
-    await app.inject({ method: "PUT", url: "/api/brands/acme/settings", headers: auth, payload: { ...cur, assistant: { kind: "custom", command: `node ${join(FX, "fake-assistant-cmd.mjs")} echo` } } });
+    await app.inject({ method: "PUT", url: "/api/brands/acme/settings", headers: auth, payload: { ...cur, assistant: { kind: "codex" } } });
+    process.env.HUB_CODEX_BIN = join(FX, "fake-codex.mjs"); process.env.CODEX_FAKE_MODE = "echo";
     await app.inject({ method: "PUT", url: "/api/brands/acme/character/studio/fields", headers: auth, payload: { name: "Bun", fields: { what: "a round loaf", personality: "kind", extra: "" } } });
     writeFileSync(join(data, "brands/acme/identity/style.md"), "# Style\n\n## Voice and tone\n- Very playful\n");
     const r = (await post("/api/brands/acme/character/studio/chat", { messages: [] })).json();
@@ -255,6 +254,7 @@ describe("the character studio routes", () => {
     expect(r.say).toContain("Very playful");
     expect(r.say).toContain("a round loaf");
     expect((await post("/api/brands/acme/character/studio/chat", { messages: [{ role: "robot", text: "x" }] })).statusCode).toBe(400);
+    delete process.env.HUB_CODEX_BIN; delete process.env.CODEX_FAKE_MODE;
   });
   it("stores fields and a sheet, serves them, and approves only after a preview exists", async () => {
     const empty = (await get("/api/brands/acme/character/studio")).json();

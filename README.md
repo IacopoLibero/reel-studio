@@ -314,7 +314,7 @@ The other variables of the hub are in [platform/README.md](platform/README.md).
 
 **Can I run two brands?** Yes, as many as you like. Each has its own Instagram login, settings and daily loop; browser jobs run one at a time.
 
-**Can I use another AI than Claude?** The jobs run headless Claude Code. Only the brand interview can use `codex` or a custom command, and those are untested.
+**Can I use another AI than Claude?** The jobs run headless Claude Code. The brand creator (the interview, the character chat, the voice proposals) can use **Codex** instead (Settings > Brand assistant): the hub runs `codex exec --sandbox read-only --skip-git-repo-check --ephemeral -` with the prompt on stdin, as OpenAI documents for non-interactive use. It needs Codex installed and signed in; it was written from that documentation and tested with a stand-in, not with a real Codex.
 
 **Where is my data?** In your studio folder, `~/ReelStudio` by default: `data/brands/<name>/` (one folder per brand: identity, character, reels, question list, Instagram login) and `workspace/` (the Remotion project the program fills; your reels' code is in the brand folders). The voice engine, Blender and their models are in `data/tools/` (the setup installs them again if you delete it). To back up, copy `~/ReelStudio` ([platform/README.md](platform/README.md)).
 

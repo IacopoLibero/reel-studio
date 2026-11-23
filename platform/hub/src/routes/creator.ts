@@ -46,7 +46,7 @@ export function creatorRoutes(app: FastifyInstance, d: AppDeps, svc: CreatorServ
   app.get(`${prefix}/options`, async () => {
     const a = d.settings.getGlobal().assistant;
     return {
-      assistant: { ...a, tested: a.kind === "claude" },
+      assistant: { kind: a.kind },
       slugs: d.brands.slugs(),
       voices: d.brands.list().filter((b) => b.voice.sample && b.voice.sampleText).map((b) => ({ slug: b.slug, name: b.name })),
       characters: mascots(),

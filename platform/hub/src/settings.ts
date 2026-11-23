@@ -28,10 +28,8 @@ export const brandSettingsSchema = z.object({
 export const globalSettingsSchema = z.object({
   blenderDevice: z.enum(["cpu", "gpu", "auto"]),
   claudeModel: z.string().max(80).regex(/^[A-Za-z0-9._:[\]-]*$/, "Model name has invalid characters"),
-  assistant: z.object({
-    kind: z.enum(["claude", "codex", "custom"]),
-    command: z.string().trim().max(300),
-  }).refine((a) => a.kind !== "custom" || a.command.length > 0, "Type the command for the custom assistant.").default({ kind: "claude", command: "" }),
+  // An older settings file may hold {kind: "custom", command}: that setting is gone, the assistant is Claude again.
+  assistant: z.preprocess((v) => (v && typeof v === "object" && ["claude", "codex"].includes((v as { kind?: unknown }).kind as string) ? v : { kind: "claude" }), z.object({ kind: z.enum(["claude", "codex"]) })).default({ kind: "claude" }),
 });
 
 /** The merged view the Settings page edits and the jobs receive. accountName comes from the brand (brand.json), not from the settings files. */
@@ -45,7 +43,7 @@ export type GlobalSettings = z.infer<typeof globalSettingsSchema>;
 export const DEFAULT_BRAND_SETTINGS: BrandSettings = {
   factory: { concurrency: 2, closingRules: DEFAULT_RULES }, daily: { enabled: false, earliest: "06:00", ideas: 3, threads: false }, slotPattern: DEFAULT_PATTERN,
 };
-export const DEFAULT_GLOBAL_SETTINGS: GlobalSettings = { blenderDevice: "auto", claudeModel: "", assistant: { kind: "claude", command: "" } };
+export const DEFAULT_GLOBAL_SETTINGS: GlobalSettings = { blenderDevice: "auto", claudeModel: "", assistant: { kind: "claude" } };
 export const DEFAULT_SETTINGS: Settings = { ...DEFAULT_BRAND_SETTINGS, ...DEFAULT_GLOBAL_SETTINGS, accountName: "" };
 
 /** Splits the merged settings into the part a brand owns and the shared part. */

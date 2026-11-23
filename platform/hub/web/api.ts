@@ -33,7 +33,7 @@ export const getBrand = (): string => currentBrand;
 export const scoped = (path: string): string => `/api/brands/${encodeURIComponent(currentBrand)}${path}`;
 
 export interface CreatorOptions {
-  assistant: { kind: "claude" | "codex" | "custom"; command: string; tested: boolean };
+  assistant: { kind: "claude" | "codex" };
   slugs: string[];
   voices: { slug: string; name: string }[];
   characters: string[];

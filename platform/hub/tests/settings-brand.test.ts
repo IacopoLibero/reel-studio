@@ -27,7 +27,7 @@ describe("per-brand settings", () => {
     expect(s.get("acme")).toMatchObject({ daily: { enabled: true, earliest: "08:30" }, accountName: "acme_cafe" });
     // what is on disk: brand file has the brand part only, the global file the shared part only
     expect(Object.keys(JSON.parse(readFileSync(join(tmp, "brands/acme/settings.json"), "utf8"))).sort()).toEqual(["daily", "factory", "slotPattern"]);
-    expect(JSON.parse(readFileSync(join(tmp, "settings.json"), "utf8"))).toEqual({ blenderDevice: "cpu", claudeModel: "opus", assistant: { kind: "claude", command: "" } });
+    expect(JSON.parse(readFileSync(join(tmp, "settings.json"), "utf8"))).toEqual({ blenderDevice: "cpu", claudeModel: "opus", assistant: { kind: "claude" } });
     expect(existsSync(join(tmp, "brands/beta/settings.json"))).toBe(false);
   });
   it("survives a restart and a corrupt file", () => {

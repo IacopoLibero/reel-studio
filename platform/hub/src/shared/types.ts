@@ -47,9 +47,9 @@ export interface FactorySettings {
   closingRules: { product: string[]; general: string[] };
 }
 
-export type AssistantKind = "claude" | "codex" | "custom";
-/** The command that talks to the person when a brand is created by interview. Only "claude" is tested. */
-export interface AssistantSettings { kind: AssistantKind; command: string }
+export type AssistantKind = "claude" | "codex";
+/** Which tool talks to the person in the brand creator (the interview, the character chat, the voice proposals). */
+export interface AssistantSettings { kind: AssistantKind }
 
 export interface Settings {
   assistant: AssistantSettings;

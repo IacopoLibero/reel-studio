@@ -7,7 +7,7 @@ import type { UsageStore } from "../claude/usage.js";
 import { jobEnv } from "../env.js";
 import { parseStreamLine } from "../character/claude-stream.js";
 import { runProcess } from "../jobs/process.js";
-import { splitCommand, DEFAULT_COMMANDS } from "../creator/assistant.js";
+import { CODEX_ARGS, codexCommand } from "../creator/assistant.js";
 import { HttpError } from "./scope.js";
 
 const accessBody = z.object({ mode: z.enum(["login", "api-key"]), apiKey: z.string().max(400).optional(), removeKey: z.boolean().optional() });
@@ -82,11 +82,9 @@ async function checkClaude(d: AppDeps, signal: AbortSignal): Promise<{ ok: boole
 }
 
 async function checkCodex(d: AppDeps, ai: AiServices, signal: AbortSignal): Promise<{ ok: boolean; error?: string }> {
-  const [cmd, ...args] = splitCommand(d.settings.get().assistant.kind === "codex" && d.settings.get().assistant.command.trim() ? d.settings.get().assistant.command : DEFAULT_COMMANDS.codex);
-  if (!cmd) return { ok: false, error: "No Codex command is set." };
   let out = "", err = "";
   const env = ai.access.codex.apply(Object.fromEntries(Object.entries(process.env).filter(([k]) => k !== "HUB_TOKEN" && k !== "ANTHROPIC_API_KEY" && k !== "ANTHROPIC_AUTH_TOKEN")));
-  const code = await runProcess({ cmd, args, cwd: d.config.root, env, stdin: CHECK_PROMPT, signal, onLine: (l, s) => { if (s === "out") out += `${l}\n`; else if (l.trim()) err = l.slice(0, 300); } })
+  const code = await runProcess({ cmd: codexCommand(), args: [...CODEX_ARGS], cwd: tmpdir(), env, stdin: CHECK_PROMPT, signal, onLine: (l, s) => { if (s === "out") out += `${l}\n`; else if (l.trim()) err = l.slice(0, 300); } })
     .catch((e: Error) => { err = e.message; return null; });
   if (signal.aborted) return { ok: false, error: "Codex did not answer in time." };
   if (code !== 0) return { ok: false, error: (err || `Codex stopped with exit code ${code}.`).slice(0, 400) };

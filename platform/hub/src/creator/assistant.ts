@@ -17,30 +17,20 @@ export const assistantDenied = (root: string, dataDir?: string): string => joinT
   dataDir ? [`Read(${dataDir}/brands/**)`, `Read(${dataDir}/jobs.json)`, `Read(${dataDir}/settings.json)`] : [],
 );
 
-/** What `kind` runs when no command is typed. codex is a best guess and untested; claude uses HUB_CLAUDE_BIN. */
-export const DEFAULT_COMMANDS: Record<"codex", string> = { codex: "codex exec -" };
+/**
+ * The arguments of `codex exec` for one turn (OpenAI's non-interactive mode, checked against its documentation):
+ * the prompt is read from stdin (`-`); stdout carries only the final answer and progress goes to stderr; the sandbox is read-only, so it cannot
+ * write files or change anything; the folder it runs in is an empty scratch folder, not a git repository (`--skip-git-repo-check`); no session file is kept (`--ephemeral`).
+ */
+/** The Codex command: HUB_CODEX_BIN, else `codex` (found on the PATH). */
+export const codexCommand = (env: NodeJS.ProcessEnv = process.env): string => env.HUB_CODEX_BIN?.trim() || "codex";
 
-/** Splits a command line into words. Single and double quotes group words; there is no shell, so nothing else is interpreted. */
-export function splitCommand(line: string): string[] {
-  const out: string[] = [];
-  let cur = "";
-  let quote: string | null = null;
-  let any = false;
-  for (const ch of line.trim()) {
-    if (quote) { if (ch === quote) quote = null; else cur += ch; }
-    else if (ch === "'" || ch === '"') { quote = ch; any = true; }
-    else if (/\s/.test(ch)) { if (cur || any) { out.push(cur); cur = ""; any = false; } }
-    else cur += ch;
-  }
-  if (quote) throw new Error("The assistant command has an unclosed quote.");
-  if (cur || any) out.push(cur);
-  return out;
-}
+export const CODEX_ARGS: readonly string[] = ["exec", "--sandbox", "read-only", "--skip-git-repo-check", "--ephemeral", "-"];
 
 /** The environment variables an assistant process gets: how to run and find its own login, nothing else (no hub token, no Composio or other service keys). */
 const ENV_ALLOWED = /^(PATH|HOME|USER|LOGNAME|LANG|LC_[A-Z_]+|TERM|TMPDIR|SHELL|TZ|XDG_[A-Z_]+|CLAUDE_[A-Z_]+|ANTHROPIC_[A-Z_]+|OPENAI_[A-Z_]+|CODEX_[A-Z_]+|HTTPS?_PROXY|NO_PROXY|https?_proxy|no_proxy)$/;
 
-/** The environment without Anthropic credentials: what a codex or custom assistant command gets. */
+/** The environment without Anthropic credentials: what the codex command gets. */
 const withoutAnthropicKeys = (base: NodeJS.ProcessEnv): NodeJS.ProcessEnv => Object.fromEntries(Object.entries(base).filter(([k]) => k !== "ANTHROPIC_API_KEY" && k !== "ANTHROPIC_AUTH_TOKEN"));
 
 export function assistantEnv(base: NodeJS.ProcessEnv): NodeJS.ProcessEnv {
@@ -51,6 +41,8 @@ export interface AssistantRun {
   config: AssistantSettings;
   /** HUB_CLAUDE_BIN, used for kind "claude". */
   claudeBin: string;
+  /** The Codex command, for kind "codex": this, else HUB_CODEX_BIN, else `codex`. */
+  codexBin?: string;
   model: string;
   prompt: string;
   root: string;
@@ -69,32 +61,30 @@ const TIMEOUT_MS = 5 * 60 * 1000;
 
 /**
  * One turn: the whole prompt goes in, the assistant's text comes out.
- * claude: headless `claude -p` with read-only tools. codex and custom: the command reads the prompt on stdin and prints text on stdout;
- * those get no tool restrictions from us, because we cannot set them. Only claude is tested.
+ * claude: headless `claude -p` with read-only tools. codex: `codex exec` in a read-only sandbox (see CODEX_ARGS); it reads the prompt on stdin and prints the answer.
+ * Codex gets no tool list from us (it has its own sandbox), and a read-only sandbox can still read files the user can read.
  */
 export async function runAssistant(o: AssistantRun): Promise<string> {
   mkdirSync(o.scratch, { recursive: true });
   const ac = new AbortController();
   const timer = setTimeout(() => ac.abort(), o.timeoutMs ?? TIMEOUT_MS);
   o.signal?.addEventListener("abort", () => ac.abort(), { once: true });
-  // A codex command gets the Codex access (login or API key); a custom command gets neither, and none of them gets an Anthropic key.
-  const env = { ...assistantEnv(o.config.kind === "codex" ? applyEnvLayer(withoutAnthropicKeys(o.env), "codex") : withoutAnthropicKeys(o.env)), ...o.extraEnv };
+  // Codex gets the Codex access (login or API key) and never an Anthropic key.
+  const env = { ...assistantEnv(applyEnvLayer(withoutAnthropicKeys(o.env), "codex")), ...o.extraEnv };
   let timedOut = false;
   ac.signal.addEventListener("abort", () => { timedOut = !o.signal?.aborted; }, { once: true });
   try {
-    // Only Claude gets the Claude access (login or API key); a codex or custom command never receives an Anthropic key.
+    // Only Claude gets the Claude access (login or API key); codex never receives an Anthropic key.
     if (o.config.kind === "claude") return await runClaude(o, { ...assistantEnv(applyEnvLayer(o.env, "claude")), ...o.extraEnv }, ac.signal);
-    const line = o.config.command.trim() || (o.config.kind === "codex" ? DEFAULT_COMMANDS.codex : "");
-    const [cmd, ...args] = splitCommand(line);
-    if (!cmd) throw new Error("No assistant command is set. Open Settings and type it.");
+    const cmd = o.codexBin ?? codexCommand(o.env);
     const out: string[] = [];
     let err = "";
-    const code = await runProcess({ cmd, args, cwd: o.scratch, env, stdin: o.prompt, signal: ac.signal, onLine: (l, s) => { if (s === "out") out.push(l); else if (l.trim()) err = l.slice(0, 300); } });
+    const code = await runProcess({ cmd, args: [...CODEX_ARGS], cwd: o.scratch, env, stdin: o.prompt, signal: ac.signal, onLine: (l, s) => { if (s === "out") out.push(l); else if (l.trim()) err = l.slice(0, 300); } });
     if (timedOut) throw new Error("The assistant took too long and was stopped.");
     if (ac.signal.aborted) throw new Error("Cancelled");
-    if (code !== 0) throw new Error(`The assistant command stopped with exit code ${code}. ${err}`.trim());
+    if (code !== 0) throw new Error(`Codex stopped with exit code ${code}. Is it installed and signed in (run \`codex login\`)? ${err}`.trim());
     const text = out.join("\n").trim();
-    if (!text) throw new Error(`The assistant command printed nothing. ${err}`.trim());
+    if (!text) throw new Error(`Codex printed nothing. ${err}`.trim());
     return text;
   } finally { clearTimeout(timer); }
 }

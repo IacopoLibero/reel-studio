@@ -16,11 +16,10 @@ const base: Settings = {
 } as Settings;
 
 describe("settings form: assistant", () => {
-  it("needs a command for a custom assistant", () => {
+  it("accepts claude and codex without any command", () => {
     const d = toDraft(base);
     expect(validate(d).assistant).toBeUndefined();
-    expect(validate({ ...d, settings: { ...d.settings, assistant: { kind: "custom", command: " " } } }).assistant).toContain("command");
-    expect(validate({ ...d, settings: { ...d.settings, assistant: { kind: "codex", command: "" } } }).assistant).toBeUndefined();
+    expect(validate({ ...d, settings: { ...d.settings, assistant: { kind: "codex" } } }).assistant).toBeUndefined();
   });
 });
 

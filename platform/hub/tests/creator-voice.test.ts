@@ -25,6 +25,7 @@ let failOn: string | null;
 let url: string;
 
 beforeEach(async () => {
+  process.env.HUB_CODEX_BIN = ASSISTANT;
   env = makeEnv();
   calls = []; failOn = null;
   server = createServer((req, res) => {
@@ -43,10 +44,11 @@ beforeEach(async () => {
   url = `http://127.0.0.1:${(server.address() as { port: number }).port}`;
   env.svc.voiceUrl = url;
 });
-afterEach(async () => { await new Promise((r) => server.close(r)); rmSync(env.tmp, { recursive: true, force: true }); });
+afterEach(async () => {
+  delete process.env.HUB_CODEX_BIN; delete process.env.CODEX_FAKE_MODE; await new Promise((r) => server.close(r)); rmSync(env.tmp, { recursive: true, force: true }); });
 
-const ctxFor = (command: string, j = job("voice.generate", "acme-bakery", { brand })) => ({ ...env.ctx(j), settings: { ...DEFAULT_SETTINGS, assistant: { kind: "custom" as const, command } } });
-const run = (command = `node ${ASSISTANT}`, params: Record<string, unknown> = { brand }) => { const j = job("voice.generate", "acme-bakery", params); return voiceGenerate(j, ctxFor(command, j)); };
+const ctxFor = (j = job("voice.generate", "acme-bakery", { brand })) => ({ ...env.ctx(j), settings: { ...DEFAULT_SETTINGS, assistant: { kind: "codex" as const } } });
+const run = (params: Record<string, unknown> = { brand }) => { const j = job("voice.generate", "acme-bakery", params); return voiceGenerate(j, ctxFor(j)); };
 
 describe("voice.generate", () => {
   it("makes each proposed voice from its description alone and stages the WAVs", async () => {
@@ -80,7 +82,8 @@ describe("voice.generate", () => {
   });
 
   it("gives up with a clear message when the assistant never answers in JSON", async () => {
-    await expect(run(`node ${ASSISTANT} prose`)).rejects.toThrow(/did not answer with JSON/);
+    process.env.CODEX_FAKE_MODE = "prose";
+    await expect(run()).rejects.toThrow(/did not answer with JSON/);
     expect(calls).toHaveLength(0);
   });
 
@@ -93,11 +96,11 @@ describe("voice.generate", () => {
   it("needs the creator services and valid params", async () => {
     const j = job("voice.generate", "x", { brand });
     await expect(voiceGenerate(j, { ...ctxFor("node x", j), creator: undefined })).rejects.toThrow(/not available/);
-    await expect(run(undefined, { brand: { name: "" } })).rejects.toThrow();
+    await expect(run({ brand: { name: "" } })).rejects.toThrow();
   });
 
   it("tells the assistant which voices to avoid on a new round", async () => {
-    const r = await run(undefined, { brand, avoid: ["female, young adult, medium pitch, warm"] }) as { voices: { label: string }[] };
+    const r = await run({ brand, avoid: ["female, young adult, medium pitch, warm"] }) as { voices: { label: string }[] };
     expect(r.voices[1]?.label).toBe("Bright and quick");
   });
 });

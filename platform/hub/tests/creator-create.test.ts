@@ -203,4 +203,4 @@ describe("brand.create from an import", () => {
   });
 });
 
-it("settings defaults stay untouched by the creator", () => { expect(DEFAULT_SETTINGS.assistant).toEqual({ kind: "claude", command: "" }); });
+it("settings defaults stay untouched by the creator", () => { expect(DEFAULT_SETTINGS.assistant).toEqual({ kind: "claude" }); });

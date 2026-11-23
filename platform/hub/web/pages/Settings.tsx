@@ -148,16 +148,11 @@ export function SettingsPage({ brand }: { brand: BrandSummary }) {
           </Section>
 
           <Section id="set-assistant" title="Brand assistant" intro="Used by New brand > Discuss it with an AI, for every brand. One turn per message, with the whole conversation as input.">
-            <Row label="Assistant" htmlFor="s-asst" help="Only claude is tested. codex and a custom command are written to the same interface (the prompt on stdin, the answer as text on stdout) but have not been tried.">
-              <select id="s-asst" value={s.assistant.kind} onChange={(e) => set({ assistant: { ...s.assistant, kind: e.target.value as Settings["assistant"]["kind"] } })}>
-                <option value="claude">claude (default, tested)</option><option value="codex">codex (not tested)</option><option value="custom">Custom command (not tested)</option>
+            <Row label="Assistant" htmlFor="s-asst" help="Claude is the default and the one that was tried the most. Codex runs `codex exec` in a read-only sandbox with the prompt on stdin (it must be installed and signed in: `codex login`, or an API key in the Codex section above). Use the Test button of Codex above to check it.">
+              <select id="s-asst" value={s.assistant.kind} onChange={(e) => set({ assistant: { kind: e.target.value as Settings["assistant"]["kind"] } })}>
+                <option value="claude">Claude (default)</option><option value="codex">Codex</option>
               </select>
             </Row>
-            {s.assistant.kind !== "claude" && (
-              <Row label="Command" htmlFor="s-asst-cmd" {...(problems.assistant ? { problem: problems.assistant } : { help: s.assistant.kind === "codex" ? "Empty uses: codex exec -" : "It must read the prompt on stdin and print text. No shell: words only, quotes group them." })}>
-                <input id="s-asst-cmd" type="text" className="mono" value={s.assistant.command} placeholder={s.assistant.kind === "codex" ? "codex exec -" : "my-assistant --stdin"} onChange={(e) => set({ assistant: { ...s.assistant, command: e.target.value } })} />
-              </Row>
-            )}
             {s.assistant.kind !== "claude" && <p className="warn-box">This assistant gets no tool limits from the hub, because the hub cannot set them. Only claude runs with read-only tools and no access to credentials.</p>}
           </Section>
 

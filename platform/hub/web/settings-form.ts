@@ -62,7 +62,6 @@ export function validate(d: SettingsDraft): Problems {
   if (!Number.isInteger(ideas) || ideas < 1 || ideas > 10) p.ideas = "Choose a whole number from 1 to 10.";
   const c = d.settings.factory.concurrency;
   if (!Number.isInteger(c) || c < 1 || c > 6) p.concurrency = "Choose a whole number from 1 to 6.";
-  if (d.settings.assistant.kind === "custom" && !d.settings.assistant.command.trim()) p.assistant = "Type the command for the custom assistant.";
   return p;
 }
 
