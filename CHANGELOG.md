@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- **Reels are made with the /brag method** (`reel` skill, "Make it land"): a brief first (what, for whom, the hook, the real thing to show), a kind for every scene (hook, reveal, proof, highlight, closing), things that appear one by one, a reading time for every line, no muddy crossfades, and frames that are worth posting. A brand can name its **product folder** (`brand.json` `sources.productDir`, read-only): the reel then shows the product's real screens, copy and flow instead of an invented drawing.
+
 ## 1.0.1 (2026-11-23)
 
 - **One AI tool for everything: Claude or Codex** (Settings > AI tool). Reels, edits, ideas, the daily loop, readouts, the character and the brand assistant all run on the chosen tool. Codex runs `codex exec --json` in a sandbox, its events are translated into the ones the jobs know, the skills are linked where Codex looks for them (a job that needs a skill fails if Codex did not open its SKILL.md, like Claude), and the Terminal page runs Codex when it is the chosen tool. The interface marks Codex as not tested. Written from OpenAI's documentation and tested with a stand-in only.

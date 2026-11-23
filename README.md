@@ -349,6 +349,7 @@ advice**; read each project's own license, especially for commercial use. Detail
   3 people, and larger companies need a company license. Read [remotion.dev/license](https://www.remotion.dev/license) yourself before you use it for a company.
 - **Remotion agent skills** ([remotion-dev/skills](https://github.com/remotion-dev/skills)): downloaded from upstream at install time, not part of
   this repository and not redistributed. That repository declares no license, so check its terms yourself.
+- **/brag** ([latent-spaces/brag](https://github.com/latent-spaces/brag), MIT, copyright 2026 Shunit Haviv Hakimi): its rules for a good launch video (the hook, a stranger understands it, show the real product, readable pace, one tone) are adapted in the `reel` skill, section "Make it land". The skill itself is not bundled.
 - **VoiceStudio** ([debpalash/VoiceStudio](https://github.com/debpalash/VoiceStudio)): AGPL-3.0. Downloaded at first start and run as a separate local service, not bundled.
 - **VoxCPM2** voice model ([openbmb/VoxCPM2](https://huggingface.co/openbmb/VoxCPM2)): the official model card states Apache-2.0 (checked 2026-11-20).
   Cloning a person's voice needs that person's consent.

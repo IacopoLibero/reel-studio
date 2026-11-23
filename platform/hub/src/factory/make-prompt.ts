@@ -18,6 +18,8 @@ export interface MakeInput {
   sourceKind: SourceKind;
   folder: string;
   blogDir: string;
+  /** The brand's product folder (brand.json sources.productDir), absolute, read-only: where the real screens, copy and flow of the product are. */
+  productDir?: string | null;
   note?: string;
   /** The brand's own wording: closing lines, website, character. Without it the style.md of the brand is the only source. */
   brandInfo?: Pick<Brand, "name" | "website" | "closing" | "character">;
@@ -30,6 +32,11 @@ const closingText = (c: "A" | "B", b?: MakeInput["brandInfo"]) => {
     ? `option A (${o?.label ?? "the brand offer and website"}): the last spoken sentence names the website, as the Closing hook section of the brand's style.md says.${own}`
     : `option B (${o?.label ?? "Follow for tips"}): the last spoken sentence is the follow line, without the website spoken; the website still shows on screen in the closing scene.${own}`;
 };
+
+/** The product folder: the real thing to show, so the reel is about this product and not about a generic one. */
+const productText = (i: MakeInput): string => i.productDir
+  ? `- The brand's product is in ${i.productDir} (read it, never change anything in it). Before the plan, look there for the real thing to show: screenshots and images (public/, docs/, any assets or brag-output folder), the app's screens and components, its exact copy, the flow of one person using it. The reel shows the product doing its job with these (an image of a screen placed in a phone frame, a screen redrawn from its real components and copy), as the skill's "Make it land" section says. Use only what you find: do not invent features, screens or numbers. If you find nothing usable for this question, say so in your summary and draw it instead.`
+  : "";
 
 /** The character's available moves, as the hub reads them from the brand's movements folder: the only list a reel may pick from. */
 const movesText = (i: MakeInput): string => i.moves?.length
@@ -65,6 +72,7 @@ Factory rules:
 - Remotion finds the logo, the character's moves, the sounds and the reels' voice files by itself, from this brand's own folder (the hub sets REEL_BRAND). Never copy files into a public/ folder.
 - The reel's own code goes in ${dir}/code/ (index.ts, Root.tsx, the scenes), never in the workspace's \`src/\`. Code that several of this brand's reels share goes in ${i.brandDir}/code/. Import the program's kit by alias (\`@kit/theme\`, \`@kit/Captions\`, \`@cover/Cover\`), never by a relative path. Render with \`REEL_BRAND=${i.brand} npx remotion render ${dir}/code/index.ts <CompositionId> ...\` from the workspace.
 ${movesText(i)}
+${productText(i)}
 - Never schedule on Instagram and never post. Skip step 14.
 - Do not run git, docker, systemctl, kill or rm -rf. Do not touch other reels' folders.
 ${i.note ? `- This is a redo. The reviewer rejected the previous version with this note: "${i.note}". Make the reel again in the same folder, fix what the note says, and overwrite the old MP4, caption.md and cover.png.\n` : ""}- The reel is finished only when ${dir} holds the MP4, caption.md and cover.png. Finish with a short summary: the closing used, the source used, what you measured in the checks and what you would improve.`;

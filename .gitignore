@@ -60,3 +60,6 @@ public/a1/italian.wav
 .agents/
 skills-lock.json
 .claude/skills/remotion-*
+
+# Visual companion scratch files
+.superpowers/

@@ -76,7 +76,12 @@ they want to switch first.
      returns the time of every character; work out each word's start and end from those.
    - **No voice:** skip it and time the words at a natural reading speed.
 4. **Plan.** Write `plan.md`: one scene per sentence, with its words, its start and end from the word times, and what
-   is on screen. Check the plan against "Make it look good" before drawing anything.
+   is on screen. Check the plan against "Make it look good" and "Make it land" before drawing anything.
+   - **Start `plan.md` with a short brief** (from the /brag video method, see "Make it land"): what the reel is about in one
+     sentence; who it is for and what they get; the hook (the first two seconds); the real thing it shows (a screen, a flow, an
+     object, a number: and where it comes from); the one beat that makes people keep watching; the one thing to do at the end.
+   - Give every scene a **kind**: hook, reveal, proof (the real product or number), highlight, or closing. A reel that is all
+     highlights with no proof is weak: at least one scene is proof when the brand has a product to show.
    - The last scene is the closing hook: the brand logo (`staticFile("logo.png")`: Remotion finds it by itself in the brand's
      `identity/` folder; a brand with no logo file has no logo: leave it out, and never copy files into a `public/` folder), the website large in the accent colour, and the
      call to action, landing on the spoken words. It stays on screen for at least 2 seconds and keeps moving
@@ -122,6 +127,10 @@ they want to switch first.
       phone, or inside the edges Instagram covers.
     - **First frame.** Extract frame 0 and look at it: the opening question must be fully readable (nothing faded,
       cut off or still animating in, and inside the safe area). If not, fix it and render again.
+    - **Transitions.** Look at a still taken in the middle of each scene change too, not only at the settled frames. A plain
+      crossfade between two busy layouts looks like a muddy double exposure: stagger it (the old scene leaves, then the new one
+      arrives) or dip through the background colour.
+    - **Postable.** Pick the frames at 25%, 50% and 75%: each one, frozen, should still be worth showing. A frame that is a half-drawn mess is a problem.
     - **Sound.** Every line of the script plays to its end: compare the audio's length with the last word's time.
     - Fix what fails and render again, three rounds at most. Say what you measured, what failed and what you changed.
 11. **Caption.** Write the Instagram caption and save it as `<brand folder>/reels/<short-name>/caption.md` (the caption text
@@ -216,12 +225,41 @@ and rules in `style.md` to match, so the next reel starts from their taste. Tell
 - Moves are short and land with weight: things arrive fast and settle. No slow fades, no spinning, no drifting.
 - Numbers count up. Lines draw themselves. When the words are about an app, draw its screen and make it move.
 - One font, the colours in `style.md`, the accent only on what matters. No gradients, glows, emoji or stock icons.
+- When the words are about the brand's own product, show the real product (see "Make it land"), not a drawing of it.
 - The first frame already shows the hook as text, and something is moving. **The first frame must show the question
   itself** (the reel's opening question, in words a person can read), fully visible and not mid-animation, because
   Instagram uses it as the preview. In the check (step 10), look at frame 0 and say whether the question is readable.
 - Instagram covers the edges. Keep everything that must be read out of the top 220 px, the bottom 420 px and the
   right 140 px.
 - Everything reads on a phone. If a frame could belong to any video, make it belong to this one.
+
+## Make it land
+
+Rules taken from the /brag launch-video method (MIT, github.com/latent-spaces/brag), adapted to reels with a voice. They sit on top of
+"Make it look good": that section is how it looks, this one is what makes a stranger keep watching.
+
+- **The hook is everything.** The first two seconds decide whether anyone stays. Plan the hook before any other scene, and make it
+  specific to this reel, not a generic opener.
+- **Clear to a stranger.** After one viewing, someone who has never heard of the brand knows what the reel is about, who it is for
+  and what to do next. Lead with that, not with how it works.
+- **Show the real thing.** When the brand has a product (its folder is in the job prompt, or `brand.json` `sources.productDir`),
+  show it doing its job: its real screens, copy and flow, as an image of the real screen in a phone or window frame, or the screen
+  redrawn from its real components. A reel about a menu shows the menu; one about ordering shows the order arriving in the kitchen. Prefer
+  this to an abstract drawing of the idea. Rebuild only what you cannot reuse, and never invent a feature, a screen or a number.
+- **Specific, never generic.** Use the product's own words and claims. No empty phrases ("streamline your workflow", "boost your business").
+  If a frame could belong to any brand's reel, redo it.
+- **Make it alive.** Things that appear one by one (a list, three steps, the cards of a screen), a tap or a click drawn on a button,
+  a number counting up, a line typing out. They beat a static slide, and they land on the word they belong to.
+- **Readable.** The pace comes from fast entrances and tight cuts, never from taking text away early. A line the viewer has to read
+  stays fully visible and settled for about 0.3 s per word (a label of one to three words: about 0.8 s), counted from the moment the whole line is
+  there. A scene with more text than its length allows gets less text, not faster text. Text that is only texture needs no reading time.
+- **Shape.** Hook (2-3 s), then the reveal of what it is, then two or three sharp highlights with at least one proof, then the
+  closing. A start, not a template: change it when the idea asks.
+- **Tone.** The brand's `style.md` tone sets the energy. Pick the pacing from it: a calm brand holds scenes longer and cuts less; a loud
+  one cuts fast. Do not mix: a reel has one tone.
+- **Sound.** The effects and the music (when there is any) belong together: the effects sit softly under the voice, nothing harsh
+  or spiky, repeated small sounds stay in the background. The voice is always the loudest thing.
+- **Funny earns its place.** Humour comes from the subject itself, never forced.
 
 ## Factory mode
 
