@@ -16,6 +16,7 @@ export const PROGRAM_ENTRIES: readonly string[] = [
   "tsconfig.json",
   "scripts",
   ".claude/skills/reel",
+  ".claude/skills/carousel",
   ".claude/skills/reel-hooks",
   ".claude/skills/reel-insights",
   ".claude/skills/reel-research",

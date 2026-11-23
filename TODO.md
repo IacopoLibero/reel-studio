@@ -31,12 +31,14 @@ Nothing blocks the use of the app. These are the things that were not tried or n
 - **Character from a picture** (`character.build`, `character.moves`): both ran for real with Claude and Blender (23 Nov), from a sheet to the moves reels use. The result is rough: blocky parts, thin arms not joined to the body, no real side view. A full reel was made with a generated character (23 Nov): voice, Whisper captions, scenes with the character's moves, MP4 with audio, all worked. The builder prompts now ask for joined limbs, rounded shapes and depth (real run on 23 Nov: connected silhouette, traced head, face; still blocky edges), and changes are a chat. Next: smoother outlines, and a larger character in the reel layout. A fully automatic, polished character from any picture is future work.
 - **Codex as the tool for everything** (`src/ai/agent.ts`, `codex-stream.ts`): written from OpenAI's documentation and tested only with a stand-in Codex. Try it with a real one: Settings > AI tool > Codex, then a reel. Unverified: the `--json` event shapes of `file_change` and `web_search`, `--add-dir` and `-c sandbox_workspace_write.network_access=true` on `exec`, `exec resume` with the sandbox flags, skills found through `.agents/skills`, web search in a read-only run, and that the voice server on localhost is reachable from the sandbox. A skill counts as called when Codex opens its SKILL.md with a command (the prompt tells it to), and a job that needs a skill fails otherwise, as with Claude: if a real Codex reads skills another way, those jobs will fail wrongly and the detection in `codex-stream.ts` needs to change. The Terminal page runs Codex (not tried); the sidebar usage box is Claude only.
 
+- **Carousels** (`carousel.make`, 2D and 3D, on `ootto-viral-carousel` and `ootto-carousel-builder`): built and run for real with Claude on 23 Nov (a 2D carousel of Easy Restaurant with the product's real screens: five slides, caption and plan, both Ootto skills called). Not done: **scheduling a carousel on Instagram from the Calendar** (the scheduler uploads one MP4; a carousel needs several images in Instagram's own scheduler, which has to be tried live), the carousel's **analytics** (impressions, saves and shares per carousel), and **editing a slide by chat** like the reel page (today: make it again with a note). Codex was not tried with it.
+
 ### Open
->the skills are installed but the factory only makes reels. Each needs its own page, job and scheduler flow. They are visible in Settings and off.
+
+The skills are installed and visible in Settings, but the factory only makes reels and carousels. Each of these needs its own page, job and scheduler flow:
 
 - **Stories** (`ootto-story-sequencer`)
-- **carousels** (`ootto-carousel-builder`, `ootto-viral-carousel`) 
-- **paid campaigns** (`ootto-paid-social-brief`, `ootto-utm-campaign-plan`)
+- **Paid campaigns** (`ootto-paid-social-brief`, `ootto-utm-campaign-plan`)
 
 ## Known limits
 

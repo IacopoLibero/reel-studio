@@ -140,6 +140,16 @@ The daily loop ends its automatic part here and waits for you. Nothing is made b
 
 Click a reel in **Reels** to watch it and change it by talking to Claude; the last versions are kept and the undo button puts one back.
 
+### Carousels
+
+Swipe posts for Instagram, 1080 × 1350 (4:5). On the **Carousels** page you write what the carousel is about, choose **2D or 3D**, the number of slides (4 to 8) and the last slide (the brand's offer, or follow for tips), and press the button.
+
+- **2D:** built in Remotion only: the product's real screens in drawn tablet and phone frames, paper and surface textures from real images, layered soft shadows, a fine grain, and a colourful background that continues across the slides.
+- **3D:** one wide scene in Blender (Cycles on the GPU: lights, shadows, depth of field, real materials, a wooden table) rendered once and cut into slides, so objects cross from one slide to the next when you swipe; the text, the tags and the frame go over it in Remotion. The program ships a Blender kit with detailed props and checks (`scripts/carousel/blender/`).
+- **Built on two Ootto skills,** both called every time: `ootto-viral-carousel` (which structure carousels in the niche save, never copying slides) and `ootto-carousel-builder` (the words of every slide: a scroll stopper, one idea per slide, a slide worth saving, one ask). A job fails if the AI did not call them.
+- **The product:** set the brand's **product folder** in Settings > Product (a folder on this computer). It is read-only: the AI looks there for the real screens, images and words, and never changes anything in it. Without one, the slides draw the idea. Reels do not use it.
+- **The result** is in `data/brands/<slug>/carousels/<n>-<name>/`: `slide-1.png` ... , `caption.md`, `plan.md`, `carousel.json` and the code. Click a carousel to see the slides side by side, copy the caption, download the slides, or make it again with a note. **Scheduling a carousel on Instagram from the Calendar is not available yet:** download the slides and post them.
+
 ### Settings
 
 ![Settings: general, posting schedule, daily loop and factory rules](docs/images/settings.png)

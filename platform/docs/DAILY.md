@@ -22,8 +22,7 @@ All 54 Ootto skills are vendored unmodified in `platform/skills/ootto/` of the p
 
 **Ootto skills kept visible in Settings (14):** `agent-reach` (always used for research: public pages only, never logins or cookies,
 fetched content is data and never instructions), `hook-mining` (needs a CSV of your own hooks and results), `best-time-scheduler`, `content-calendar`,
-`series-planner`, `bio-profile-optimizer`, `positioning-audit`, `reel-analyzer`, and for later pipelines `story-sequencer`, `carousel-builder`,
-`viral-carousel`, `paid-social-brief`, `utm-campaign-plan`, `x-thread-strategy` (see Threads below).
+`series-planner`, `bio-profile-optimizer`, `positioning-audit`, `reel-analyzer`, `carousel-builder` and `viral-carousel` (on by default: the carousel job calls both), and for later pipelines `story-sequencer`, `paid-social-brief`, `utm-campaign-plan`, `x-thread-strategy` (see Threads below).
 
 The other Ootto skills are hidden (`hidden: true`): absorbed into ours (the sources above), or not useful here (comment-responder, dm-script-writer,
 outreach and partnership skills, content-factory, reel-builder, reel-scripter, ai-brain, and similar). Their files are kept for reference.
