@@ -105,7 +105,7 @@ export function Extras({ value: v, onChange, options, brandName, colors, problem
             <Row label="Name">
               <input type="text" aria-label="Character name" value={v.character.name} maxLength={80} placeholder="Bun" onChange={(e) => set({ character: { ...v.character, name: e.target.value } })} />
             </Row>
-            {characterBrand && <CharacterChat brand={characterBrand} name={v.character.name} fields={v.character.fields} onFill={(name, fields) => set({ character: { ...v.character, name, fields } })} />}
+            {characterBrand && <CharacterChat ask={(m) => api.characterInterview(m, characterBrand)} name={v.character.name} fields={v.character.fields} onFill={(name, fields) => set({ character: { ...v.character, name, fields } })} />}
             <CharacterPromptBuilder brandName={brandName} colors={colors} fields={v.character.fields} onChange={(fields) => set({ character: { ...v.character, fields } })} />
             <Row label="Reference sheet" help="PNG or JPG, up to 10 MB." {...(sheet.error ? { problem: sheet.error } : {})}>
               <input type="file" aria-label="Reference sheet" accept="image/png,image/jpeg,.png,.jpg,.jpeg" onChange={(e) => { const f = e.target.files?.[0]; void sheet.send(f).then((u) => { if (u || !f) set({ character: { ...v.character, sheet: u } }); }); }} />

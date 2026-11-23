@@ -111,7 +111,7 @@ Character step (optional: none / create / import): **create** starts with **Desi
 zip or folder import): a chat (`POST /api/brand-creator/character-interview`, `src/creator/character-interview.ts`) where the assistant is given everything
 decided about the brand so far (name, what it does, audience, tone, language, colours, fonts, and in the interview mode the style guide and the earlier
 conversation) and asks only what is open about the character: what it is, body, face, the colour of each part, clothes, a signature detail, personality
-and movement, its role, what to avoid. It fills the name and the three fields (up to 1500 characters each) after every answer, and you can edit them. It then shows the prompt for an AI image tool (`src/shared/character-prompt.ts`: flat
+and movement, its role, what to avoid. It fills the name and the three fields (up to 1500 characters each) after every answer, and you can edit them. The same chat is on the Character page of an existing brand (`POST /character/studio/chat`): the hub itself reads brand.json and style.md and the name and fields already written, so the assistant refines them instead of starting over. It then shows the prompt for an AI image tool (`src/shared/character-prompt.ts`: flat
 2D vector, brand colours inserted, front, three-quarter and side views and eight expressions on a plain background, editable fields,
 Copy button), takes the reference sheet (PNG or JPG up to 10 MB, stored in `<brand>/mascot/studio/`) and later runs `character.build`.
 **import** copies a character that another brand on the machine has (its `mascot/<id>.py` and files, and its moves). The same studio is on the Character page of any brand.

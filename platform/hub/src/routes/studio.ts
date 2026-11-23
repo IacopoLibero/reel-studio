@@ -3,6 +3,9 @@ import { join } from "node:path";
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
 import { FileError } from "../creator/files.js";
+import { readFileSync } from "node:fs";
+import { runAssistant, scratchDir } from "../creator/assistant.js";
+import { characterTurn, characterTurnRequestSchema } from "../creator/character-interview.js";
 import { listPreviews, PREVIEW_FILE, patchState, readPlan, readState, saveSheet, sheetFile, studioDir } from "../creator/studio.js";
 import type { AppDeps } from "../app.js";
 import { acceptRawUploads } from "./creator.js";
@@ -18,6 +21,30 @@ export function studioRoutes(app: FastifyInstance, d: AppDeps, scope: Scope): vo
   const view = (brandDir: string) => ({ state: readState(brandDir), sheet: sheetFile(brandDir), previews: listPreviews(brandDir), plan: readPlan(brandDir) });
 
   app.get("/character/studio", async (req) => view(scope(req).paths.brandDir));
+
+  /** The conversation about the character, for a brand that exists: the hub itself gives the assistant what is decided about the brand (brand.json, style.md) and what is already written. */
+  let talking = false;
+  app.post("/character/studio/chat", async (req) => {
+    const b = scope(req);
+    const body = characterTurnRequestSchema.pick({ messages: true }).safeParse(req.body);
+    if (!body.success) throw new HttpError(400, body.error.issues[0]?.message ?? "Invalid conversation.");
+    if (talking) throw new HttpError(409, "The assistant is still answering. Wait a moment.");
+    talking = true;
+    try {
+      const x = b.brand;
+      let styleMd = "";
+      try { styleMd = readFileSync(b.paths.styleMd, "utf8").slice(0, 12_000); } catch { /* no style guide */ }
+      const st = readState(b.paths.brandDir);
+      const g = d.settings.getGlobal();
+      const request = characterTurnRequestSchema.parse({
+        messages: body.data.messages, current: { name: st.name || x.character.name, ...st.fields },
+        brand: { name: x.name, about: x.about, audience: x.audience, tone: x.tone, language: x.language, website: x.website, colors: x.colors, fonts: x.fonts, styleMd },
+      });
+      return await characterTurn(request, (prompt) => runAssistant({ config: g.assistant, claudeBin: d.config.claudeBin, model: g.claudeModel, prompt, root: d.config.root, scratch: scratchDir(d.config.dataDir), dataDir: d.config.dataDir, env: process.env }));
+    } catch (e) {
+      throw new HttpError(424, `The assistant could not answer: ${(e as Error).message}`);
+    } finally { talking = false; }
+  });
 
   app.put("/character/studio/fields", async (req) => {
     const b = scope(req);

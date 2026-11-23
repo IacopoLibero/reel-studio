@@ -193,6 +193,7 @@ export const api = {
   upload: (kind: "logo" | "voice" | "sheet", blob: Blob) => callRaw<Uploaded>("POST", `/api/brand-creator/uploads/${kind}`, blob),
   importZip: (blob: Blob) => callRaw<ImportPreview>("POST", "/api/brand-creator/import/zip", blob),
   importFolder: (files: { path: string; data: string }[]) => call<ImportPreview>("POST", "/api/brand-creator/import/folder", { files }),
+  characterStudioChat: (messages: InterviewMessage[]) => call<CharacterTurn>("POST", scoped("/character/studio/chat"), { messages }),
   characterInterview: (messages: InterviewMessage[], brand: CharacterBrand) => call<CharacterTurn>("POST", "/api/brand-creator/character-interview", { messages, brand }),
   interview: (messages: InterviewMessage[]) => call<InterviewTurn>("POST", "/api/brand-creator/interview", { messages }),
   proposeVoices: (r: VoiceRequest) => call<{ job: Job }>("POST", "/api/brand-creator/voices", r),

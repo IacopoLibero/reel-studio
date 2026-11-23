@@ -4,6 +4,7 @@ import { EMPTY_CHARACTER_FIELDS, type CharacterFields } from "../../src/shared/c
 import { api, scoped, type StudioView } from "../api";
 import { useLoad } from "../hooks";
 import { CharacterPromptBuilder } from "../creator/CharacterPromptBuilder";
+import { CharacterChat } from "../creator/CharacterChat";
 import { JobCard } from "./JobCard";
 
 const BUILD = "character.build";
@@ -52,6 +53,7 @@ export function CharacterStudio({ jobs, brand }: { jobs: Job[]; brand: BrandSumm
         <h3>1. Make the reference sheet with an AI image tool</h3>
         <label htmlFor="cs-name">Character name</label>
         <input id="cs-name" type="text" value={name} maxLength={80} placeholder="Bun" onChange={(e) => setName(e.target.value)} onBlur={() => void save()} />
+        <CharacterChat ask={api.characterStudioChat} name={name} fields={fields} onFill={(n, f) => { setName(n); setFields(f); void api.saveStudioFields(n, f).catch((e: Error) => setMsg(e.message)); }} />
         <CharacterPromptBuilder brandName={brand.name} colors={brand.colors} fields={fields} onChange={setFields} onBlur={() => void save()} />
       </div>
       <div className="card">

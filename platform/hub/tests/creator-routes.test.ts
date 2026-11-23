@@ -245,6 +245,17 @@ describe("deleting a brand", () => {
 });
 
 describe("the character studio routes", () => {
+  it("talks about the character with the brand's own context and what is already written", async () => {
+    const cur = (await get("/api/brands/acme/settings")).json();
+    await app.inject({ method: "PUT", url: "/api/brands/acme/settings", headers: auth, payload: { ...cur, assistant: { kind: "custom", command: `node ${join(FX, "fake-assistant-cmd.mjs")} echo` } } });
+    await app.inject({ method: "PUT", url: "/api/brands/acme/character/studio/fields", headers: auth, payload: { name: "Bun", fields: { what: "a round loaf", personality: "kind", extra: "" } } });
+    writeFileSync(join(data, "brands/acme/identity/style.md"), "# Style\n\n## Voice and tone\n- Very playful\n");
+    const r = (await post("/api/brands/acme/character/studio/chat", { messages: [] })).json();
+    expect(r.character).toMatchObject({ name: "Echo", what: "a heard thing" });
+    expect(r.say).toContain("Very playful");
+    expect(r.say).toContain("a round loaf");
+    expect((await post("/api/brands/acme/character/studio/chat", { messages: [{ role: "robot", text: "x" }] })).statusCode).toBe(400);
+  });
   it("stores fields and a sheet, serves them, and approves only after a preview exists", async () => {
     const empty = (await get("/api/brands/acme/character/studio")).json();
     expect(empty).toMatchObject({ sheet: null, previews: [], state: { status: "draft" } });
