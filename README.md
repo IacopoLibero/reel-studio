@@ -192,7 +192,7 @@ cd packaging/arch && makepkg -si     # builds the package from this repository a
 reel-studio                  # or open "Reel Studio" from your application menu
 ```
 
-Or take the prebuilt package of the [latest release](https://github.com/IacopoLibero/reel-studio/releases/latest) (check it against `SHA256SUMS` there) and install it with `sudo pacman -U reel-studio-1.0.1-1-x86_64.pkg.tar.zst`. What changed in each version: [CHANGELOG.md](CHANGELOG.md).
+Or take the prebuilt package of the [latest release](https://github.com/IacopoLibero/reel-studio/releases/latest) (check it against `SHA256SUMS` there) and install it with `sudo pacman -U reel-studio-1.0.2-1-x86_64.pkg.tar.zst`. What changed in each version: [CHANGELOG.md](CHANGELOG.md).
 
 The first start shows a **setup screen**. It checks what your computer has (Node, Claude Code, Chromium, FFmpeg, Git, uv, your graphics card) and
 installs what the app can install itself:

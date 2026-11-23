@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 1.0.2 (2026-11-24)
 
 - **Carousels, in 2D or 3D.** A new **Carousels** page: say what a carousel is about, choose 2D or 3D, the number of slides and the last slide (offer or follow), and the AI builds it: a plan, the slides (1080 x 1350), the caption. **2D** is Remotion only (real product screens in drawn tablet and phone frames, paper textures from real images, soft layered shadows, grain, a background that continues across the slides). **3D** is one wide Blender scene (Cycles on the GPU, depth of field, real materials) cut into slides with the text over it, so objects cross from one slide to the next. A carousel is built on the two Ootto skills `ootto-viral-carousel` (the structure) and `ootto-carousel-builder` (the words of every slide): both are on by default, the job calls them and fails if the AI did not. New `carousel` skill, a Blender kit with detailed props, a texture generator and a checker (four views, close-ups, numbers) in `scripts/carousel/`, and a read-only **product folder** per brand (Settings > Product) the slides take their real screens from. Not done: scheduling a carousel on Instagram from the Calendar.
 - **Reels are made with the /brag method** (`reel` skill, "Make it land"): a brief first (what, for whom, the hook, the real thing to show, drawn: never screenshots of the brand's platform), a kind for every scene (hook, reveal, proof, highlight, closing), things that appear one by one, a reading time for every line, no muddy crossfades, and frames that are worth posting.
