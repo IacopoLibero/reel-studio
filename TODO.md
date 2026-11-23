@@ -28,8 +28,7 @@ Nothing blocks the use of the app. These are the things that were not tried or n
 ## After the app (big, born with the final structure)
 
 - **Character from a picture** (`character.build`, `character.moves`): both ran for real with Claude and Blender (23 Nov), from a sheet to the moves reels use. The result is rough: blocky parts, thin arms not joined to the body, no real side view. A full reel was made with a generated character (23 Nov): voice, Whisper captions, scenes with the character's moves, MP4 with audio, all worked. The builder prompts now ask for joined limbs, rounded shapes and depth (real run on 23 Nov: connected silhouette, traced head, face; still blocky edges), and changes are a chat. Next: smoother outlines, and a larger character in the reel layout. A fully automatic, polished character from any picture is future work.
-- **Assistants `codex` and custom command** for the brand interview follow the generic stdin and stdout interface and were tested only with a stand-in command.
-  They get no tool limits from the hub. Try them with the real tools and fix the default `codex exec -` if needed.
+- **Codex as the brand assistant** runs `codex exec --sandbox read-only --skip-git-repo-check --ephemeral -` (from OpenAI's documentation) and was tested only with a stand-in. Try it with a real Codex (Settings > Codex > Test, then New brand > Discuss it with an AI) and fix the arguments if the CLI changed.
 - **Full-width `Stage` variant of the Remotion kit** and a generic scene toolkit: `src/kit` has only the theme and captions. Reels for a brand without a character rely on the
   `reel` skill composing full-width scenes from them.
 - **Stories** (`ootto-story-sequencer`), **carousels** (`ootto-carousel-builder`, `ootto-viral-carousel`) and **paid campaigns** (`ootto-paid-social-brief`,

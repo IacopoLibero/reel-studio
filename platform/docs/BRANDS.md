@@ -90,8 +90,7 @@ Three entries, one result. Every one of them posts a request to `POST /api/brand
    panel fills in as the chat goes; at the end `brand.json` and `style.md` are shown for review and editing, checked again by the hub,
    then Create. The assistant is a global setting: `claude` (HUB_CLAUDE_BIN, headless `-p`, allowed tools Read, Glob, Grep, WebFetch,
    WebSearch; denied: Bash, Write, Edit, the credential paths of `claude-safety.ts`, the project's `brand/` and `platform/data/`, and the `brands/` folder of the data folder; run in an empty scratch folder; the hub token is removed from its environment). `codex`
-   (`codex exec -`) and a custom command read the prompt on stdin and print text; no shell is used, the line is split into words.
-   **Only claude is tested.** The others are covered only by a stand-in command and get no tool limits from the hub.
+   runs `codex exec --sandbox read-only --skip-git-repo-check --ephemeral -` (`CODEX_ARGS` in `assistant.ts`, from OpenAI's non-interactive mode documentation): the prompt on stdin, only the final answer on stdout (progress goes to stderr), a read-only sandbox, an empty scratch folder that is not a git repository, no session file kept. The command is `HUB_CODEX_BIN` or `codex` on the PATH. It gets the Codex access (login or API key), never an Anthropic key or the hub token. Its sandbox stops writes but a read-only sandbox can still read files you can read. **Only claude was tried for real**: codex is covered by a stand-in. There is no custom command (removed on 23 Nov 2026).
 3. **Import** (`ImportEntry.tsx`, `bundle.ts`, `zip.ts`): a zip or a picked folder with `brand.json` at the top, or in an `identity/` folder (one wrapping folder is
    stripped). Limits: 300 files, 25 MB per file, 40 MB in all, no symlinks, no encrypted or zip64 zips, no `..`, absolute or backslash
    paths. Only `brand.json`, `style.md`, `reel-questions.md`, `logo.png` and the voice sample (`identity/voice.*`, the character's `mascot/<id>-voice.*`, or an old `voice/` folder) are kept. A slug that exists is
@@ -138,4 +137,4 @@ Generating a good 3D-style rig from any image is hard (Pip took many iterations 
 upload, `character.build` (flat previews and a plan) and `character.moves` (the moves). Both were run for real on 23 Nov 2026 with Claude and
 Blender on a reference sheet of a fork character: the result is recognisable and every move renders, but it is rough (blocky parts, thin
 arms not joined to the body, no real side view). Expect to give notes and run the build again, or to finish the character by hand. Not verified here:
-`codex` or a custom command as the interview assistant. A fully automatic, polished character from any picture is future work (TODO.md).
+`codex` as the brand assistant. A fully automatic, polished character from any picture is future work (TODO.md).

@@ -67,7 +67,7 @@ A reel's code is not in it: it lives with the brand (`<brand>/reels/<n>-<name>/c
 - **Login** (the default): the tool's own login on this computer: Claude Code with your Claude subscription (run `claude` once), Codex with your ChatGPT account (`codex login`). Any `ANTHROPIC_API_KEY` or `OPENAI_API_KEY` in the environment the app was started from is removed for the runs, so the login is what is used.
 - **API key:** an Anthropic key (`sk-ant-…`) for Claude, an OpenAI key (`sk-…`) for Codex. Jobs are then paid per use on your account. The key is written once to `data/<tool>-api-key` (readable only by you), never sent back to the page (it shows the last four characters), and put in the environment of the runs of that tool only. For Claude the app also sets `CLAUDE_CODE_SUBPROCESS_ENV_SCRUB=1`, so Claude Code does not hand the key on to the commands it runs; jobs are also forbidden to read the key files. Removing the key goes back to the login.
 - **Test** makes one small call with the chosen access and says whether it worked. A change applies to the next job; a job already running keeps what it started with.
-- Claude runs the jobs, the reel chat, the daily loop and the brand interview. Codex is only an option for the brand interview (Settings > Brand assistant) and is not tested with real tools; a custom assistant command receives neither key.
+- Claude runs the jobs, the reel chat, the daily loop and the brand interview. Codex is only an option for the brand creator (Settings > Brand assistant: the interview, the character chat and the voice proposals): it runs `codex exec` in a read-only sandbox with the prompt on stdin, was written from OpenAI's documentation and is tested only with a stand-in. Codex never receives an Anthropic key.
 
 **Usage in the sidebar.** With the login, the sidebar shows the **session** (the five-hour window) and the **week** (seven days) of the Claude subscription as bars, with the time they reset (yellow from 70%, red from 90%). The numbers are what Claude itself reports while it works (`rate_limit_event`, read from every Claude run and kept in `data/claude-usage.json`), so they are as fresh as the last run: *read 5 min ago*, with a **Check** button that makes one small call to read them again. With an API key the sidebar shows the cost of the jobs (today and the last 7 days, from the cost each run reports). Codex has no usage display: it reports no limits to the app.
 
@@ -121,6 +121,7 @@ None is needed. These change where the app looks, for the hub it starts (set the
 | `HUB_DATA` | `<REEL_STUDIO_HOME>/data` | Where the hub keeps its state. |
 | `REEL_ROOT` | `<REEL_STUDIO_HOME>/workspace` | The workspace; Claude jobs run in it. |
 | `HUB_CLAUDE_BIN` | `claude` | The Claude Code command. |
+| `HUB_CODEX_BIN` | `codex` | The Codex command, used when Codex is chosen as the brand assistant. |
 | `HUB_BLOG_DIR` | `<workspace>/sources/blog` | A folder of source texts (blog posts) the ideas jobs read. A brand can name its own. |
 | `CHROME_PATH` | system Chromium or Chrome | The browser for Instagram. |
 | `HUB_SCHEDULER` | on | `off` runs without the Instagram scheduler (tests). |
