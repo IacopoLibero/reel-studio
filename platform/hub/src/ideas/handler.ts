@@ -1,5 +1,5 @@
+import { agentCommand, requireSkill } from "../ai/agent.js";
 import { jobEnv } from "../env.js";
-import { parseStreamLine } from "../character/claude-stream.js";
 import { classifyClosing } from "../factory/classifier.js";
 import { questionId } from "../factory/questions.js";
 import type { Handler } from "../jobs/handlers.js";
@@ -20,8 +20,7 @@ export const reelIdeas: Handler = async (job, ctx) => {
   ctx.update({ step: IDEAS_STEPS[0], stepIndex: 0, progress: MARKS[0], log: `Brand ${brand}, ${count} ideas, reading ${ctx.blogDir} and ${productDir(ctx.blogDir)}` });
   const slugs = blogSlugs(ctx.blogDir);
   const prompt = buildIdeasPrompt({ root: ctx.root, brand, ...(ctx.brand ? { brandInfo: ctx.brand.brand } : {}), count, dataDir: ctx.dataDir, blogDir: ctx.blogDir, slugs, ...brandData(ctx.dataDir) });
-  const args = ["-p", "--output-format", "stream-json", "--verbose", "--permission-mode", "acceptEdits", "--allowedTools", IDEAS_ALLOWED_TOOLS, "--disallowedTools", IDEAS_DENIED_TOOLS, "--add-dir", ctx.blogDir, "--add-dir", productDir(ctx.blogDir)];
-  if (ctx.settings.claudeModel) args.push("--model", ctx.settings.claudeModel);
+  const agent = agentCommand(ctx, { access: "read", allowedTools: IDEAS_ALLOWED_TOOLS, deniedTools: IDEAS_DENIED_TOOLS, addDirs: [ctx.blogDir, productDir(ctx.blogDir)] });
 
   let answer = "";
   let ok = true;
@@ -31,10 +30,10 @@ export const reelIdeas: Handler = async (job, ctx) => {
   let generating = false;
   const generate = () => { if (!generating) { generating = true; ctx.update({ step: IDEAS_STEPS[1], stepIndex: 1, progress: MARKS[1] }); } };
   const code = await runProcess({
-    cmd: ctx.claudeBin, args, cwd: ctx.root, env: jobEnv(ctx.settings, ctx.brand?.slug ?? null), stdin: prompt, signal: ctx.signal,
+    cmd: agent.cmd, args: agent.args, cwd: ctx.root, env: jobEnv(ctx.settings, ctx.brand?.slug ?? null), stdin: prompt, signal: ctx.signal,
     onLine: (line, stream) => {
       if (stream === "err") { if (line.trim()) { stderrLast = line.slice(0, 300); ctx.update({ log: `[stderr] ${stderrLast}` }); } return; }
-      for (const ev of parseStreamLine(line)) {
+      for (const ev of agent.parse(line)) {
         if (ev.kind === "tool") {
           calls += 1;
           if (ev.name === "Skill") {
@@ -56,7 +55,7 @@ export const reelIdeas: Handler = async (job, ctx) => {
   ctx.update({ step: IDEAS_STEPS[2], stepIndex: 2, progress: MARKS[2], log: "Checking the answer" });
   const parsed = parseClaudeIdeas(answer, count);
   if (!parsed.ok) throw new Error(parsed.error);
-  if (!called.some((x) => REQUIRED_IDEA_SKILLS.includes(x))) throw new Error("Claude did not call reel-hooks or reel-research, so the ideas are not skill-based. Check Settings > Content skills, then try again.");
+  requireSkill(ctx, called.some((x) => REQUIRED_IDEA_SKILLS.includes(x)), "The AI did not call reel-hooks or reel-research, so the ideas are not skill-based. Check Settings > Content skills, then try again.");
   const skillsUsed = called;
   const withSources = normalizeSources(parsed.ideas, new Set(slugs));
   const { kept, dropped } = dedupeIdeas(existingQuestions(ctx.dataDir, brand), withSources.ideas);

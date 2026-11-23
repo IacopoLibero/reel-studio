@@ -6,7 +6,9 @@ import type { Settings } from "./shared/types.js";
  */
 export function jobEnv(settings: Settings, brand: string | null = null, base: NodeJS.ProcessEnv = process.env): NodeJS.ProcessEnv {
   const { HUB_TOKEN: _drop, ...rest } = base;
-  const env = { ...rest, BLENDER_DEVICE: settings.blenderDevice, ...(brand ? { REEL_BRAND: brand } : {}) };
+  const env: NodeJS.ProcessEnv = { ...rest, BLENDER_DEVICE: settings.blenderDevice, ...(brand ? { REEL_BRAND: brand } : {}) };
+  // One tool for everything: Codex gets the Codex access and never an Anthropic key; Claude gets the Claude access.
+  if (settings.assistant?.kind === "codex") { const { ANTHROPIC_API_KEY: _a, ANTHROPIC_AUTH_TOKEN: _b, ...clean } = env; return applyEnvLayer(clean, "codex"); }
   return applyEnvLayer(env, "claude");
 }
 

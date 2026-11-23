@@ -1,5 +1,5 @@
+import { agentCommand } from "../ai/agent.js";
 import { jobEnv } from "../env.js";
-import { parseStreamLine } from "../character/claude-stream.js";
 import type { HandlerCtx } from "../jobs/handlers.js";
 import { runProcess } from "../jobs/process.js";
 
@@ -10,17 +10,16 @@ export interface ClaudeAnswer { answer: string; skills: string[] }
 
 /** Headless Claude (read-only tools) with the prompt on stdin. Returns the final text and the skills it really called. */
 export async function runClaudeText(ctx: HandlerCtx, prompt: string, onActivity: () => void = () => undefined): Promise<ClaudeAnswer> {
-  const args = ["-p", "--output-format", "stream-json", "--verbose", "--permission-mode", "acceptEdits", "--allowedTools", READ_ONLY_TOOLS, "--disallowedTools", DENIED_BASH];
-  if (ctx.settings.claudeModel) args.push("--model", ctx.settings.claudeModel);
+  const agent = agentCommand(ctx, { access: "read", allowedTools: READ_ONLY_TOOLS, deniedTools: DENIED_BASH });
   let answer = "";
   let ok = true;
   let stderrLast = "";
   const skills: string[] = [];
   const code = await runProcess({
-    cmd: ctx.claudeBin, args, cwd: ctx.root, env: jobEnv(ctx.settings, ctx.brand?.slug ?? null), stdin: prompt, signal: ctx.signal,
+    cmd: agent.cmd, args: agent.args, cwd: ctx.root, env: jobEnv(ctx.settings, ctx.brand?.slug ?? null), stdin: prompt, signal: ctx.signal,
     onLine: (line, stream) => {
       if (stream === "err") { if (line.trim()) { stderrLast = line.slice(0, 300); ctx.update({ log: `[stderr] ${stderrLast}` }); } return; }
-      for (const ev of parseStreamLine(line)) {
+      for (const ev of agent.parse(line)) {
         if (ev.kind === "tool") {
           onActivity();
           if (ev.name === "Skill") {

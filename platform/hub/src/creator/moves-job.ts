@@ -1,7 +1,7 @@
+import { agentCommand } from "../ai/agent.js";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { z } from "zod";
-import { parseStreamLine } from "../character/claude-stream.js";
 import { countPngs, moveDir, characterScript } from "../character/gallery.js";
 import { writeMascotComponent } from "../character/mascot-component.js";
 import { blenderCommand } from "../character/prompt.js";
@@ -102,16 +102,15 @@ export const characterMoves: Handler = async (job, ctx) => {
 
   const prompt = buildMovesPrompt({ root, mascotDir, id, name, faces, example: exampleScript(dirname(brandDir), id) });
   const tools = characterTools(mascotDir);
-  const args = ["-p", "--output-format", "stream-json", "--verbose", "--permission-mode", "acceptEdits", "--allowedTools", tools.allowed, "--disallowedTools", tools.denied, "--add-dir", mascotDir];
-  if (ctx.settings.claudeModel) args.push("--model", ctx.settings.claudeModel);
+  const agent = agentCommand(ctx, { access: "edit", allowedTools: tools.allowed, deniedTools: tools.denied, addDirs: [mascotDir] });
 
   let answer = "", ok = true, stderrLast = "", cost: number | null = null, at = 0;
   const go = (i: number) => { if (i > at) { at = i; ctx.update({ step: MOVES_STEPS[i], stepIndex: i, progress: MARKS[i] as number }); } };
   const code = await runProcess({
-    cmd: ctx.claudeBin, args, cwd: root, env: jobEnv(ctx.settings, brand.slug), stdin: prompt, signal: ctx.signal,
+    cmd: agent.cmd, args: agent.args, cwd: root, env: jobEnv(ctx.settings, brand.slug), stdin: prompt, signal: ctx.signal,
     onLine: (line, stream) => {
       if (stream === "err") { if (line.trim()) { stderrLast = line.slice(0, 300); ctx.update({ log: `[stderr] ${stderrLast}` }); } return; }
-      for (const ev of parseStreamLine(line)) {
+      for (const ev of agent.parse(line)) {
         if (ev.kind === "tool") {
           const target = String(ev.input.file_path ?? ev.input.command ?? "");
           if ((ev.name === "Write" || ev.name === "Edit") && target.endsWith(`${id}.py`)) go(1);

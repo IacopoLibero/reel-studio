@@ -63,7 +63,7 @@ export async function buildApp(config: Config): Promise<{ app: FastifyInstance; 
   });
   const hooks = { ensureDaily: (_slug: string): boolean => false, voiceInstalled: (): void => undefined };
   const creator: CreatorServices = { root: config.root, dataDir: config.dataDir, brands, uploads: new UploadStore(join(config.dataDir, "tmp-uploads")), settings, voiceUrl: `http://127.0.0.1:${process.env.VOICE_PORT || 3900}`, ensureDaily: (slug) => hooks.ensureDaily(slug) };
-  const runner = new JobRunner(store, settings, { root: config.root, claudeBin: config.claudeBin, dataDir: config.dataDir, blogDir: config.blogDir, brands, creator: () => creator });
+  const runner = new JobRunner(store, settings, { root: config.root, claudeBin: config.claudeBin, codexBin: config.codexBin, dataDir: config.dataDir, blogDir: config.blogDir, brands, creator: () => creator });
   const deps: AppDeps = { config, store, settings, runner, brands, hooks, creator };
 
   const app = fastify({ logger: { level: process.env.HUB_LOG_LEVEL ?? "info", redact: ["req.headers.authorization", "req.headers.cookie"] }, bodyLimit: 1_000_000 });

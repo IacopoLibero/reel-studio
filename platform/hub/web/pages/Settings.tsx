@@ -147,8 +147,8 @@ export function SettingsPage({ brand }: { brand: BrandSummary }) {
             <SetupVoice />
           </Section>
 
-          <Section id="set-assistant" title="Brand assistant" intro="Used by New brand > Discuss it with an AI, for every brand. One turn per message, with the whole conversation as input.">
-            <Row label="Assistant" htmlFor="s-asst" help="Claude is the default and the one that was tried the most. Codex runs `codex exec` in a read-only sandbox with the prompt on stdin (it must be installed and signed in: `codex login`, or an API key in the Codex section above). Use the Test button of Codex above to check it.">
+          <Section id="set-assistant" title="AI tool" intro="The tool that does all the AI work for every brand: making and changing reels, ideas, the daily loop, the readouts, the character, and the brand assistant in New brand. One tool for everything.">
+            <Row label="Tool" htmlFor="s-asst" help="Claude is the default and the one everything was tried with. Codex runs `codex exec` (installed and signed in: `codex login`, or an API key in the Codex section above); it was written from OpenAI's documentation and has not been tried with a real Codex. With Codex the hub cannot limit single commands, only the sandbox: the jobs that make things write in their own folders, and the rest only read. Use the Test button of Codex above first.">
               <select id="s-asst" value={s.assistant.kind} onChange={(e) => set({ assistant: { kind: e.target.value as Settings["assistant"]["kind"] } })}>
                 <option value="claude">Claude (default)</option><option value="codex">Codex</option>
               </select>

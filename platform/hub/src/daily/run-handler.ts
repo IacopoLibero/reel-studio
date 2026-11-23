@@ -1,3 +1,4 @@
+import { requireSkill } from "../ai/agent.js";
 import type { Handler } from "../jobs/handlers.js";
 import { productDir } from "../ideas/prompt.js";
 import { blogSlugs, brandData, existingQuestions } from "../ideas/service.js";
@@ -57,7 +58,7 @@ export const makeDailyRun = (collectFn: Collect = collectViaAdapter): Handler =>
     const prompt = buildDailyIdeasPrompt({ root: ctx.root, brand, ...(ctx.brand ? { brandInfo: ctx.brand.brand } : {}), dataDir: ctx.dataDir, count: settings.ideas, blogDir: ctx.blogDir, slugs, hooksRows: rows, hasResults: brandData(ctx.dataDir).hasResults, readout, threads: settings.threads });
     const run = await runClaude(ctx, prompt, [ctx.blogDir, productDir(ctx.blogDir)]);
     run.called.forEach((s) => used.add(s));
-    if (!skillGateOk(run.called)) throw new Error("Claude did not call reel-hooks or reel-research, so the ideas are not skill-based.");
+    requireSkill(ctx, skillGateOk(run.called), "The AI did not call reel-hooks or reel-research, so the ideas are not skill-based.");
     const parsed = parseDailyIdeas(run.answer, settings.ideas, { slugs: new Set(slugs), existing: existingQuestions(ctx.dataDir, brand), rules: ctx.settings.factory.closingRules });
     const missing = REQUIRED_SKILLS.filter((s) => !run.called.includes(s));
     ctx.update({ log: [`Skills used: ${[...used].join(", ")}`, ...parsed.dropped.map((d) => `Dropped: ${d.question} (${d.reason})`), ...parsed.notes] });

@@ -1,5 +1,6 @@
+import { agentCommand } from "../ai/agent.js";
 import { characterScript, countPngs, moveDir, readMoveFrames } from "../character/gallery.js";
-import { parseStreamLine, initialStreamState, reduceStream, STEPS } from "../character/claude-stream.js";
+import { initialStreamState, reduceStream, STEPS } from "../character/claude-stream.js";
 import { ALLOWED_TOOLS, buildAddMovePrompt, renderCommand } from "../character/prompt.js";
 import { jobEnv } from "../env.js";
 import { loadScheduler, targetOf } from "../scheduler-bridge.js";
@@ -26,6 +27,8 @@ export interface HandlerCtx {
   brand: BrandCtx | null;
   root: string;
   claudeBin: string;
+  /** The Codex command (HUB_CODEX_BIN) for when Codex is the tool. */
+  codexBin?: string;
   dataDir: string;
   blogDir: string;
   startedAtMs: number;
@@ -81,8 +84,7 @@ export const claudeTask: Handler = async (job, ctx) => {
   const move = String(job.params.move);
   const character = characterOf(ctx);
   const prompt = buildAddMovePrompt(ctx.root, character.mascotDir, character, move, String(job.params.request));
-  const args = ["-p", "--output-format", "stream-json", "--verbose", "--permission-mode", "acceptEdits", "--allowedTools", ALLOWED_TOOLS];
-  if (ctx.settings.claudeModel) args.push("--model", ctx.settings.claudeModel);
+  const agent = agentCommand(ctx, { access: "edit", allowedTools: ALLOWED_TOOLS, addDirs: [character.mascotDir] });
   let state = initialStreamState();
   let cost: number | null = null;
   const stop = watchRender(ctx, move, 0.3, 0.92, "Rendering with Blender");
@@ -96,10 +98,10 @@ export const claudeTask: Handler = async (job, ctx) => {
   };
   try {
     const code = await runProcess({
-      cmd: ctx.claudeBin, args, cwd: ctx.root, env: jobEnv(ctx.settings, ctx.brand?.slug ?? null), stdin: prompt, signal: ctx.signal,
+      cmd: agent.cmd, args: agent.args, cwd: ctx.root, env: jobEnv(ctx.settings, ctx.brand?.slug ?? null), stdin: prompt, signal: ctx.signal,
       onLine: (line, stream) => {
         if (stream === "err") { if (line.trim()) ctx.update({ log: `[stderr] ${line.slice(0, 300)}` }); return; }
-        for (const ev of parseStreamLine(line)) {
+        for (const ev of agent.parse(line)) {
           if (ev.kind === "result") cost = ev.cost;
           apply(reduceStream(state, ev));
         }

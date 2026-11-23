@@ -1,7 +1,7 @@
+import { agentCommand } from "../ai/agent.js";
 import { existsSync, readFileSync, statSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { z } from "zod";
-import { parseStreamLine } from "../character/claude-stream.js";
 import { blenderCommand } from "../character/prompt.js";
 import { jobEnv } from "../env.js";
 import { DESTRUCTIVE_BASH_DENIES, SECRET_READ_DENIES, join as joinTools } from "../jobs/claude-safety.js";
@@ -120,14 +120,13 @@ export const characterBuild: Handler = async (job, ctx) => {
   const go = (i: number) => { if (i > at) { at = i; ctx.update({ step: CHARACTER_STEPS[i], stepIndex: i, progress: MARKS[i] as number }); } };
   const attempt = async (resume: string | null): Promise<number | null> => {
     const prompt = buildCharacterPrompt({ root, studio, brand: (ctx.brand as NonNullable<typeof ctx.brand>).brand, sheet, notes: state.notes, fields: state.fields, mascotExample: mascotExample(dirname(brandDir)), ...(reviseMode ? { revise: { message: note, resumed: resume !== null } } : {}) });
-    const args = ["-p", "--output-format", "stream-json", "--verbose", ...(resume ? ["--resume", resume] : []), "--permission-mode", "acceptEdits", "--allowedTools", tools.allowed, "--disallowedTools", tools.denied, "--add-dir", studio];
-    if (ctx.settings.claudeModel) args.push("--model", ctx.settings.claudeModel);
+    const agent = agentCommand(ctx, { access: "edit", allowedTools: tools.allowed, deniedTools: tools.denied, addDirs: [studio], resume });
     sawInit = false; sessionId = resume;
     return runProcess({
-    cmd: ctx.claudeBin, args, cwd: root, env: jobEnv(ctx.settings, slug), stdin: prompt, signal: ctx.signal,
+    cmd: agent.cmd, args: agent.args, cwd: root, env: jobEnv(ctx.settings, slug), stdin: prompt, signal: ctx.signal,
     onLine: (line, stream) => {
       if (stream === "err") { if (line.trim()) { stderrLast = line.slice(0, 300); ctx.update({ log: `[stderr] ${stderrLast}` }); } return; }
-      for (const ev of parseStreamLine(line)) {
+      for (const ev of agent.parse(line)) {
         if (ev.kind === "init") { sawInit = true; if (ev.sessionId) sessionId = ev.sessionId; }
         if (ev.kind === "tool") {
           const target = String(ev.input.file_path ?? ev.input.command ?? "");

@@ -1,10 +1,10 @@
+import { agentCommand } from "../ai/agent.js";
 import { existsSync, readdirSync, readFileSync, writeFileSync, renameSync, rmSync } from "node:fs";
 import { join } from "node:path";
 import { questionsFile } from "../brands/paths.js";
 import { reelDirOf } from "../reels/scanner.js";
 import { listMoves } from "../character/gallery.js";
 import { jobEnv } from "../env.js";
-import { parseStreamLine } from "../character/claude-stream.js";
 import type { Handler } from "../jobs/handlers.js";
 import { runProcess } from "../jobs/process.js";
 import { allocateReelFolder, withFileLock } from "./allocator.js";
@@ -41,8 +41,7 @@ export const reelMake: Handler = async (job, ctx) => {
   const character = ctx.brand?.brand.character;
   const moves = character?.enabled && ctx.brand ? listMoves(ctx.brand.paths.mascotDir, character.id).filter((m) => m.rendered).map((m) => m.name) : [];
   const prompt = buildReelPrompt({ root: ctx.root, brandDir, moves, brand: p.brand, question: p.question, closing: p.closing, source: p.source, sourceKind: p.sourceKind, folder: alloc.folder, blogDir: ctx.blogDir, ...(ctx.brand ? { brandInfo: ctx.brand.brand } : {}), ...(typeof job.params.note === "string" ? { note: job.params.note } : {}) });
-  const args = ["-p", "--output-format", "stream-json", "--verbose", "--permission-mode", "acceptEdits", "--allowedTools", MAKE_ALLOWED_TOOLS, "--disallowedTools", MAKE_DENIED_TOOLS, "--add-dir", brandDir];
-  if (ctx.settings.claudeModel) args.push("--model", ctx.settings.claudeModel);
+  const agent = agentCommand(ctx, { access: "edit", allowedTools: MAKE_ALLOWED_TOOLS, deniedTools: MAKE_DENIED_TOOLS, addDirs: [brandDir] });
 
   let state: MakeState = initialMakeState();
   const skills: string[] = [];
@@ -57,10 +56,10 @@ export const reelMake: Handler = async (job, ctx) => {
   const poll = setInterval(() => apply({ kind: "files", present: listFiles(alloc.path) }), 2000);
   try {
     const code = await runProcess({
-      cmd: ctx.claudeBin, args, cwd: ctx.root, env: jobEnv(ctx.settings, ctx.brand?.slug ?? null), stdin: prompt, signal: ctx.signal,
+      cmd: agent.cmd, args: agent.args, cwd: ctx.root, env: jobEnv(ctx.settings, ctx.brand?.slug ?? null), stdin: prompt, signal: ctx.signal,
       onLine: (line, stream) => {
         if (stream === "err") { if (line.trim()) { stderrLast = line.slice(0, 300); ctx.update({ log: `[stderr] ${stderrLast}` }); } return; }
-        for (const ev of parseStreamLine(line)) {
+        for (const ev of agent.parse(line)) {
           if (ev.kind === "tool" && ev.name === "Skill") {
             const sk = String(ev.input.skill ?? ev.input.command ?? "").replace(/^\//, "");
             if (sk && !skills.includes(sk)) { skills.push(sk); ctx.update({ log: `SKILL CALLED: ${sk}` }); }

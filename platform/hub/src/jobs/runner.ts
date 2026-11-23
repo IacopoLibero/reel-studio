@@ -1,3 +1,4 @@
+import { linkSkillsForCodex, toolOf } from "../ai/agent.js";
 import type { Job } from "../shared/types.js";
 import type { SettingsStore } from "../settings.js";
 import { blogDirOf, brandCtx, type BrandCtx } from "../brands/context.js";
@@ -31,7 +32,7 @@ export class JobRunner {
   constructor(
     private readonly store: JobStore,
     private readonly settings: SettingsStore,
-    private readonly opts: { root: string; claudeBin: string; dataDir: string; blogDir: string; brands: BrandRegistry; creator?: () => CreatorServices },
+    private readonly opts: { root: string; claudeBin: string; codexBin?: string; dataDir: string; blogDir: string; brands: BrandRegistry; creator?: () => CreatorServices },
   ) {}
 
   /** Starts queued jobs found in the store (after a restart) and any new ones. */
@@ -72,9 +73,11 @@ export class JobRunner {
     try {
       if (!handler) throw new Error(`Jobs of type ${running.type} are not handled by the hub.`);
       const brand = this.ctxOf(running);
+      // Codex looks for skills in .agents/skills: the ones of .claude/skills are linked there first.
+      if (toolOf({ settings: this.settings.get(brand?.slug) }) === "codex") { try { linkSkillsForCodex(this.opts.root); } catch { /* a read-only folder: the run goes on without the links */ } }
       const result = await handler(running, {
         update: (p) => { try { this.store.patch(id, p); } catch { /* job removed */ } },
-        signal: ac.signal, settings: this.settings.get(brand?.slug), brand, root: this.opts.root, claudeBin: this.opts.claudeBin,
+        signal: ac.signal, settings: this.settings.get(brand?.slug), brand, root: this.opts.root, claudeBin: this.opts.claudeBin, codexBin: this.opts.codexBin,
         dataDir: brand?.paths.dataDir ?? this.opts.dataDir, blogDir: brand ? blogDirOf(this.opts.root, brand.brand) : this.opts.blogDir,
         startedAtMs: Date.now() - 1000,
         ...(this.opts.creator ? { creator: this.opts.creator() } : {}),

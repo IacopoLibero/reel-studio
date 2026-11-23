@@ -1,3 +1,4 @@
+import { requireSkill } from "../ai/agent.js";
 import { toLocal } from "../calendar/merge.js";
 import { bestTimeStats, parseSuggestions } from "../calendar/best-times.js";
 import { questionId } from "../factory/questions.js";
@@ -45,7 +46,7 @@ export const reelInsights: Handler = async (job, ctx) => {
   const prompt = insightsPrompt({ root: ctx.root, brand, ...(ctx.brand ? { brandInfo: ctx.brand.brand } : {}), date: snap.collectedAt.slice(0, 10), csvRows: csvRowCount(join(dir, "hooks.csv")), snapshotPath: join(dir, `${toLocal(snap.collectedAt, ctx.settings.slotPattern.timezone).date}.json`), dir, questionsFile: questionsFile(ctx.dataDir), styleFile: join(ctx.dataDir, "identity", "style.md") });
   let step = false;
   const { answer, skills } = await runClaudeText(ctx, prompt, () => { if (!step) { step = true; ctx.update({ step: INSIGHTS_STEPS[1], stepIndex: 1, progress: 0.3 }); } });
-  if (!skills.includes("reel-insights")) throw new Error(`Claude did not call the reel-insights skill (called: ${skills.join(", ") || "none"}), so the readout is not skill-based. Check that the skill exists in .claude/skills.`);
+  requireSkill(ctx, skills.includes("reel-insights"), `The AI did not call the reel-insights skill (called: ${skills.join(", ") || "none"}), so the readout is not skill-based. Check that the skill exists in .claude/skills.`);
   ctx.update({ step: INSIGHTS_STEPS[2], stepIndex: 2, progress: 0.95 });
   const file = writeReadout(ctx.dataDir, date, answer.trim());
   ctx.update({ progress: 1, log: `Readout saved to ${file}` });
@@ -62,7 +63,7 @@ export const seriesPlan: Handler = async (job, ctx) => {
   const prompt = seriesPrompt({ root: ctx.root, brand, ...(ctx.brand ? { brandInfo: ctx.brand.brand } : {}), focus, existing: store.list().map((s) => s.name), hasData: !!latestSnapshot(ctx.dataDir), dir: analyticsDir(ctx.dataDir), questionsFile: questionsFile(ctx.dataDir), styleFile: join(ctx.dataDir, "identity", "style.md") });
   let step = false;
   const { answer, skills } = await runClaudeText(ctx, prompt, () => { if (!step) { step = true; ctx.update({ step: SERIES_STEPS[1], stepIndex: 1, progress: 0.3 }); } });
-  if (!skills.includes("series-planner")) throw new Error(`Claude did not call the series-planner skill (called: ${skills.join(", ") || "none"}).`);
+  requireSkill(ctx, skills.includes("series-planner"), `The AI did not call the series-planner skill (called: ${skills.join(", ") || "none"}).`);
   ctx.update({ step: SERIES_STEPS[2], stepIndex: 2, progress: 0.9 });
   let raw: unknown;
   try { raw = extractJson(answer); } catch (e) { throw new Error((e as Error).message, { cause: e }); }
@@ -89,7 +90,7 @@ export const scheduleSuggest: Handler = async (_job, ctx) => {
   }
   ctx.update({ step: SUGGEST_STEPS[1], stepIndex: 1, progress: 0.3, log: `${stats.reelsUsed} reels used` });
   const { answer, skills } = await runClaudeText(ctx, suggestPrompt({ root: ctx.root, ...(ctx.brand ? { brandInfo: ctx.brand.brand } : {}), stats, timezone: ctx.settings.slotPattern.timezone }));
-  if (!skills.includes("best-time-scheduler")) throw new Error(`Claude did not call the best-time-scheduler skill (called: ${skills.join(", ") || "none"}).`);
+  requireSkill(ctx, skills.includes("best-time-scheduler"), `The AI did not call the best-time-scheduler skill (called: ${skills.join(", ") || "none"}).`);
   const parsed = parseSuggestions(answer);
   if (!parsed.ok) throw new Error(parsed.error);
   const out = { at, enough: true, message: stats.message, reelsUsed: stats.reelsUsed, defaults: stats.defaults, ...parsed.value };

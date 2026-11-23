@@ -38,6 +38,28 @@ describe("the character studio files", () => {
   });
 });
 
+describe("character.build with Codex as the tool", () => {
+  beforeEach(() => { saveSheet(dir(), PNG); });
+  it("runs `codex exec --json` in a workspace-write sandbox, reads its events and keeps the thread for the next message", async () => {
+    const argsFile = join(env.tmp, "codex-args.jsonl");
+    process.env.FAKE_ARGS_FILE = argsFile;
+    const codexCtx = (j: ReturnType<typeof job>) => ({ ...env.ctx(j), settings: { ...DEFAULT_SETTINGS, assistant: { kind: "codex" as const } }, codexBin: join(import.meta.dirname, "fixtures/fake-codex-agent.mjs") });
+    const j1 = { ...job("character.build", "acme", {}), id: "aaaaaaaa-0000-0000-0000-000000000001" };
+    const r = await characterBuild(j1, codexCtx(j1));
+    expect(r).toMatchObject({ previews: ["front.png"], plan: { parts: 1 } });
+    const j2 = { ...job("character.build", "acme", { notes: "Rounder" }), id: "aaaaaaaa-0000-0000-0000-000000000002" };
+    await characterBuild(j2, codexCtx(j2));
+    const calls = readFileSync(argsFile, "utf8").trim().split("\n").map((l) => JSON.parse(l) as { args: string[]; prompt: string });
+    expect(calls[0]?.args.slice(0, 5)).toEqual(["exec", "--json", "--skip-git-repo-check", "--sandbox", "workspace-write"]);
+    expect(calls[0]?.args).toEqual(expect.arrayContaining(["--add-dir", join(env.data, "brands/acme/mascot/studio")]));
+    expect(calls[0]?.args.at(-1)).toBe("-");
+    expect(calls[1]?.args.slice(-3)).toEqual(["resume", "thr-7", "-"]);
+    const chat = readChat(join(env.data, "brands/acme/mascot/studio"));
+    expect(chat.sessionId).toBe("thr-7");
+    expect(chat.messages.map((m) => m.role)).toEqual(["user", "claude"]);
+  });
+});
+
 describe("character.build with a fake claude", () => {
   beforeEach(() => { saveSheet(dir(), PNG); });
   it("writes a plan and builder and ends with a preview for approval", async () => {

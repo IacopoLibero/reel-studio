@@ -11,6 +11,8 @@ export interface Config {
   token: string;
   webDir: string;
   claudeBin: string;
+  /** The Codex command (HUB_CODEX_BIN), used when Codex is the tool. */
+  codexBin: string;
   blogDir: string;
   terminalCmd: string | null;
 }
@@ -37,6 +39,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
     token,
     webDir,
     claudeBin: env.HUB_CLAUDE_BIN ?? "claude",
+    codexBin: env.HUB_CODEX_BIN?.trim() || "codex",
     // Optional folder of source texts (blog posts) the ideas jobs read. Default: sources/blog inside the project.
     blogDir: env.HUB_BLOG_DIR?.trim() || join(root, "sources", "blog"),
     terminalCmd: env.HUB_TERMINAL_CMD ?? null,

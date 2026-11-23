@@ -123,7 +123,7 @@ Tuesday, Thursday 08:00, 16:30 and 19:00; other days 07:30 and 17:30; time zone 
 The hub reads the brand's `reel-questions.md` (in its data folder, `<data>/brands/<slug>/`) on every request (`GET /api/brands/:slug/factory/questions`) and joins it with the reel
 folders and `scheduled.json`. The Factory page selects to-do questions and creates one `reel.make` job each.
 
-- **The job** is a headless `claude -p` (through `HUB_CLAUDE_BIN`) in the project folder with a prompt built from `.claude/skills/reel/SKILL.md`
+- **The job** is a headless `claude -p` (through `HUB_CLAUDE_BIN`; with Codex chosen in Settings > AI tool, `codex exec --json` through `HUB_CODEX_BIN`, see `src/ai/agent.ts`) in the project folder with a prompt built from `.claude/skills/reel/SKILL.md`
   and the approvals waived. Bash is allowed except `rm -rf`, `git`, `docker`, `systemctl`, `kill`, `sudo`, reads of credential files and the network and
   environment tools (`curl`, `wget`, `nc`, `ssh`, `scp`, `rsync`, `env`, `printenv`, `python3 -c`, `node -e`; see `claude-safety.ts`). Voice, Blender and renders must go through `scripts/slot.sh`. It never schedules on Instagram.
   Steps: Script, Voice, Plan, Build, Render, Checks, Caption, Cover, Done. It fails with the last error if the MP4, `caption.md` and `cover.png`
@@ -173,3 +173,14 @@ The page of one reel has a conversation with Claude that changes the reel. Each 
 - **Undo.** The page lists the versions (`GET /reels/:folder` returns `versions`) and `POST /reels/:folder/restore {version}` puts one back (`restoreVersion`): the saved video, caption, cover, script, plan, props and code replace the current ones (files the change added to `code/` are removed, the audio is left alone), after the reel as it is now is saved, so an undo can itself be undone. It is refused while a change or a schedule of the reel runs.
 - **Not done:** editing the script's audio by hand, several reels in one conversation.
 
+
+## One AI tool for everything
+
+`src/ai/agent.ts` builds the command of every headless run: `agentCommand(ctx, { access, allowedTools, deniedTools, addDirs, resume })` returns the command, its arguments and the parser of its output. The tool is `settings.assistant.kind` (global): `claude` or `codex`. Every job (reel.make, reel.edit, ideas, daily, analytics, character.build, character.moves, claude.task) goes through it.
+
+- **Claude:** `claude -p --output-format stream-json` with the allow and deny lists, as before.
+- **Codex:** `codex exec --json --skip-git-repo-check --sandbox <read-only|workspace-write> [-c sandbox_workspace_write.network_access=true] [--add-dir ...] [resume <thread>] -` (OpenAI's non-interactive mode). `access: "edit"` jobs get `workspace-write` with network on (the voice server and the renders are local); `read` jobs get `read-only`. The lists of Claude tools do not exist for Codex, so the credential and command denials do not apply: the sandbox is the limit.
+- **Events:** `codex-stream.ts` turns Codex's JSON Lines (`thread.started`, `item.started`, `item.completed`, `turn.completed`, `turn.failed`, `error`) into the same events Claude's stream gives (`init`, `text`, `tool`, `result`), so the handlers do not change. A command that reads a `skills/<name>/SKILL.md` is reported as a `Skill` call; `requireSkill` makes a missing call an error for Claude and a warning for Codex.
+- **Skills:** before a Codex job the runner links each `.claude/skills/<x>` into `.agents/skills/<x>` (never replacing anything), where Codex looks for skills.
+- **Environment:** `jobEnv` gives Codex the Codex access and no Anthropic key or hub token.
+- **Not done for Codex:** the Claude terminal page, the sidebar usage box (Codex reports no limits), the Claude model setting. Not verified against a real Codex (TODO.md).
