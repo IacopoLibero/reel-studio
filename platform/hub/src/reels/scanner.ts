@@ -3,6 +3,25 @@ import { join } from "node:path";
 import type { Reel, ScheduleEntry } from "../shared/types.js";
 
 export type ScheduleMap = Record<string, ScheduleEntry>;
+
+/** "YYYY-MM-DD HH:mm" now, in a time zone: the same shape as a schedule entry's `at`, so the two compare as text. */
+export function nowLocal(tz: string, now: Date = new Date()): string {
+  const f = new Intl.DateTimeFormat("en-CA", { timeZone: tz, hourCycle: "h23", year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" });
+  const o: Record<string, string> = {};
+  for (const p of f.formatToParts(now)) if (p.type !== "literal") o[p.type] = p.value;
+  return `${o.year}-${o.month}-${o.day} ${o.hour}:${o.minute}`;
+}
+
+/**
+ * What the banner of a reel says. Nothing in the hub writes "posted": Instagram publishes a scheduled post at its time by itself, so a scheduled reel whose time has passed is posted.
+ * A reel that is not complete (MP4, caption and cover) is "incomplete"; one with an Instagram job running is "scheduling".
+ */
+export type ReelState = "incomplete" | "to-schedule" | "scheduling" | "scheduled" | "posted";
+export function reelState(r: Pick<Reel, "mp4" | "hasCaption" | "hasCover" | "schedule" | "scheduling">, now: string | null): ReelState {
+  if (r.schedule) return r.schedule.status === "posted" || (now !== null && r.schedule.at <= now) ? "posted" : "scheduled";
+  if (r.scheduling) return "scheduling";
+  return r.mp4 && r.hasCaption && r.hasCover ? "to-schedule" : "incomplete";
+}
 const FOLDER = /^(\d+)-(.+)$/;
 const SAFE = /^[A-Za-z0-9._-]+$/;
 
@@ -27,7 +46,7 @@ export const folderOfKey = (key: string): string => (key.split("/").length === 2
 export const reelDirOf = (reelsDir: string, folder: string): string => join(reelsDir, folder);
 
 /** Every <n>-<name>/ folder of one brand's reels folder, with its files and schedule state. */
-export function scanReels(reelsDir: string, brand: string, scheduled: ScheduleMap, active: ReadonlySet<string> = new Set()): Reel[] {
+export function scanReels(reelsDir: string, brand: string, scheduled: ScheduleMap, active: ReadonlySet<string> = new Set(), now: string | null = null): Reel[] {
   const out: Reel[] = [];
   for (const folder of dirs(reelsDir)) {
     const m = FOLDER.exec(folder);
@@ -35,11 +54,12 @@ export function scanReels(reelsDir: string, brand: string, scheduled: ScheduleMa
     const dir = reelDirOf(reelsDir, folder);
     const key = `${brand}/${folder}`;
     const cap = join(dir, "caption.md");
-    out.push({
+    const reel = {
       key, brand, folder, n: Number(m[1]), name: m[2] as string, mp4: firstMp4(dir),
       hasCaption: existsSync(cap), captionStart: existsSync(cap) ? captionStart(cap) : "",
       hasCover: existsSync(join(dir, "cover.png")), schedule: scheduled[key] ?? null, scheduling: active.has(key),
-    });
+    };
+    out.push({ ...reel, state: reelState(reel, now) });
   }
   return out.sort((a, b) => a.n - b.n);
 }

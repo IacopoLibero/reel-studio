@@ -15,7 +15,8 @@ export function CharacterPage({ jobs, brand }: { jobs: Job[]; brand: BrandSummar
           <p className="sub">{brand.name} has no character, and that is fine: its reels use the full-width layout and work completely. If you want a mascot, you can try to make one below.</p>
         </>
       )}
-      <CharacterStudio jobs={jobs} brand={brand} />
+      {/* The builder (a character from a picture) is only for a brand that has no character yet. */}
+      {!brand.character.enabled && <CharacterStudio jobs={jobs} brand={brand} />}
     </>
   );
 }

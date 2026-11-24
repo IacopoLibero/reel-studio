@@ -3,6 +3,20 @@ import type { Job } from "../src/shared/types";
 import { api } from "./api";
 
 /** Jobs of one brand, kept live over SSE (EventSource sends the login cookie). The event stream carries every brand's jobs; others are ignored. */
+/**
+ * Reloads a page's data now and then, so what changes by itself on the server (a post's time passes, a job ends elsewhere) shows without a click:
+ * every `seconds`, when the window gets focus or the tab becomes visible again, and whenever `deps` change.
+ */
+export function useAutoReload(reload: () => void, deps: readonly unknown[], seconds = 30): void {
+  useEffect(reload, deps);
+  useEffect(() => {
+    const tick = () => { if (document.visibilityState === "visible") reload(); };
+    const t = window.setInterval(tick, seconds * 1000);
+    window.addEventListener("focus", tick); document.addEventListener("visibilitychange", tick);
+    return () => { window.clearInterval(t); window.removeEventListener("focus", tick); document.removeEventListener("visibilitychange", tick); };
+  }, [reload, seconds]);
+}
+
 export function useJobs(brand: string): Job[] {
   const [jobs, setJobs] = useState<Job[]>([]);
   useEffect(() => {

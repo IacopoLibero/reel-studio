@@ -3,7 +3,7 @@ import type { FastifyInstance } from "fastify";
 import { z } from "zod";
 import { join } from "node:path";
 import { countPngs, listMoves, moveDir } from "../character/gallery.js";
-import { folderOfKey, readScheduled, reelDirOf, resolveReelFile, scanReels } from "../reels/scanner.js";
+import { folderOfKey, nowLocal, readScheduled, reelDirOf, resolveReelFile, scanReels } from "../reels/scanner.js";
 import { readReelDetail } from "../reels/detail.js";
 import { appendMessage, readChat } from "../reels/chat.js";
 import { listVersions, restoreVersion } from "../reels/versions.js";
@@ -21,7 +21,7 @@ import { HttpError, type Scope } from "./scope.js";
 export function contentRoutes(app: FastifyInstance, d: AppDeps, scope: Scope): void {
   const activeReels = (slug: string) => new Set(d.store.list().filter((j) => j.type === "instagram.schedule" && j.brand === slug && (j.status === "queued" || j.status === "running")).map((j) => String(j.params.reel)));
 
-  app.get("/reels", async (req) => { const b = scope(req); return scanReels(b.paths.reelsDir, b.slug, readScheduled(b.paths.scheduledFile), activeReels(b.slug)); });
+  app.get("/reels", async (req) => { const b = scope(req); return scanReels(b.paths.reelsDir, b.slug, readScheduled(b.paths.scheduledFile), activeReels(b.slug), nowLocal(d.settings.get(b.slug).slotPattern.timezone)); });
 
   // Carousels: the list, one carousel with its caption and plan, and its slides (PNG) and caption as files.
   app.get("/carousels", async (req) => { const b = scope(req); return scanCarousels(b.paths.carouselsDir, b.slug); });

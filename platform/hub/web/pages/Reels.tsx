@@ -1,15 +1,16 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import type { Job, Reel } from "../../src/shared/types";
 import { api, getBrand, scoped } from "../api";
-import { routeHash, useLoad } from "../hooks";
+import { routeHash, useAutoReload, useLoad } from "../hooks";
 import { SlotPicker } from "../components/SlotPicker";
 import { EmptyState } from "../components/EmptyState";
 
 export function ReelsPage({ jobs }: { jobs: Job[] }) {
   const { data, error, reload } = useLoad(api.reels);
   const [picking, setPicking] = useState<Reel | null>(null);
-  const doneCount = jobs.filter((j) => j.type === "instagram.schedule" && j.status === "done").length;
-  useEffect(reload, [doneCount, jobs.filter((j) => j.type === "instagram.schedule" && j.status !== "done" && j.status !== "failed" && j.status !== "cancelled").length]);
+  // Any Instagram job (schedule, move, delete) changes a banner: reload when one starts or ends, and every 30 s (a scheduled post becomes posted when its time passes).
+  const igKey = jobs.filter((j) => j.type.startsWith("instagram.")).map((j) => `${j.id}:${j.status}`).join(",");
+  useAutoReload(reload, [igKey], 30);
   const reels = [...(data ?? [])].reverse();
   return (
     <>
@@ -35,10 +36,11 @@ export function ReelsPage({ jobs }: { jobs: Job[] }) {
                 <span className="badge">{r.hasCover ? "cover" : "no cover"}</span>
               </div>
             </div>
-            {r.schedule?.status === "posted" ? <span className="badge done">Posted {r.schedule.at}</span>
-              : r.schedule ? <span className="badge scheduled">Scheduled {r.schedule.at}</span>
-              : r.scheduling ? <span className="badge running">In queue</span>
-              : <button className="btn primary" disabled={!ready} title={ready ? "" : "Needs MP4, caption and cover"} onClick={() => setPicking(r)}>Schedule</button>}
+            {r.state === "posted" ? <span className="badge done">Posted {r.schedule?.at}</span>
+              : r.state === "scheduled" ? <span className="badge scheduled">Scheduled {r.schedule?.at}</span>
+              : r.state === "scheduling" ? <span className="badge running">Scheduling…</span>
+              : r.state === "to-schedule" ? <button className="btn primary" disabled={!ready} onClick={() => setPicking(r)}>To schedule</button>
+              : <span className="badge" title="Needs MP4, caption and cover">Not finished</span>}
           </div>
         );
       })}

@@ -75,7 +75,10 @@ export interface ScheduleEntry {
   jobId?: string;
 }
 
+export type ReelStateName = "incomplete" | "to-schedule" | "scheduling" | "scheduled" | "posted";
 export interface Reel {
+  /** What the banner says: posted once the scheduled time has passed. */
+  state: ReelStateName;
   key: string;
   brand: string;
   folder: string;

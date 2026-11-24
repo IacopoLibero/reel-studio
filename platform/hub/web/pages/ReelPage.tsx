@@ -27,7 +27,7 @@ export function ReelPage({ folder, jobs }: { folder: string; jobs: Job[] }) {
   if (error) return <><p><a href={`#/${getBrand()}/reels`}>← Reels</a></p><p className="error">{error}</p></>;
   if (!data) return <p className="muted">Loading…</p>;
   const { reel } = data;
-  const asListReel: Reel = { key: reel.key, brand: reel.brand, folder: reel.folder, n: reel.n, name: reel.name, mp4: reel.mp4, hasCaption: !!reel.caption, captionStart: reel.caption.split("\n")[0] ?? "", hasCover: reel.hasCover, schedule: reel.schedule, scheduling: false };
+  const asListReel: Reel = { key: reel.key, brand: reel.brand, folder: reel.folder, n: reel.n, name: reel.name, mp4: reel.mp4, hasCaption: !!reel.caption, captionStart: reel.caption.split("\n")[0] ?? "", hasCover: reel.hasCover, schedule: reel.schedule, state: reel.schedule ? "scheduled" : reel.mp4 && !!reel.caption && reel.hasCover ? "to-schedule" : "incomplete", scheduling: false };
   const ready = !!reel.mp4 && !!reel.caption && reel.hasCover;
   return (
     <>
