@@ -37,7 +37,7 @@ export function buildIdeasPrompt(i: IdeasInput): string {
 
 Read first:
 1. ${b}/identity/style.md (voice, audience, hooks).
-2. ${i.dataDir}/reel-questions.md: every existing question, the done ones too. Your ideas must not repeat any of them, not even reworded.${i.hasResults ? `\n3. ${b}/instagram-results.md: what performed well and badly. Lean toward what worked.` : ""}
+2. ${i.dataDir}/reel-questions.md: every existing question, the done ones too. Also the reels/ and carousels/ folders (videos made, scheduled or posted: script.json, carousel.json) and analytics/hooks.csv (hooks already posted). Your ideas must not repeat any of them, not even reworded.${i.hasResults ? `\n3. ${b}/instagram-results.md: what performed well and badly. Lean toward what worked.` : ""}
 Then the blog posts folder ${i.blogDir}. These are the slugs, read the ones you need to check facts:
 ${i.slugs.map((s) => `- ${s}`).join("\n") || "- (none found)"}
 To know what the brand's product really does, read ${product}/README.md and ${product}/CLAUDE.md.
