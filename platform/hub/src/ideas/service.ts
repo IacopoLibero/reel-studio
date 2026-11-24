@@ -2,7 +2,6 @@ import { existsSync, readdirSync, readFileSync, renameSync, writeFileSync } from
 import { join } from "node:path";
 import { questionsFile } from "../brands/paths.js";
 import { withFileLock } from "../factory/allocator.js";
-import { parseQuestions } from "../factory/questions.js";
 import { appendIdeas } from "./append.js";
 import { isDuplicate } from "./dedupe.js";
 import { knownIdeas } from "./known.js";

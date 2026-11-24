@@ -57,6 +57,7 @@ export interface Settings {
   daily: DailySettings;
   blenderDevice: "cpu" | "gpu" | "auto";
   claudeModel: string;
+  terminalPermission: "ask" | "edit" | "plan" | "full";
   accountName: string;
   slotPattern: SlotPattern;
 }

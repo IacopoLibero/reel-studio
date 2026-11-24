@@ -24,11 +24,15 @@ export const brandSettingsSchema = z.object({
   }),
 });
 
+export const TERMINAL_PERMISSIONS = ["ask", "edit", "plan", "full"] as const;
+
 /** What is shared by every brand: how Blender renders and which Claude model the jobs use. Stored in data/settings.json. */
 export const globalSettingsSchema = z.object({
   blenderDevice: z.enum(["cpu", "gpu", "auto"]),
   claudeModel: z.string().max(80).regex(/^[A-Za-z0-9._:[\]-]*$/, "Model name has invalid characters"),
   // An older settings file may hold {kind: "custom", command}: that setting is gone, the assistant is Claude again.
+  /** How much the Terminal page may do without asking: ask each time, edit files, only plan, or everything. */
+  terminalPermission: z.enum(TERMINAL_PERMISSIONS).default("ask"),
   assistant: z.preprocess((v) => (v && typeof v === "object" && ["claude", "codex"].includes((v as { kind?: unknown }).kind as string) ? v : { kind: "claude" }), z.object({ kind: z.enum(["claude", "codex"]) })).default({ kind: "claude" }),
 });
 
@@ -43,14 +47,14 @@ export type GlobalSettings = z.infer<typeof globalSettingsSchema>;
 export const DEFAULT_BRAND_SETTINGS: BrandSettings = {
   factory: { concurrency: 2, closingRules: DEFAULT_RULES }, daily: { enabled: false, earliest: "06:00", ideas: 3, threads: false }, slotPattern: DEFAULT_PATTERN,
 };
-export const DEFAULT_GLOBAL_SETTINGS: GlobalSettings = { blenderDevice: "auto", claudeModel: "", assistant: { kind: "claude" } };
+export const DEFAULT_GLOBAL_SETTINGS: GlobalSettings = { blenderDevice: "auto", claudeModel: "", terminalPermission: "ask", assistant: { kind: "claude" } };
 export const DEFAULT_SETTINGS: Settings = { ...DEFAULT_BRAND_SETTINGS, ...DEFAULT_GLOBAL_SETTINGS, accountName: "" };
 
 /** Splits the merged settings into the part a brand owns and the shared part. */
 export function splitSettings(s: Settings): { brand: BrandSettings; global: GlobalSettings } {
   return {
     brand: { factory: s.factory, daily: s.daily, slotPattern: s.slotPattern },
-    global: { blenderDevice: s.blenderDevice, claudeModel: s.claudeModel, assistant: s.assistant },
+    global: { blenderDevice: s.blenderDevice, claudeModel: s.claudeModel, terminalPermission: s.terminalPermission, assistant: s.assistant },
   };
 }
 

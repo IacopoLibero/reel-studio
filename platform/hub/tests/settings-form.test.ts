@@ -7,6 +7,7 @@ const base: Settings = {
   daily: { enabled: false, earliest: "06:00", ideas: 3, threads: false },
   blenderDevice: "auto",
   claudeModel: "",
+  terminalPermission: "ask",
   assistant: { kind: "claude", command: "" },
   accountName: "my_brand_account",
   slotPattern: {

@@ -1,5 +1,8 @@
 import { existsSync } from "node:fs";
 import { delimiter } from "node:path";
+import { execFileSync } from "node:child_process";
+import { join } from "node:path";
+import { sessionName, terminalArgs, type TerminalPermission } from "./terminal-access.js";
 import { linkSkillsForCodex } from "./ai/agent.js";
 import { applyEnvLayer } from "./env.js";
 import type { AssistantKind } from "./shared/types.js";
@@ -15,7 +18,6 @@ const msgSchema = z.discriminatedUnion("type", [
 ]);
 
 const hasBin = (b: string) => (process.env.PATH ?? "").split(delimiter).some((d) => d && existsSync(`${d}/${b}`));
-const sessionOf = (tool: AssistantKind): string => `reel-${tool}`;
 
 /**
  * One terminal for the hub. With tmux, each connection attaches a pty to a named tmux session that outlives the page.
@@ -23,12 +25,12 @@ const sessionOf = (tool: AssistantKind): string => `reel-${tool}`;
  */
 export class Terminal {
   private shared: pty.IPty | null = null;
-  private sharedTool: AssistantKind | null = null;
+  private sharedTool: string | null = null;
   private buffer = "";
   private readonly useTmux: boolean;
 
   /** `tool` says which tool the terminal runs now (Settings > AI tool): Claude Code or Codex, in the project folder. */
-  constructor(private readonly cfg: Config, private readonly tool: () => AssistantKind = () => "claude") {
+  constructor(private readonly cfg: Config, private readonly tool: () => AssistantKind = () => "claude", private readonly level: () => TerminalPermission = () => "ask") {
     this.useTmux = !cfg.terminalCmd && hasBin("tmux");
   }
 
@@ -44,8 +46,17 @@ export class Terminal {
     if (this.cfg.terminalCmd) return pty.spawn("/bin/sh", ["-c", this.cfg.terminalCmd], opts);
     if (tool === "codex") { try { linkSkillsForCodex(this.cfg.root); } catch { /* the terminal still starts without the links */ } }
     const bin = tool === "codex" ? this.cfg.codexBin : this.cfg.claudeBin;
-    if (this.useTmux) return pty.spawn("tmux", ["new-session", "-A", "-s", sessionOf(tool), "-c", this.cfg.root, bin], opts);
-    return pty.spawn(bin, [], opts);
+    const level = this.level();
+    const args = terminalArgs(tool, level, join(this.cfg.dataDir, "brands"));
+    if (this.useTmux) {
+      // A session started at another level keeps its old flags: close it so the chosen level counts.
+      for (const t of ["claude", "codex"] as const) for (const l of ["ask", "edit", "plan", "full"] as const) {
+        if (t === tool && l === level) continue;
+        try { execFileSync("tmux", ["kill-session", "-t", sessionName(t, l)], { stdio: "ignore" }); } catch { /* none running */ }
+      }
+      return pty.spawn("tmux", ["new-session", "-A", "-s", sessionName(tool, level), "-c", this.cfg.root, bin, ...args], opts);
+    }
+    return pty.spawn(bin, args, opts);
   }
 
   attach(ws: WebSocket, cols = 100, rows = 30): void {
@@ -55,12 +66,12 @@ export class Terminal {
     try {
       if (persistent) {
         // The tool was changed in the settings: the old terminal is closed and the new tool starts.
-        if (this.shared && this.sharedTool !== tool) { const old = this.shared; this.shared = null; this.buffer = ""; try { old.kill(); } catch { /* ended */ } }
+        if (this.shared && this.sharedTool !== `${tool}-${this.level()}`) { const old = this.shared; this.shared = null; this.buffer = ""; try { old.kill(); } catch { /* ended */ } }
         if (!this.shared) {
           const created = this.spawn(cols, rows, tool);
           created.onData((d) => { if (this.shared === created) this.buffer = (this.buffer + d).slice(-MAX_BUFFER); });
           created.onExit(() => { if (this.shared === created) { this.shared = null; this.buffer = ""; } });
-          this.shared = created; this.sharedTool = tool;
+          this.shared = created; this.sharedTool = `${tool}-${this.level()}`;
         }
         p = this.shared;
         if (this.buffer) ws.send(this.buffer);
