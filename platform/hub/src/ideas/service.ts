@@ -5,6 +5,7 @@ import { withFileLock } from "../factory/allocator.js";
 import { parseQuestions } from "../factory/questions.js";
 import { appendIdeas } from "./append.js";
 import { isDuplicate } from "./dedupe.js";
+import { knownIdeas } from "./known.js";
 import { readBatch, writeBatch, type IdeaBatch, type StoredIdea } from "./store.js";
 
 /** Where the brand's question list is: reel-questions.md in the brand's data folder. */
@@ -15,9 +16,8 @@ export function brandExists(dataDir: string): boolean {
   return existsSync(questionsPath(dataDir));
 }
 
-/** Every question of the brand, done ones included. */
-export const existingQuestions = (dataDir: string, brand: string): string[] =>
-  parseQuestions(readFileSync(questionsPath(dataDir), "utf8"), brand).map((q) => q.question);
+/** Every idea the brand already has, to refuse a repeat: the question list (done ones included), the reels and carousels made, and the hooks that were posted. */
+export const existingQuestions = (dataDir: string, _brand: string): string[] => knownIdeas(dataDir);
 
 /** Blog post slugs: the .ts files in the posts folder that are not the index or the translations. */
 export function blogSlugs(blogDir: string): string[] {
