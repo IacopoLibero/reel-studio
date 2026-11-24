@@ -4,7 +4,8 @@ import { analyticsView } from "../analytics/view.js";
 import { readBestTimes } from "../analytics/store.js";
 import { readBrandQuestions } from "../factory/service.js";
 import { questionId } from "../factory/questions.js";
-import { assignBody, seriesInput } from "../series/schema.js";
+import { addEpisodeQuestions } from "../series/episodes.js";
+import { assignBody, fromPlanBody, seriesInput } from "../series/schema.js";
 import { SeriesStore } from "../series/store.js";
 import { defaultsFromPattern } from "../calendar/best-times.js";
 import type { AppDeps } from "../app.js";
@@ -27,6 +28,15 @@ export function analyticsRoutes(app: FastifyInstance, d: AppDeps, scope: Scope):
   }));
   app.get("/series/badges", async (req) => series(req).badges());
 
+  // Accepting a plan: the new episodes go into the question list first, then the series is made with every episode in order.
+  app.post("/series/from-plan", async (req, reply) => {
+    const b = fromPlanBody.safeParse(req.body);
+    if (!b.success) return reply.code(400).send(bad(b.error.issues[0]?.message ?? "Invalid series."));
+    const sc = scope(req);
+    const added = await addEpisodeQuestions(sc.paths.dataDir, sc.slug, b.data.newQuestions);
+    const { newQuestions: _n, ...rest } = b.data;
+    return reply.code(201).send(series(req).create({ ...rest, questionIds: [...b.data.questionIds, ...added] }));
+  });
   app.post("/series", async (req, reply) => {
     const b = seriesInput.safeParse(req.body);
     if (!b.success) return reply.code(400).send(bad(b.error.issues[0]?.message));

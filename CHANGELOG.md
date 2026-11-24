@@ -1,5 +1,14 @@
 # Changelog
 
+## Unreleased
+
+- **Reels banner is true.** A reel is "Posted" once its Instagram slot has passed (Instagram publishes it), "Scheduled" before that, "Scheduling…" while a job runs. The Reels page reloads by itself (every 30 s, on focus, and when an Instagram job changes).
+- **Character page:** the builder shows only for a brand that has no character yet.
+- **No repeated ideas.** Ideas (Factory, Daily) are checked against the question list, every reel and carousel made (posted or not) and the hooks already posted; the prompts say so too.
+- **Daily loop always uses hook-mining**, reel-insights and best-time-scheduler (with a small data set it says so plainly); all six skills are listed as used or not called.
+- **Terminal:** permission level (ask, edit, plan, everything) chosen on the Terminal page, and every brand's data folder is within reach. Codex flags come from OpenAI's docs and are not tried.
+- **Series are episodes.** A series is a run of videos about one subject. "Plan a series" can write new episodes (up to 40) that go into the question list when you accept. Reels of a series are listed in Series (with posted/scheduled state) and no longer in Reels.
+
 ## 1.0.2 (2026-11-24)
 
 - **Carousels, in 2D or 3D.** A new **Carousels** page: say what a carousel is about, choose 2D or 3D, the number of slides and the last slide (offer or follow), and the AI builds it: a plan, the slides (1080 x 1350), the caption. **2D** is Remotion only (real product screens in drawn tablet and phone frames, paper textures from real images, soft layered shadows, grain, a background that continues across the slides). **3D** is one wide Blender scene (Cycles on the GPU, depth of field, real materials) cut into slides with the text over it, so objects cross from one slide to the next. A carousel is built on the two Ootto skills `ootto-viral-carousel` (the structure) and `ootto-carousel-builder` (the words of every slide): both are on by default, the job calls them and fails if the AI did not. New `carousel` skill, a Blender kit with detailed props, a texture generator and a checker (four views, close-ups, numbers) in `scripts/carousel/`, and a read-only **product folder** per brand (Settings > Product) the slides take their real screens from. Not done: scheduling a carousel on Instagram from the Calendar.

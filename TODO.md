@@ -8,6 +8,10 @@ Nothing blocks the use of the app. These are the things that were not tried or n
 
 - **Small things.** A cover without a logo has its kicker not looked at.
 
+- **Analytics to design (not built).** Per video: followers gained (profile follows in the hours after posting, from the platform's insights), next to plays, reach, saves, shares. Per page and platform (Instagram, Threads, TikTok...): a daily row of followers, reach, profile visits and posts, stored as `analytics/pages/<platform>.csv`, with the same snapshot-and-readout flow as `hooks.csv`. `hooks.csv` would get a `followers_gained` column.
+- **Carousels cannot be posted from the app yet.** Needs several images in Instagram's own scheduler, tried live on the account (ask before touching it).
+- **Series scheduling.** "Make all" and one episode a day on free slots are not built: each episode is made and scheduled from its reel page.
+
 ## Paused
 
 - **Threads.** Posting needs your own Meta app (Composio asks for a client id and secret, plus the redirect URL it shows).

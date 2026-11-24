@@ -80,6 +80,8 @@ export type ReelStateName = "incomplete" | "to-schedule" | "scheduling" | "sched
 export interface Reel {
   /** What the banner says: posted once the scheduled time has passed. */
   state: ReelStateName;
+  /** The series the reel is an episode of: such reels are shown in the Series page, not in the Reels list. */
+  series?: { id: string; name: string } | null;
   key: string;
   brand: string;
   folder: string;

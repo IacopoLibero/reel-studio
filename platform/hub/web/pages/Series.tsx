@@ -1,12 +1,12 @@
 import { useEffect, useState } from "react";
 import type { Job } from "../../src/shared/types";
-import { api, type SeriesData, type SeriesDraft, type SeriesItem } from "../api";
-import { useLoad } from "../hooks";
+import { api, getBrand, type SeriesData, type SeriesDraft, type SeriesItem } from "../api";
+import { routeHash, useAutoReload, useLoad } from "../hooks";
 import { ProgressBar } from "../components/JobCard";
 
 const blank: SeriesDraft = { name: "", promise: "", cadence: "weekly", exampleHooks: [], questionIds: [] };
 const active = (j: Job) => j.status === "queued" || j.status === "running";
-interface Proposal extends SeriesDraft { why?: string; questions?: string[] }
+interface Proposal extends SeriesDraft { why?: string; questions?: string[]; newQuestions?: string[] }
 
 function Editor({ item, data, onSave, onCancel }: { item: SeriesDraft & { id?: string }; data: SeriesData; onSave: (d: SeriesDraft) => void; onCancel: () => void }) {
   const [d, setD] = useState<SeriesDraft>(item);
@@ -34,6 +34,8 @@ function Editor({ item, data, onSave, onCancel }: { item: SeriesDraft & { id?: s
 
 export function SeriesPage({ jobs }: { jobs: Job[] }) {
   const { data, error, reload } = useLoad(api.series);
+  const reels = useLoad(api.reels);
+  useAutoReload(reels.reload, [], 30);
   const [editing, setEditing] = useState<(SeriesDraft & { id?: string }) | null>(null);
   const [focus, setFocus] = useState("");
   const [err, setErr] = useState<string | null>(null);
@@ -49,13 +51,18 @@ export function SeriesPage({ jobs }: { jobs: Job[] }) {
     const id = editing?.id;
     (id ? api.updateSeries(id, d) : api.createSeries(d)).then(() => { setEditing(null); setErr(null); reload(); }).catch(fail);
   };
-  const accept = (p: Proposal) => api.createSeries({ name: p.name, promise: p.promise, cadence: p.cadence, exampleHooks: p.exampleHooks, questionIds: p.questionIds }).then(reload).catch(fail);
+  const accept = (p: Proposal) => api.acceptSeriesPlan({ name: p.name, promise: p.promise, cadence: p.cadence, exampleHooks: p.exampleHooks, questionIds: p.questionIds, newQuestions: p.newQuestions ?? [] }).then(reload).catch(fail);
   const qText = (id: string) => data?.questions.find((q) => q.id === id)?.question ?? id;
+  /** The reel made for a question of the series, if there is one. */
+  const reelOf = (id: string) => {
+    const folder = data?.questions.find((q) => q.id === id)?.folder?.split("/").pop();
+    return folder ? reels.data?.find((r) => r.folder === folder) : undefined;
+  };
 
   return (
     <>
       <h1>Series</h1>
-      <p className="sub">Named recurring formats: a promise, a cadence, example hooks and the questions assigned to them. The Factory shows the series of each question.</p>
+      <p className="sub">A run of videos about one subject (for example "30 days to raise your turnover", one a day). Each question of a series is an episode: its reel is scheduled with the others from the Calendar, but it is listed here and not among the single reels.</p>
       <div className="card">
         <label style={{ marginTop: 0 }}>Plan a series (optional focus)</label>
         <div className="row"><input type="text" value={focus} maxLength={300} placeholder="for example: myths about menus" onChange={(e) => setFocus(e.target.value)} />
@@ -70,6 +77,7 @@ export function SeriesPage({ jobs }: { jobs: Job[] }) {
           {proposal.why && <p className="muted">{proposal.why}</p>}
           <div>{proposal.exampleHooks.map((h) => <span className="pill" key={h}>{h}</span>)}</div>
           {proposal.questions && proposal.questions.length > 0 && <p className="muted">Questions: {proposal.questions.join(" | ")}</p>}
+          {proposal.newQuestions && proposal.newQuestions.length > 0 && <p className="muted">{proposal.newQuestions.length} new episodes, added to the question list when you accept: {proposal.newQuestions.slice(0, 5).join(" | ")}{proposal.newQuestions.length > 5 ? " …" : ""}</p>}
           <div className="row"><button className="btn primary" onClick={() => accept(proposal)}>Add this series</button></div>
         </div>
       )}
@@ -83,7 +91,24 @@ export function SeriesPage({ jobs }: { jobs: Job[] }) {
             <button className="btn small" onClick={() => { if (confirm(`Delete the series "${s.name}"?`)) api.deleteSeries(s.id).then(reload).catch(fail); }}>Delete</button></div>
           <p>{s.promise}</p>
           <div>{s.exampleHooks.map((h) => <span className="pill" key={h}>{h}</span>)}</div>
-          {s.questionIds.length > 0 && <ul className="muted">{s.questionIds.map((q) => <li key={q}>{qText(q)}</li>)}</ul>}
+          {s.questionIds.length > 0 && (
+            <ol className="episodes">
+              {s.questionIds.map((q, i) => {
+                const r = reelOf(q);
+                return (
+                  <li key={q}>
+                    <span className="muted">Episode {i + 1}</span> {r ? <a href={routeHash(getBrand(), "reels", r.folder)}>{qText(q)}</a> : qText(q)}{" "}
+                    {!r ? <span className="badge">Not made yet</span>
+                      : r.state === "posted" ? <span className="badge done">Posted {r.schedule?.at}</span>
+                      : r.state === "scheduled" ? <span className="badge scheduled">Scheduled {r.schedule?.at}</span>
+                      : r.state === "scheduling" ? <span className="badge running">Scheduling…</span>
+                      : r.state === "to-schedule" ? <a className="btn small primary" href={routeHash(getBrand(), "reels", r.folder)}>To schedule</a>
+                      : <span className="badge">Not finished</span>}
+                  </li>
+                );
+              })}
+            </ol>
+          )}
         </div>
       ))}
     </>

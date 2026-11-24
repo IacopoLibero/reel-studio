@@ -156,6 +156,7 @@ export const api = {
   series: () => call<SeriesData>("GET", scoped("/series")),
   seriesBadges: () => call<Record<string, { id: string; name: string }>>("GET", scoped("/series/badges")),
   createSeries: (b: SeriesDraft) => call<SeriesItem>("POST", scoped("/series"), b),
+  acceptSeriesPlan: (b: SeriesDraft & { newQuestions: string[] }) => call<SeriesItem>("POST", scoped("/series/from-plan"), b),
   updateSeries: (id: string, b: SeriesDraft) => call<SeriesItem>("PUT", scoped(`/series/${id}`), b),
   assignSeries: (id: string, questionIds: string[]) => call<SeriesItem>("POST", scoped(`/series/${id}/assign`), { questionIds }),
   deleteSeries: (id: string) => call<{ ok: boolean }>("DELETE", scoped(`/series/${id}`)),

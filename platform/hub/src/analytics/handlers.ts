@@ -5,6 +5,7 @@ import { questionId } from "../factory/questions.js";
 import { questionsFile } from "../brands/paths.js";
 import { readBrandQuestions } from "../factory/service.js";
 import type { Handler } from "../jobs/handlers.js";
+import { isDuplicate } from "../ideas/dedupe.js";
 import { planSchema } from "../series/schema.js";
 import { SeriesStore } from "../series/store.js";
 import { join } from "node:path";
@@ -72,7 +73,8 @@ export const seriesPlan: Handler = async (job, ctx) => {
   const known = new Map(readBrandQuestions(ctx.dataDir, brand).map((q) => [norm(q.question), q]));
   const matched = plan.data.questions.map((q) => known.get(norm(q))).filter((q): q is NonNullable<typeof q> => !!q);
   const dropped = plan.data.questions.length - matched.length;
-  const proposal = { ...plan.data, questionIds: matched.map((q) => questionId(q.question)), questions: matched.map((q) => q.question) };
+  const fresh = plan.data.newQuestions.filter((q) => !isDuplicate(q, [...known.values()].map((k) => k.question)));
+  const proposal = { ...plan.data, newQuestions: fresh, questionIds: matched.map((q) => questionId(q.question)), questions: matched.map((q) => q.question) };
   ctx.update({ progress: 1, log: [`Skills used: ${skills.join(", ")}`, ...(dropped ? [`${dropped} question(s) did not match the list and were dropped`] : [])] });
   return { proposal, skills, summary: `Proposed series: ${proposal.name}` };
 };

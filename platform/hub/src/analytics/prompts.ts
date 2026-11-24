@@ -35,10 +35,11 @@ Read: ${o.styleFile}, ${o.questionsFile} (all questions, done and to do)${o.hasD
 Series that already exist (do not repeat them): ${o.existing.join("; ") || "none"}.
 ${o.focus ? `The person who runs the brand asks for this focus: ${o.focus}\n` : ""}Rules:
 - A named, repeatable format ${audienceOf(o.brandInfo)} would follow so as not to miss one: a short name, a one-line promise, a cadence (for example "weekly"), 3 to 5 example hooks written as opening questions.
-- "questions": copy EXACTLY, character for character, between 3 and 8 existing questions from reel-questions.md that fit the series (done or to do).
+- "questions": copy EXACTLY, character for character, between 0 and 8 existing questions from reel-questions.md that fit the series (done or to do).
+- "newQuestions": new episode questions, in watching order, one line each, each an opening question a viewer would stop for and not a repeat of any existing question. Write them when the series needs more episodes than the list has: when the focus names a count or a rhythm (for example "30 days, one a day") give exactly that many episodes in total (questions + newQuestions, at most 40); otherwise give none.
 - "why": one line, using the real numbers when data exists.
 Answer with JSON only, no text around it:
-{"name":"...","promise":"...","cadence":"...","exampleHooks":["..."],"questions":["..."],"why":"..."}`;
+{"name":"...","promise":"...","cadence":"...","exampleHooks":["..."],"questions":["..."],"newQuestions":["..."],"why":"..."}`;
 }
 
 export function suggestPrompt(o: { root: string; brandInfo?: BrandInfo; stats: TimeStats; timezone: string }): string {

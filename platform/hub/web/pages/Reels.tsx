@@ -11,11 +11,14 @@ export function ReelsPage({ jobs }: { jobs: Job[] }) {
   // Any Instagram job (schedule, move, delete) changes a banner: reload when one starts or ends, and every 30 s (a scheduled post becomes posted when its time passes).
   const igKey = jobs.filter((j) => j.type.startsWith("instagram.")).map((j) => `${j.id}:${j.status}`).join(",");
   useAutoReload(reload, [igKey], 30);
-  const reels = [...(data ?? [])].reverse();
+  // Episodes of a series are shown in the Series page, not among the single reels.
+  const reels = [...(data ?? [])].reverse().filter((r) => !r.series);
+  const hidden = (data ?? []).length - reels.length;
   return (
     <>
       <h1>Reels</h1>
       <p className="sub">Every reel folder, its files and its Instagram schedule. Click a reel to watch it and change it by talking to Claude.</p>
+      {hidden > 0 && <p className="muted">{hidden} reel{hidden === 1 ? "" : "s"} of a series {hidden === 1 ? "is" : "are"} in <a href={`#/${getBrand()}/series`}>Series</a>.</p>}
       {error && <p className="error">{error}</p>}
       {data && reels.length === 0 && (
         <EmptyState title="No reels yet" action={<a className="btn primary" href={`#/${getBrand()}/factory`}>Go to the Factory</a>}>

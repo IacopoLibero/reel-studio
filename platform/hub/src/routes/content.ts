@@ -13,7 +13,9 @@ import { nextSlots } from "../slots.js";
 import { settingsSchema } from "../settings.js";
 import { validMoveName } from "../character/moves-parser.js";
 import { loadScheduler, targetOf } from "../scheduler-bridge.js";
-import { listFactoryQuestions } from "../factory/service.js";
+import { listFactoryQuestions, readBrandQuestions } from "../factory/service.js";
+import { seriesByFolder } from "../series/membership.js";
+import { SeriesStore } from "../series/store.js";
 import { readBrand, writeBrand } from "../brands/registry.js";
 import type { AppDeps } from "../app.js";
 import { HttpError, type Scope } from "./scope.js";
@@ -21,7 +23,12 @@ import { HttpError, type Scope } from "./scope.js";
 export function contentRoutes(app: FastifyInstance, d: AppDeps, scope: Scope): void {
   const activeReels = (slug: string) => new Set(d.store.list().filter((j) => j.type === "instagram.schedule" && j.brand === slug && (j.status === "queued" || j.status === "running")).map((j) => String(j.params.reel)));
 
-  app.get("/reels", async (req) => { const b = scope(req); return scanReels(b.paths.reelsDir, b.slug, readScheduled(b.paths.scheduledFile), activeReels(b.slug), nowLocal(d.settings.get(b.slug).slotPattern.timezone)); });
+  app.get("/reels", async (req) => {
+    const b = scope(req);
+    const reels = scanReels(b.paths.reelsDir, b.slug, readScheduled(b.paths.scheduledFile), activeReels(b.slug), nowLocal(d.settings.get(b.slug).slotPattern.timezone));
+    const inSeries = seriesByFolder(readBrandQuestions(b.paths.dataDir, b.slug), new SeriesStore(b.paths.seriesFile).list());
+    return reels.map((r) => ({ ...r, series: inSeries.get(r.folder) ?? null }));
+  });
 
   // Carousels: the list, one carousel with its caption and plan, and its slides (PNG) and caption as files.
   app.get("/carousels", async (req) => { const b = scope(req); return scanCarousels(b.paths.carouselsDir, b.slug); });
