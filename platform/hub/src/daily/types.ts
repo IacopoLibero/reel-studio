@@ -49,5 +49,5 @@ export const planSchema = z.object({
 });
 export type DailyPlan = z.infer<typeof planSchema>;
 
-export const REQUIRED_SKILLS = ["ootto-agent-reach", "reel-research", "reel-hooks"] as const;
+export const REQUIRED_SKILLS = ["ootto-agent-reach", "reel-research", "reel-hooks", "reel-insights", "ootto-hook-mining", "ootto-best-time-scheduler"] as const;
 export const MAX_RERUNS = 2;

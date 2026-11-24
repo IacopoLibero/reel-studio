@@ -12,7 +12,8 @@ export function buildAnalysePrompt(i: AnalyseInput): string {
 
 Call the Skill tool for these, in this order (a real call, not a mention):
 1. reel-insights: read ${i.dataDir}/analytics/ (the newest snapshot ${i.hooksRows ? `and hooks.csv, ${i.hooksRows} rows` : "; there is no hooks.csv yet"}) and ${b}/identity/style.md, ${i.dataDir}/reel-questions.md.
-${i.hooksRows >= 8 ? "2. ootto-hook-mining on ${i.dataDir}/analytics/hooks.csv: which opening patterns won and lost.\n" : ""}${i.hooksRows >= 8 ? "3" : "2"}. ootto-best-time-scheduler: from the real data, the best posting times (weekday and HH:MM, local time).
+2. ootto-hook-mining on ${i.dataDir}/analytics/hooks.csv: which opening patterns won and lost${i.hooksRows >= 8 ? "" : ` (only ${i.hooksRows} rows so far: call it, say plainly that the data is too small, and claim nothing it cannot support)`}.
+3. ootto-best-time-scheduler: from the real data, the best posting times (weekday and HH:MM, local time).
 If the data is missing or too small, say so plainly and keep claims modest. A skill call that fails is left out of skillsUsed.
 
 Output ONLY this JSON, no text before or after, no code fence. The readout text is plain ${languageName(i.brandInfo?.readoutLanguage ?? "en")} for the person who runs the brand, short sentences, no jargon; hooks and proposals' "change" stay in English where they quote reel material.
@@ -48,7 +49,8 @@ You MUST use the Skill tool. Call these in this order before you write any idea 
 1. ootto-agent-reach: research hooks and facts on public pages.
 2. reel-research: what is working now and which facts are true.
 3. reel-hooks: shape each opening question into a strong hook, still in the question list format.
-${i.threads ? "4. reel-threads: after the ideas are chosen, one short Threads text per idea (generated only, never posted).\n" : ""}${i.hooksRows >= 8 ? "5. ootto-hook-mining on ${i.dataDir}/analytics/hooks.csv.\n" : ""}A call that fails is left out of skillsUsed; do not pretend.
+${i.threads ? "4. reel-threads: after the ideas are chosen, one short Threads text per idea (generated only, never posted).\n" : ""}5. ootto-hook-mining on ${i.dataDir}/analytics/hooks.csv: which opening patterns won, to steer the ideas${i.hooksRows >= 8 ? "" : ` (only ${i.hooksRows} rows so far: call it and say the data is too small)`}.
+A call that fails is left out of skillsUsed; do not pretend.
 
 Task: propose exactly ${i.count} new reel questions, in the exact style of reel-questions.md.
 - The question is the opening line of the reel, one line, plain words ${audienceOf(i.brandInfo)} use, with a concrete situation from their everyday work.

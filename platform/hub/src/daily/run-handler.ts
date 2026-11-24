@@ -60,7 +60,7 @@ export const makeDailyRun = (collectFn: Collect = collectViaAdapter): Handler =>
     run.called.forEach((s) => used.add(s));
     requireSkill(ctx, skillGateOk(run.called), "The AI did not call reel-hooks or reel-research, so the ideas are not skill-based.");
     const parsed = parseDailyIdeas(run.answer, settings.ideas, { slugs: new Set(slugs), existing: existingQuestions(ctx.dataDir, brand), rules: ctx.settings.factory.closingRules });
-    const missing = REQUIRED_SKILLS.filter((s) => !run.called.includes(s));
+    const missing = REQUIRED_SKILLS.filter((s) => !used.has(s));
     ctx.update({ log: [`Skills used: ${[...used].join(", ")}`, ...parsed.dropped.map((d) => `Dropped: ${d.question} (${d.reason})`), ...parsed.notes] });
 
     const note = NotificationStore.at(ctx.dataDir).add({ kind: "daily", brand, title: `Reel Hub, ${ctx.brand?.brand.name ?? brand}: ${parsed.ideas.length} new reel ideas`, body: parsed.ideas.map((i) => i.question).join("\n"), url: `/#/${brand}/daily` });

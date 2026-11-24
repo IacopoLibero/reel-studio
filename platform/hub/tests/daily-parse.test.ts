@@ -48,8 +48,8 @@ describe("parseAnalysis", () => {
 
 describe("prompts", () => {
   const a = { root: "/r", brand: "acme", date: "2026-11-20" };
-  it("analysis prompt: reel-insights always, hook-mining only with 8+ rows, never applies changes", () => {
-    expect(buildAnalysePrompt({ ...a, hooksRows: 3 })).not.toContain("ootto-hook-mining");
+  it("analysis prompt: reel-insights and hook-mining always (honest about small data), never applies changes", () => {
+    expect(buildAnalysePrompt({ ...a, hooksRows: 3 })).toContain("only 3 rows so far");
     const p = buildAnalysePrompt({ ...a, hooksRows: 9 });
     expect(p).toContain("reel-insights"); expect(p).toContain("ootto-hook-mining"); expect(p).toContain("ootto-best-time-scheduler");
     expect(p).toMatch(/never apply/i);
@@ -63,7 +63,7 @@ describe("prompts", () => {
     // Threads is paused by default: no skill call and no text asked for.
     expect(p).not.toContain("reel-threads");
     expect(p).toContain("threads: always null");
-    expect(p).not.toContain("ootto-hook-mining");
+    expect(p).toContain("ootto-hook-mining"); expect(p).toContain("data is too small");
     const withThreads = buildDailyIdeasPrompt({ root: "/r", brand: "acme", count: 3, blogDir: "/er/app/blog/posts", slugs: [], hooksRows: 0, hasResults: false, readout: null, threads: true });
     expect(withThreads).toContain("reel-threads"); expect(withThreads).toContain("at most 500 characters");
     const q = buildDailyIdeasPrompt({ root: "/r", brand: "acme", count: 3, blogDir: "/er/app/blog/posts", slugs: [], hooksRows: 8, hasResults: true, readout: { text: "Bene", repeat: ["prezzi"], stop: [], hookPatterns: [], bestTimes: [] } });

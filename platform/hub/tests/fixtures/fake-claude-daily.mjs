@@ -28,7 +28,7 @@ process.stdin.on("end", () => {
   if (/You are the analyst/.test(prompt)) {
     skill("reel-insights");
     if (mode === "analysis-fails") { out({ type: "result", subtype: "error_during_execution", is_error: true, result: "analysis boom" }); return; }
-    text = JSON.stringify({ skillsUsed: ["reel-insights", "ootto-best-time-scheduler"], readout: { text: "Come sta andando: bene. Saves in crescita.", repeat: ["Domande sui prezzi: 5 salvataggi"], stop: ["Liste lunghe: 0 condivisioni"], hookPatterns: ["money: 'How much does ...'"], bestTimes: ["Tue 17:30", "19:00"] }, proposals: [{ title: "Shorter captions", target: "brand/acme/style.md", change: "Proposal: cap the caption list at 4 bullets (3 of the top 4 reels had 4).", why: "Top reels were shorter" }] });
+    text = JSON.stringify({ skillsUsed: ["reel-insights", "ootto-hook-mining", "ootto-best-time-scheduler"], readout: { text: "Come sta andando: bene. Saves in crescita.", repeat: ["Domande sui prezzi: 5 salvataggi"], stop: ["Liste lunghe: 0 condivisioni"], hookPatterns: ["money: 'How much does ...'"], bestTimes: ["Tue 17:30", "19:00"] }, proposals: [{ title: "Shorter captions", target: "brand/acme/style.md", change: "Proposal: cap the caption list at 4 bullets (3 of the top 4 reels had 4).", why: "Top reels were shorter" }] });
     out({ type: "result", subtype: "success", is_error: false, result: text });
     return;
   }
