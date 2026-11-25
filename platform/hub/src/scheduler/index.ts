@@ -55,20 +55,32 @@ async function runScheduleJobLocked(
   const offer = ctx.target?.offer;
   const { caption, dropped: offerLines } = dropExpiredOffer(fileCaption, slot, offer);
 
-  const page = await (await getContext(ctx.target?.profileDir, { visible: true, minimized: true })).newPage();
-  try {
-    await requireLogin(page, url);
-    const scheduledAt = new Date().toISOString();
-    if (offerLines.length) ctx.update({ log: `The offer ended on ${humanDay(offer?.lastDay ?? '')}: the offer line was left out of the Instagram caption (caption.md is unchanged).` });
-    await runFlow(page, {
-      url, videoPath, coverPath, caption, slot, cropTimeoutMs: opts.cropTimeoutMs,
-      onScheduled: async () => { await recordScheduled(key, { slot, scheduledAt, verified: false }, file); },
-    }, ctx);
-    await recordScheduled(key, { slot, scheduledAt, verified: true }, file);
-    return { reel: key, slot, scheduledAt, verified: true };
-  } finally {
-    await page.close().catch(() => undefined);
+  // A reel is scheduled in the background (no window). If Instagram stops it before anything was scheduled, the same flow runs once more with a (minimized) window.
+  const modes = process.env.SCHED_VISIBLE === '1' ? [true] : [false, true];
+  let lastError: unknown;
+  for (const visible of modes) {
+    let scheduledOnInstagram = false;
+    const page = await (await getContext(ctx.target?.profileDir, visible ? { visible: true, minimized: true } : {})).newPage();
+    try {
+      await requireLogin(page, url);
+      const scheduledAt = new Date().toISOString();
+      if (offerLines.length) ctx.update({ log: `The offer ended on ${humanDay(offer?.lastDay ?? '')}: the offer line was left out of the Instagram caption (caption.md is unchanged).` });
+      await runFlow(page, {
+        url, videoPath, coverPath, caption, slot, cropTimeoutMs: opts.cropTimeoutMs,
+        onScheduled: async () => { scheduledOnInstagram = true; await recordScheduled(key, { slot, scheduledAt, verified: false }, file); },
+      }, ctx);
+      await recordScheduled(key, { slot, scheduledAt, verified: true }, file);
+      return { reel: key, slot, scheduledAt, verified: true };
+    } catch (e) {
+      lastError = e;
+      const retry = !visible && modes.length > 1 && !scheduledOnInstagram && e instanceof SchedulerError && ['ui_changed', 'step_failed'].includes(e.code);
+      if (!retry) throw e;
+      ctx.update({ log: `The background run stopped (${e.message.slice(0, 120)}): trying again with a window.` });
+    } finally {
+      await page.close().catch(() => undefined);
+    }
   }
+  throw lastError;
 }
 
 /** The alt texts in the order of the sorted slides (the job gives them in slide order). */
