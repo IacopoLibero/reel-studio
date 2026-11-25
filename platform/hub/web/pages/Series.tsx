@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import type { Job } from "../../src/shared/types";
+import type { Job, Reel, Slot } from "../../src/shared/types";
 import { api, getBrand, type SeriesData, type SeriesDraft, type SeriesItem } from "../api";
 import { routeHash, useAutoReload, useLoad } from "../hooks";
 import { ProgressBar } from "../components/JobCard";
@@ -35,6 +35,35 @@ function Editor({ item, data, onSave, onCancel }: { item: SeriesDraft & { id?: s
 export function SeriesPage({ jobs }: { jobs: Job[] }) {
   const { data, error, reload } = useLoad(api.series);
   const reels = useLoad(api.reels);
+  const factory = useLoad(api.questions);
+  const [picked, setPicked] = useState<ReadonlySet<string>>(new Set());
+  const [sent, setSent] = useState<string | null>(null);
+  const togglePick = (ids: string[], on: boolean) => setPicked((cur) => { const n = new Set(cur); ids.forEach((i) => (on ? n.add(i) : n.delete(i))); return n; });
+  /** Sends the picked episodes to the Factory, each with the closing the Factory chooses by itself. */
+  const sendPicked = async () => {
+    const chosen = (factory.data ?? []).filter((q) => picked.has(q.id) && !q.done && !q.making);
+    const results = await Promise.allSettled(chosen.map((q) => api.createJob("reel.make", { questionId: q.id, closing: q.autoClosing })));
+    const failed = results.filter((r): r is PromiseRejectedResult => r.status === "rejected");
+    setSent(`${results.length - failed.length} sent to the Factory.${failed.length ? ` ${failed.length} refused: ${(failed[0]?.reason as Error | undefined)?.message ?? "unknown error"}` : ""}`);
+    setPicked(new Set()); factory.reload();
+  };
+  /** Schedules the finished episodes of a series in order, one a day, on the first free slot of each day (the Calendar's slots). */
+  const scheduleDaily = async (questionIds: string[]) => {
+    const ready = questionIds.map((q) => reelOf(q)).filter((r): r is Reel => !!r && r.state === "to-schedule");
+    if (!ready.length) { setSent("No finished episode is waiting to be scheduled."); return; }
+    const slots = await api.slots(30).catch((e: Error) => { fail(e); return [] as Slot[]; });
+    const days = new Map<string, Slot>();
+    for (const s of slots) if (!days.has(s.date)) days.set(s.date, s);
+    const picks = [...days.values()];
+    const chosen = ready.slice(0, picks.length);
+    const results = await Promise.allSettled(chosen.map((r, i) => api.createJob("instagram.schedule", { reel: r.key, date: (picks[i] as Slot).date, time: (picks[i] as Slot).time })));
+    const failed = results.filter((r): r is PromiseRejectedResult => r.status === "rejected");
+    const left = ready.length - chosen.length;
+    setSent(`${results.length - failed.length} episodes scheduled, one a day from ${(picks[0] as Slot).date}.${left ? ` ${left} left: not enough free days in the next 30.` : ""}${failed.length ? ` ${failed.length} refused: ${(failed[0]?.reason as Error | undefined)?.message ?? "unknown error"}` : ""}`);
+    reels.reload();
+  };
+  /** An episode can be sent when it is not made and not being made. */
+  const sendable = (id: string) => { const q = factory.data?.find((x) => x.id === id); return !!q && !q.done && !q.making; };
   useAutoReload(reels.reload, [], 30);
   const [editing, setEditing] = useState<(SeriesDraft & { id?: string }) | null>(null);
   const [focus, setFocus] = useState("");
@@ -70,6 +99,7 @@ export function SeriesPage({ jobs }: { jobs: Job[] }) {
         {running && <div style={{ marginTop: 10 }}><div className="muted">{running.step || "Waiting"}</div><ProgressBar job={running} /></div>}
       </div>
       {(err || error) && <p className="error">{err ?? error}</p>}
+      {sent && <p className="muted">{sent}</p>}
       {proposal && !running && (
         <div className="card suggest">
           <strong>Proposal: {proposal.name}</strong> <span className="muted">· {proposal.cadence}</span>
@@ -97,6 +127,7 @@ export function SeriesPage({ jobs }: { jobs: Job[] }) {
                 const r = reelOf(q);
                 return (
                   <li key={q}>
+                    {sendable(q) && <input type="checkbox" checked={picked.has(q)} onChange={(e) => togglePick([q], e.target.checked)} aria-label={`Select episode ${i + 1}`} />}{" "}
                     <span className="muted">Episode {i + 1}</span> {r ? <a href={routeHash(getBrand(), "reels", r.folder)}>{qText(q)}</a> : qText(q)}{" "}
                     {!r ? <span className="badge">Not made yet</span>
                       : r.state === "posted" ? <span className="badge done">Posted {r.schedule?.at}</span>
@@ -109,6 +140,19 @@ export function SeriesPage({ jobs }: { jobs: Job[] }) {
               })}
             </ol>
           )}
+          {(() => {
+            const ids = s.questionIds.filter(sendable);
+            const waiting = s.questionIds.filter((q) => reelOf(q)?.state === "to-schedule").length;
+            if (!ids.length && !waiting) return null;
+            const mine = ids.filter((x) => picked.has(x));
+            return (
+              <div className="row" style={{ marginTop: 8 }}>
+                {ids.length > 0 && <button className="btn small" onClick={() => togglePick(ids, mine.length !== ids.length)}>{mine.length === ids.length ? "Clear selection" : `Select all ${ids.length} not made`}</button>}
+                {ids.length > 0 && <button className="btn small primary" disabled={!mine.length} onClick={() => void sendPicked()}>Send {mine.length || ""} to the Factory</button>}
+                {waiting > 0 && <button className="btn small" onClick={() => void scheduleDaily(s.questionIds)}>Schedule {waiting} finished, one a day</button>}
+              </div>
+            );
+          })()}
         </div>
       ))}
     </>
