@@ -6,7 +6,7 @@ pkgrel=1
 pkgdesc='Make and schedule short videos for your brands (Remotion, Blender character, VoiceStudio, Instagram)'
 arch=('x86_64')
 url='https://github.com/'
-license=('MIT')
+license=('custom:Reel Studio Commercial License, single user')
 depends=('nodejs>=22.13' 'npm' 'git' 'ffmpeg' 'chromium' 'uv' 'electron' 'gcc' 'make')
 makedepends=('python' 'make' 'gcc')
 optdepends=('blender: use the system Blender instead of the one the app downloads'

@@ -1,6 +1,6 @@
 # Third-party notices
 
-This repository is MIT-licensed (see LICENSE). It uses, vendors or downloads the following. This list is a good-faith
+This repository is under the Reel Studio Commercial License for one user (see LICENSE); the components below keep their own licenses, which the LICENSE does not change. It uses, vendors or downloads the following. This list is a good-faith
 summary, not legal advice: read each project's own license before you rely on it, especially for commercial use.
 
 ## Vendored in this repository

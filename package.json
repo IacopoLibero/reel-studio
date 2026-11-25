@@ -2,7 +2,7 @@
   "name": "reel-studio",
   "version": "1.0.3",
   "description": "Reel factory: Remotion compositions, an optional Blender character and the Reel Hub",
-  "license": "MIT",
+  "license": "SEE LICENSE IN LICENSE",
   "engines": {
     "node": "^20.19.0 || ^22.13.0 || >=24"
   },

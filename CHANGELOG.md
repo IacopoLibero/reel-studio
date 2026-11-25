@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- **New license: commercial, for one individual.** One person may use Reel Studio, also commercially (content for their own business or for clients). Organizations (companies, studios, agencies, teams) must contact the author for a license first. Versions 1.0.0 to 1.0.3 were published under MIT and stay so for those who have them; this license applies to what is published after. Third-party components keep their own licenses.
+
 ## 1.0.3 (2026-11-25)
 
 - **`install.sh`** for the website: one command that installs the release package on Arch Linux after checking it against `SHA256SUMS` (see the README). It never runs anything from the package before pacman installs it.

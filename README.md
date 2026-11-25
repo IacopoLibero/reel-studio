@@ -3,7 +3,7 @@
 </p>
 
 <p align="center">
-  <a href="LICENSE"><img alt="License: MIT" src="https://img.shields.io/badge/license-MIT-blue.svg"></a>
+  <a href="LICENSE"><img alt="License: commercial, one user" src="https://img.shields.io/badge/license-commercial%20(one%20user)-orange.svg"></a>
   <img alt="Desktop app for Arch Linux" src="https://img.shields.io/badge/app-Arch%20Linux-1793D1?logo=archlinux&logoColor=white">
   <img alt="Node 22" src="https://img.shields.io/badge/node-22-339933?logo=node.js&logoColor=white">
   <a href="https://github.com/IacopoLibero/reel-studio/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/IacopoLibero/reel-studio/actions/workflows/ci.yml/badge.svg"></a>
@@ -362,7 +362,7 @@ The screenshots come from a scratch instance with an invented brand; see CONTRIB
 
 ## License and credits
 
-Reel Hub is MIT-licensed ([LICENSE](LICENSE)). It builds on other projects. The list below is a good-faith summary and **not legal
+Reel Studio has a **commercial license for one individual** ([LICENSE](LICENSE)): one person may use it, also to make content for their own business or for clients; **organizations (companies, studios, agencies, teams) must contact the author first** for a license, through the site https://reel-studio.iacopolibero.dev. The versions published before the change (1.0.0 to 1.0.3) were MIT. It builds on other projects, which keep their own licenses. The list below is a good-faith summary and **not legal
 advice**; read each project's own license, especially for commercial use. Details: [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
 
 - **Ootto content skills** ([Ootto-AI/claude-content-skills](https://github.com/Ootto-AI/claude-content-skills)): MIT, vendored unmodified in `platform/skills/ootto/`.

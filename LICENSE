@@ -1,21 +1,75 @@
-MIT License
+Reel Studio Commercial License, single user
+Version 1.0
 
-Copyright (c) 2026 Iacopo Libero Bernabei
+Copyright (c) 2026 Iacopo Libero Bernabei. All rights reserved.
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
+This license covers Reel Studio: the program in this repository (the hub, the desktop app, the scripts, the Remotion kit,
+the skills and the documentation written for it), called "the Software". It does not cover the third-party components listed
+in THIRD_PARTY_NOTICES.md: each of them stays under its own license (the Ootto skills in platform/skills/ootto/ keep their MIT
+license and their own LICENSE file; Remotion, Blender, Whisper and the others have their own terms). Using the Software does not give you
+any right over them beyond what their licenses give you, and you must follow them too.
 
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
+1. Who may use it
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+   This license is for ONE individual: a natural person who installs the Software and uses it himself or herself, on devices he or she
+   controls (a reasonable number of personal computers, for that person only).
+
+   An individual may use the Software for commercial purposes: for example to make and post reels, carousels and other content for
+   his or her own business or for clients, as a freelancer or a sole trader acting in his or her own name.
+
+2. Organizations need a different license
+
+   This license does NOT cover any organization: a company, a studio, an agency, an association, a public body or any other legal
+   entity, and it does not cover a team. You may not use the Software on behalf of an organization, on its computers or accounts, as its employee or
+   contractor for its benefit, or share it with other people in any way (accounts, a shared machine, a server others log in to), unless the
+   organization has a written license from the author. Organizations must contact the author first (see section 9). Until they have that license, they have no
+   right to use the Software.
+
+3. What you may do
+
+   a. Install and run the Software for yourself, and read its source code.
+   b. Change it for your own use. Your changes stay yours to use, but section 4 still applies to the result.
+   c. Make and keep a reasonable number of backup copies for yourself.
+   d. Keep and use the content you make with the Software (videos, carousels, captions, images) in any way you like.
+      The author claims no right over it. You remain responsible for what you make and post, for the rights of the music, the pictures and the
+      brands you put in it, and for the terms of Instagram, Threads, TikTok and any other service you use.
+
+4. What you may not do
+
+   a. Give, sell, rent, lend, sublicense, publish or otherwise pass the Software, or a changed version of it, to anyone else.
+   b. Offer it as a service, host it for others, or let anyone else use your copy.
+   c. Use it for an organization, or inside one, without the license of section 2.
+   d. Remove or change this license or the copyright notices.
+   e. Use the Software or its source to build a product or a service that competes with it.
+   f. Pass on, or attempt to get around, any technical limit or check it may contain.
+
+5. Versions published earlier
+
+   Releases published before this license (1.0.0 to 1.0.3) were published under the MIT license. Anyone who got those exact versions
+   under that license keeps the right to use those versions under it. This license applies to every version published after them and to
+   all later changes in this repository.
+
+6. Third-party services and tools
+
+   The Software runs other tools on your computer or with your accounts (for example Claude Code or Codex, Composio, Instagram, Blender).
+   You need your own access to them, you pay for them, and their terms apply to you. The author is not a party to them.
+
+7. No warranty
+
+   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING THE WARRANTIES OF MERCHANTABILITY, FITNESS
+   FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. It posts to and schedules on social media accounts and uses AI tools: check what it makes
+   before you rely on it.
+
+8. Limit of liability and ending
+
+   TO THE EXTENT THE LAW ALLOWS, THE AUTHOR IS NOT LIABLE FOR ANY CLAIM, LOSS OR DAMAGE ARISING FROM THE SOFTWARE OR ITS USE, INCLUDING
+   LOSS OF DATA, OF AN ACCOUNT OR OF PROFIT. Nothing here limits a liability that the law does not allow to be limited.
+
+   This license ends by itself if you break it. You must then stop using the Software and delete your copies. Sections 5, 7 and 8 continue
+   after it ends.
+
+9. Contact, and licenses for organizations
+
+   For an organization license, or for any right this license does not give, write to the author through the contact details published on
+   https://reel-studio.iacopolibero.dev. Nothing is granted by silence: a right exists only if this license or a written license from the
+   author gives it.
