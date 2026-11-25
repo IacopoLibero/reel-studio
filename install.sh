@@ -29,7 +29,25 @@ DRY_RUN=0
 say() { printf '%s\n' "$*"; }
 die() { printf 'Error: %s\n' "$*" >&2; exit 1; }
 
-usage() { sed -n '2,/^set -euo/p' "$0" 2>/dev/null | sed '$d' | sed 's/^# \{0,1\}//' || true; }
+usage() {
+  cat <<'USAGE'
+Reel Studio installer for Arch Linux.
+
+  curl -fsSL https://reel-studio.iacopolibero.dev/install.sh | bash
+  curl -fsSL https://reel-studio.iacopolibero.dev/install.sh | bash -s -- --version 1.0.3
+
+It checks that this is Arch Linux (pacman, x86_64, not root), downloads the release package and its SHA256SUMS from
+GitHub into a temporary folder, checks the package against SHA256SUMS, and installs it with `sudo pacman -U`.
+It runs nothing from the package before pacman installs it, and removes the temporary folder at the end.
+
+Options:
+  --version X.Y.Z   install that release (default: the latest)
+  --from DIR        use the package and SHA256SUMS found in DIR instead of downloading
+  --yes             do not ask pacman for confirmation (pacman --noconfirm)
+  --dry-run         download and check, then say what would be installed, without installing
+  -h, --help        show this text
+USAGE
+}
 
 while [ $# -gt 0 ]; do
   case "$1" in
