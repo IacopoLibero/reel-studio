@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- **A carousel keeps its source, and says so when it does not.** The carousel job must leave in the folder what draws it (2D: `code/`; 3D: `scene.py`, `tex/`, `panorama.png`, `code/`) and the hub checks it. "Change one slide" looks for these files first: without them it stops before any run, says which are missing, and the carousel page shows the same message (a slide is one flat picture, so it cannot be fixed by hand). Carousels made before this have to be made again, or have the files put back.
+
 ## 1.0.3 (2026-11-25)
 
 - **Change one slide of a carousel.** On the carousel's page, pick a slide and say what to change (`carousel.edit`): only that slide is drawn again (2D: its Remotion code; 3D: the scene is rendered again and only that strip is cut), the others are checked and put back if they changed, the new slide must be 1080 x 1350, the slide's alt text is updated if its picture changed, and the old slides, alt texts and caption are kept in `versions/` (newest ten).

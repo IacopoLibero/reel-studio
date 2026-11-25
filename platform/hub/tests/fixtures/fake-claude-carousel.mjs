@@ -16,6 +16,7 @@ process.stdin.on("end", () => {
   if (mode !== "noskill") tool("Skill", { skill: "ootto-viral-carousel" });
   if (mode !== "noskill" && mode !== "oneskill") tool("Skill", { skill: "ootto-carousel-builder" });
   mkdirSync(`${dir}/code`, { recursive: true });
+  if (style === "3d") { writeFileSync(`${dir}/scene.py`, "import kit\n"); writeFileSync(`${dir}/panorama.png`, "png"); }
   tool("Write", { file_path: `${dir}/plan.md` }); writeFileSync(`${dir}/plan.md`, "# Plan\n");
   const png = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==", "base64");
   if (mode !== "noslides") for (let i = 1; i <= n; i++) writeFileSync(`${dir}/slide-${i}.png`, png);

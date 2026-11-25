@@ -2,6 +2,7 @@ import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { z } from "zod";
 import { readAltTexts } from "./alt.js";
+import { missingSource } from "./source.js";
 import { reelState, type ReelState } from "../reels/scanner.js";
 import type { ScheduleEntry } from "../shared/types.js";
 
@@ -21,6 +22,8 @@ export interface Carousel {
   slides: string[]; hasCaption: boolean; captionStart: string; hasPlan: boolean;
   /** Alt text written for every slide (alt.json). */
   hasAlt: boolean;
+  /** The files that let one slide be drawn again are in the folder. */
+  hasSource: boolean;
   /** The Instagram slot once scheduled, and what the banner says: posted once the slot has passed, as for a reel. */
   schedule: ScheduleEntry | null;
   state: ReelState;
@@ -63,7 +66,7 @@ function summary(carouselsDir: string, brand: string, folder: string, scheduled:
   return {
     key: `${brand}/${folder}`, brand, folder, n: Number(m[1]), name: m[2] as string, style: meta.style, topic: meta.topic, title: meta.title,
     slides, hasCaption: existsSync(cap), captionStart: existsSync(cap) ? firstLine(cap) : "", hasPlan: existsSync(join(dir, "plan.md")),
-    hasAlt: readAltTexts(dir, slides.length) !== null, schedule,
+    hasAlt: readAltTexts(dir, slides.length) !== null, hasSource: missingSource(dir, meta.style).length === 0, schedule,
     state: reelState({ mp4: slides.length >= 2 ? "slides" : null, hasCaption: existsSync(cap), hasCover: true, schedule, scheduling }, now),
   };
 }

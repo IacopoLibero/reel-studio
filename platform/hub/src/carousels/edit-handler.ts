@@ -9,6 +9,7 @@ import { readScheduled } from "../reels/scanner.js";
 import { CAROUSEL_ALLOWED_TOOLS, carouselDenied } from "./prompt.js";
 import { buildCarouselEditPrompt } from "./edit-prompt.js";
 import { carouselDirOf, carouselScheduleKey, readCarouselDetail } from "./scanner.js";
+import { missingSource } from "./source.js";
 import { restoreFromSnapshot, snapshotCarousel } from "./versions.js";
 
 export const CAROUSEL_EDIT_STEPS = ["Reading the slide", "Changing it", "Rendering", "Checks", "Done"] as const;
@@ -34,6 +35,8 @@ export const carouselEdit: Handler = async (job, ctx) => {
   const detail = readCarouselDetail(brand.paths.carouselsDir, p.folder, brand.slug);
   if (!detail || !existsSync(dir)) throw new Error(`Carousel ${p.folder} not found.`);
   if (p.slide < 1 || p.slide > detail.slides.length) throw new Error(`The carousel has ${detail.slides.length} slides: there is no slide ${p.slide}.`);
+  const lacking = missingSource(dir, detail.style);
+  if (lacking.length) throw new Error(`This carousel cannot be changed one slide at a time: ${lacking.join(", ")} ${lacking.length === 1 ? "is" : "are"} not in its folder, and the slide is one flat picture. Put the files back, or press "Make it again": the new build keeps them.`);
   const target = `slide-${p.slide}.png`;
   const schedule = readScheduled(brand.paths.scheduledFile)[carouselScheduleKey(brand.slug, p.folder)];
 

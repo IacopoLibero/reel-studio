@@ -13,11 +13,12 @@ export function carouselStepOf(present: string[], slides: number): number {
   return s;
 }
 
-/** What a carousel needs to count as made: every slide, the caption and the plan. */
-export function missingCarouselOutputs(present: string[], slides: number): string[] {
+/** What a carousel needs to count as made: every slide, the caption, the plan and the source files that let one slide be drawn again (`source`). */
+export function missingCarouselOutputs(present: string[], slides: number, source: readonly string[] = []): string[] {
   const out: string[] = [];
   for (let i = 1; i <= slides; i++) if (!present.includes(`slide-${i}.png`)) out.push(`slide-${i}.png`);
   if (!present.includes("caption.md")) out.push("caption.md");
   if (!present.includes("plan.md")) out.push("plan.md");
+  for (const f of source) if (!present.includes(f)) out.push(f);
   return out;
 }

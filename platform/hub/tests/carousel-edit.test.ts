@@ -16,7 +16,7 @@ const dir = () => join(env.data, "brands/acme/carousels/0-price");
 beforeEach(() => {
   env = makeEnv({ claudeBin: FAKE });
   writeTestBrand(env.root, "acme", { name: "Acme" }, undefined, env.data);
-  mkdirSync(dir(), { recursive: true });
+  mkdirSync(join(dir(), "code"), { recursive: true });
   for (let i = 1; i <= 3; i++) writeFileSync(join(dir(), `slide-${i}.png`), png(`old${i}`));
   writeFileSync(join(dir(), "caption.md"), "Hook\n"); writeFileSync(join(dir(), "alt.json"), JSON.stringify(["a", "b", "c"]));
   writeFileSync(join(dir(), "carousel.json"), JSON.stringify({ style: "2d", topic: "t", title: "Price" }));
@@ -56,6 +56,14 @@ describe("carousel.edit with a fake AI tool", () => {
     await expect(run()).rejects.toThrow(/boom/);
     process.env.FAKE_MODE = "same";
     expect(((await run()).summary as string)).toMatch(/same as before/);
+  });
+  it("says what is missing, before any run, when the source files are not in the folder", async () => {
+    rmSync(join(dir(), "code"), { recursive: true });
+    await expect(run()).rejects.toThrow(/code is not in its folder.*Make it again/);
+    expect(existsSync(join(dir(), "versions"))).toBe(false);
+    writeFileSync(join(dir(), "carousel.json"), JSON.stringify({ style: "3d", topic: "t", title: "Price" }));
+    mkdirSync(join(dir(), "code"));
+    await expect(run()).rejects.toThrow(/scene\.py, panorama\.png are not in its folder/);
   });
   it("refuses a slide the carousel does not have", async () => {
     await expect(run({ slide: 7 })).rejects.toThrow(/no slide 7/);

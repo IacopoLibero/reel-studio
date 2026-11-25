@@ -64,6 +64,7 @@ describe("progress and outputs", () => {
   it("names what is missing", () => {
     expect(missingCarouselOutputs(["plan.md", "caption.md", "slide-1.png", "slide-2.png"], 3)).toEqual(["slide-3.png"]);
     expect(missingCarouselOutputs([], 2)).toEqual(["slide-1.png", "slide-2.png", "caption.md", "plan.md"]);
+    expect(missingCarouselOutputs(["plan.md", "caption.md", "slide-1.png"], 1, ["scene.py", "panorama.png", "code"])).toEqual(["scene.py", "panorama.png", "code"]);
   });
 });
 

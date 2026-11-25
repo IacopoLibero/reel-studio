@@ -20,7 +20,7 @@ describe("carousel.make with a fake AI tool", () => {
   it("makes the folder, runs the tool, checks the outputs and says which skills it used", async () => {
     const r = await run();
     expect(r).toMatchObject({ folder: "0-qr-menu", key: "acme/0-qr-menu", style: "2d", slides: 5, skillsUsed: ["ootto-viral-carousel", "ootto-carousel-builder"] });
-    for (const f of ["slide-1.png", "slide-5.png", "plan.md", "caption.md", "carousel.json"]) expect(existsSync(join(dir("0-qr-menu"), f))).toBe(true);
+    for (const f of ["slide-1.png", "slide-5.png", "plan.md", "caption.md", "carousel.json", "code"]) expect(existsSync(join(dir("0-qr-menu"), f))).toBe(true);
     expect(scanCarousels(join(env.data, "brands/acme/carousels"), "acme")[0]).toMatchObject({ style: "2d", slides: expect.arrayContaining(["slide-1.png"]) });
     expect(env.patches.map((p) => p.step).filter(Boolean)).toContain("Plan");
     expect(env.patches.at(-1)).toMatchObject({ step: "Done", progress: 1 });

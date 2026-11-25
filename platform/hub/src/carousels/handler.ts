@@ -9,6 +9,7 @@ import type { Handler } from "../jobs/handlers.js";
 import { runProcess } from "../jobs/process.js";
 import { carouselDirOf } from "./scanner.js";
 import { buildCarouselPrompt, CAROUSEL_ALLOWED_TOOLS, carouselDenied } from "./prompt.js";
+import { sourceOf } from "./source.js";
 import { CAROUSEL_MARKS, CAROUSEL_STEPS, carouselStepOf, missingCarouselOutputs } from "./stream.js";
 
 const execFileP = promisify(execFile);
@@ -63,7 +64,7 @@ export const carouselMake: Handler = async (job, ctx) => {
       },
     });
     if (ctx.signal.aborted) throw new Error("Cancelled");
-    const missing = missingCarouselOutputs(listFiles(alloc.path), p.slides);
+    const missing = missingCarouselOutputs(listFiles(alloc.path), p.slides, sourceOf(p.style));
     if (missing.length) throw new Error(`Carousel not finished (missing ${missing.slice(0, 4).join(", ")}${missing.length > 4 ? "…" : ""}) in ${alloc.folder}. Last error: ${lastError || stderrLast || (code !== 0 ? `the AI tool exited with code ${code}` : "it stopped early")}`);
     requireSkill(ctx, CAROUSEL_SKILLS.every((s) => skills.includes(s)), `The AI did not call ${CAROUSEL_SKILLS.filter((s) => !skills.includes(s)).join(" and ")}, so the carousel is not built on them (called: ${skills.join(", ") || "none"}).`);
     if (failed) ctx.update({ log: `Warning: the AI tool reported an error at the end: ${short(lastError, 200)}` });

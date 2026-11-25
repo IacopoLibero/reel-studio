@@ -120,7 +120,7 @@ export interface AiState {
 }
 
 export interface Carousel { key: string; brand: string; folder: string; n: number; name: string; style: "2d" | "3d"; topic: string; title: string; slides: string[]; hasCaption: boolean; captionStart: string; hasPlan: boolean;
-  hasAlt: boolean; schedule: ScheduleEntry | null; state: ReelStateName }
+  hasAlt: boolean; hasSource: boolean; schedule: ScheduleEntry | null; state: ReelStateName }
 export interface CarouselDetail extends Carousel { caption: string; plan: string; files: { name: string; size: number; dir: boolean }[] }
 export interface CarouselPageData { carousel: CarouselDetail; busy: boolean }
 export const carouselFileUrl = (folder: string, name: string, version?: number): string => scoped(`/carousels/file?folder=${encodeURIComponent(folder)}&name=${encodeURIComponent(name)}${version === undefined ? "" : `&v=${version}`}`);

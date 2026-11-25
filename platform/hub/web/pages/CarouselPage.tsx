@@ -66,13 +66,14 @@ export function CarouselPage({ folder, jobs }: { folder: string; jobs: Job[] }) 
           <div className="card">
             <strong>Change one slide</strong>
             <p className="muted" style={{ margin: "4px 0 8px" }}>Pick the slide and say what to change. Only that slide is drawn again; the other slides, the caption and the plan stay as they are (the alt text of the slide is updated if its picture changed). The old slides are kept in the <code>versions</code> folder of the carousel.</p>
+            {!c.hasSource && <p className="error" role="status">The files that draw this carousel (the scene and the code) are not in its folder, so one slide cannot be drawn again. Put them back, or press &ldquo;Make it again&rdquo; below: the new build keeps them.</p>}
             <div className="row" role="radiogroup" aria-label="Which slide" style={{ marginBottom: 8 }}>
-              {c.slides.map((s, i) => <button key={s} type="button" role="radio" aria-checked={slide === i + 1} className={`btn small${slide === i + 1 ? " primary" : ""}`} disabled={active.length > 0} onClick={() => setSlide(i + 1)}>Slide {i + 1}</button>)}
+              {c.slides.map((s, i) => <button key={s} type="button" role="radio" aria-checked={slide === i + 1} className={`btn small${slide === i + 1 ? " primary" : ""}`} disabled={active.length > 0 || !c.hasSource} onClick={() => setSlide(i + 1)}>Slide {i + 1}</button>)}
             </div>
             {active.filter((j) => j.type === "carousel.edit").map((j) => <JobCard key={j.id} job={j} open />)}
             <div className="row" style={{ alignItems: "flex-end" }}>
-              <textarea className="grow" rows={2} value={change} disabled={active.length > 0} aria-label={`What should change on slide ${slide}`} placeholder="Shorter title, move the phone to the right." onChange={(e) => setChange(e.target.value)} />
-              <button type="button" className="btn primary" disabled={busy || active.length > 0 || change.trim().length < 3} onClick={editSlide}>Change slide {slide}</button>
+              <textarea className="grow" rows={2} value={change} disabled={active.length > 0 || !c.hasSource} aria-label={`What should change on slide ${slide}`} placeholder="Shorter title, move the phone to the right." onChange={(e) => setChange(e.target.value)} />
+              <button type="button" className="btn primary" disabled={busy || active.length > 0 || !c.hasSource || change.trim().length < 3} onClick={editSlide}>Change slide {slide}</button>
             </div>
             {lastEdit && active.length === 0 && <p className={lastEdit.status === "failed" ? "error" : "muted"} role="status">{lastEdit.status === "failed" ? `Slide ${String(lastEdit.params.slide)} was not changed: ${lastEdit.error ?? "the change failed"}` : String(lastEdit.result.summary ?? "Done.")}</p>}
           </div>
