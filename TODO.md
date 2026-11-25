@@ -8,9 +8,8 @@ Nothing blocks the use of the app. These are the things that were not tried or n
 
 - **Small things.** A cover without a logo has its kicker not looked at.
 
-- **Analytics to design (not built).** Per video: followers gained (profile follows in the hours after posting, from the platform's insights), next to plays, reach, saves, shares. Per page and platform (Instagram, Threads, TikTok...): a daily row of followers, reach, profile visits and posts, stored as `analytics/pages/<platform>.csv`, with the same snapshot-and-readout flow as `hooks.csv`. `hooks.csv` would get a `followers_gained` column.
+- **Analytics: Threads and TikTok.** Instagram is built: followers gained per video (`follows`, shown as "Followers gained" and kept in `hooks.csv`) and a daily history of the whole page in `analytics/pages/instagram.csv` (followers, following, posts, reach, views, profile views, accounts engaged). Not tried with a real Instagram reading: the response shapes of `INSTAGRAM_GET_USER_INFO` / `INSTAGRAM_GET_USER_INSIGHTS` come from the tool schemas, and a metric Instagram refuses stays "n/a". Threads (`threads_followers`, `threads_views` come from the same insights tool) and TikTok are not collected yet; the page view already shows any `pages/<platform>.csv` for instagram, threads and tiktok.
 - **Carousels cannot be posted from the app yet.** Needs several images in Instagram's own scheduler, tried live on the account (ask before touching it).
-- **Series scheduling.** "Make all" and one episode a day on free slots are not built: each episode is made and scheduled from its reel page.
 
 ## Paused
 

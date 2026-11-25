@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import type { MediaRecord, Metrics } from "../../src/analytics/schemas";
 
 type Key = keyof Metrics | "postedAt";
-const COLS: [Key, string][] = [["postedAt", "Posted"], ["plays", "Plays"], ["reach", "Reach"], ["saves", "Saves"], ["shares", "Shares"], ["likes", "Likes"], ["comments", "Comments"], ["avgWatchMs", "Avg watch"]];
+const COLS: [Key, string][] = [["postedAt", "Posted"], ["plays", "Plays"], ["reach", "Reach"], ["saves", "Saves"], ["shares", "Shares"], ["likes", "Likes"], ["comments", "Comments"], ["followersGained", "Followers gained"], ["avgWatchMs", "Avg watch"]];
 const num = (v: number | undefined) => (v === undefined ? "n/a" : String(v));
 const secs = (v: number | undefined) => (v === undefined ? "n/a" : `${(v / 1000).toFixed(1)} s`);
 const value = (r: MediaRecord, k: Key): number => (k === "postedAt" ? Date.parse(r.postedAt) : r.metrics[k] ?? -1);

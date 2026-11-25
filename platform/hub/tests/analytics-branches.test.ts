@@ -34,8 +34,8 @@ describe("composio runner", () => {
     expect(() => parseCliOutput("{broken")).toThrow(AnalyticsError);
   });
 
-  it("only the two read tools can run: anything else is refused before any process starts", async () => {
-    expect([...READ_ONLY_TOOLS].sort()).toEqual(["INSTAGRAM_GET_IG_MEDIA_INSIGHTS", "INSTAGRAM_GET_IG_USER_MEDIA"]);
+  it("only the four read tools can run: anything else is refused before any process starts", async () => {
+    expect([...READ_ONLY_TOOLS].sort()).toEqual(["INSTAGRAM_GET_IG_MEDIA_INSIGHTS", "INSTAGRAM_GET_IG_USER_MEDIA", "INSTAGRAM_GET_USER_INFO", "INSTAGRAM_GET_USER_INSIGHTS"]);
     await expect(cliRunner("/does/not/matter")("INSTAGRAM_POST_IG_USER_MEDIA_PUBLISH", {})).rejects.toThrow(/read-only/);
   });
 

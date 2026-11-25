@@ -50,11 +50,11 @@ describe("collectInto", () => {
     expect(readFileSync(out.csvPath, "utf8").split("\n")[1]).toContain("Want more Google reviews for your restaurant?,58,51,0,0,1,0,");
   });
 
-  it("asks insights only for reels and never calls anything but the two GET tools", async () => {
+  it("asks insights only for reels and never calls anything but the four GET tools", async () => {
     const calls: string[] = [];
     await collectInto(runner(calls), opts());
     const slugs = new Set(calls.map((c) => c.split(":")[0]));
-    expect([...slugs].sort()).toEqual(["INSTAGRAM_GET_IG_MEDIA_INSIGHTS", "INSTAGRAM_GET_IG_USER_MEDIA"]);
+    expect([...slugs].sort()).toEqual(["INSTAGRAM_GET_IG_MEDIA_INSIGHTS", "INSTAGRAM_GET_IG_USER_MEDIA", "INSTAGRAM_GET_USER_INFO", "INSTAGRAM_GET_USER_INSIGHTS"]);
     expect(calls.filter((c) => c.startsWith("INSTAGRAM_GET_IG_MEDIA_INSIGHTS")).length).toBeGreaterThanOrEqual(3);
   });
 
@@ -101,6 +101,6 @@ describe("collectInto", () => {
     expect(readSnapshot(data, "2026-11-19")?.media).toHaveLength(4);
     expect(latestSnapshot(data)?.collectedAt).toBe(NOW.toISOString());
     expect(readSnapshot(data, "../etc")).toBeNull();
-    expect(readdirSync(join(data, "analytics")).sort()).toEqual(["2026-11-19.json", "hooks.csv"]);
+    expect(readdirSync(join(data, "analytics")).sort()).toEqual(["2026-11-19.json", "hooks.csv", "pages"]);
   });
 });

@@ -10,7 +10,7 @@ export type ToolRunner = (slug: string, args: Record<string, unknown>) => Promis
 export const composioBin = (env: NodeJS.ProcessEnv = process.env): string => env.COMPOSIO_BIN?.trim() || join(env.HOME ?? homedir(), ".composio", "composio");
 
 /** Only these read-only Instagram tools may ever be run by the collector. */
-export const READ_ONLY_TOOLS: ReadonlySet<string> = new Set(["INSTAGRAM_GET_IG_USER_MEDIA", "INSTAGRAM_GET_IG_MEDIA_INSIGHTS"]);
+export const READ_ONLY_TOOLS: ReadonlySet<string> = new Set(["INSTAGRAM_GET_IG_USER_MEDIA", "INSTAGRAM_GET_IG_MEDIA_INSIGHTS", "INSTAGRAM_GET_USER_INFO", "INSTAGRAM_GET_USER_INSIGHTS"]);
 
 /** The JSON object printed by `composio execute`, tolerating text around it. Never echoes the raw output. */
 export function parseCliOutput(stdout: string): unknown {

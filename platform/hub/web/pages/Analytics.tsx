@@ -5,6 +5,7 @@ import { api } from "../api";
 import { useLoad } from "../hooks";
 import { PlaysChart } from "../components/AnalyticsChart";
 import { ReelsTable } from "../components/AnalyticsTable";
+import { PageTotals } from "../components/PageTotals";
 import { ProgressBar } from "../components/JobCard";
 
 const active = (j: Job) => j.status === "queued" || j.status === "running";
@@ -57,6 +58,7 @@ export function AnalyticsPage({ jobs }: { jobs: Job[] }) {
       {(err || error) && <p className="error">{err ?? error}</p>}
       {failed && !running && <p className="error">{failed.title} failed: {failed.error}</p>}
       {data?.warnings.map((w) => <p key={w} className="muted">{w}</p>)}
+      {(data?.pages ?? []).length > 0 && <><h2>The whole page</h2>{data?.pages.map((p) => <PageTotals key={p.platform} platform={p.platform} rows={p.rows} />)}</>}
       {reels.length === 0 && !running && <p className="muted">No reels read yet. Log in to this brand's Instagram first (Settings), then press Refresh from Instagram. Numbers appear after the first reel is published.</p>}
       {reels.length > 0 && (
         <>

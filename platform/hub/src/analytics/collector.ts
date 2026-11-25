@@ -7,6 +7,7 @@ import { AnalyticsError } from "./errors.js";
 import { captionStart, cleanHook, matchMedia } from "./match.js";
 import { classifyFailure, parseInsights, parseMediaPage, unsupportedMetric, type RawMedia } from "./parse.js";
 import { REEL_GRAPH_METRICS, type MediaRecord, type Metrics, type Snapshot } from "./schemas.js";
+import { appendPageRow, collectPage } from "./page.js";
 import { writeHooksCsv, writeSnapshot } from "./store.js";
 
 export type { ToolRunner } from "./composio.js";
@@ -110,6 +111,8 @@ export async function collectInto(run: ToolRunner, o: CollectOpts): Promise<Coll
     if (ins.warning) { warnings.push(ins.warning); if (/rate limit/i.test(ins.warning)) limited = true; }
     log(`insights ${insights.size}/${reelsRaw.length}: ${ins.state}`);
   }
+  // The whole page: followers and the day's totals, kept as a history in analytics/pages/instagram.csv. A failure here never fails the reading.
+  try { appendPageRow(o.dataDir, "instagram", await collectPage(run, o.igUserId, now, log)); } catch (e) { warnings.push(`The page totals were not saved: ${(e as Error).message.slice(0, 160)}`); }
   const media = raw.map((m) => record(m, insights.get(m.id) ?? null, refs, questions));
   const snap: Snapshot = { version: 1, collectedAt: now.toISOString(), igUserId: o.igUserId, warnings: [...new Set(warnings)], media };
   const date = toLocal(now.toISOString(), o.timezone).date;

@@ -11,7 +11,7 @@ export function buildAnalysePrompt(i: AnalyseInput): string {
   return `You are the analyst of the reel-studio project at ${i.root}, brand ${i.brand}. Today is ${i.date}. You only read and think: do not write, edit or create any file, and never apply a change.
 
 Call the Skill tool for these, in this order (a real call, not a mention):
-1. reel-insights: read ${i.dataDir}/analytics/ (the newest snapshot ${i.hooksRows ? `and hooks.csv, ${i.hooksRows} rows` : "; there is no hooks.csv yet"}) and ${b}/identity/style.md, ${i.dataDir}/reel-questions.md.
+1. reel-insights: read ${i.dataDir}/analytics/ (the newest snapshot, the history of the whole page in pages/*.csv: followers and the day's reach and views, and the followers_gained column of hooks.csv ${i.hooksRows ? `and hooks.csv, ${i.hooksRows} rows` : "; there is no hooks.csv yet"}) and ${b}/identity/style.md, ${i.dataDir}/reel-questions.md.
 2. ootto-hook-mining on ${i.dataDir}/analytics/hooks.csv: which opening patterns won and lost${i.hooksRows >= 8 ? "" : ` (only ${i.hooksRows} rows so far: call it, say plainly that the data is too small, and claim nothing it cannot support)`}.
 3. ootto-best-time-scheduler: from the real data, the best posting times (weekday and HH:MM, local time).
 If the data is missing or too small, say so plainly and keep claims modest. A skill call that fails is left out of skillsUsed.

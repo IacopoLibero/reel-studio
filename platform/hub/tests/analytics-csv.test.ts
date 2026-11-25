@@ -12,7 +12,7 @@ describe("toHooksCsv", () => {
     const csv = toHooksCsv([rec({}), rec({ id: "2", hook: "Newer?", postedAt: "2026-11-19T07:00:01+0000" })]);
     const lines = csv.trim().split("\n");
     expect(lines[0]).toBe(HOOKS_HEADER.join(","));
-    expect(lines[1]).toBe("Newer?,10,8,1,2,3,4,2026-11-19T07:00:01+0000,b/1-x");
+    expect(lines[1]).toBe("Newer?,10,8,1,2,3,4,2026-11-19T07:00:01+0000,b/1-x,");
     expect(lines).toHaveLength(3);
   });
   it("skips media that are not reels", () => {
@@ -25,6 +25,6 @@ describe("toHooksCsv", () => {
   });
   it("leaves missing metrics empty and uses the caption when the reel is unmatched", () => {
     const csv = toHooksCsv([rec({ hook: "", captionStart: "From caption", reel: null, metrics: { plays: 5 } })]);
-    expect(csv.trim().split("\n")[1]).toBe("From caption,5,,,,,,2026-11-18T18:00:10+0000,");
+    expect(csv.trim().split("\n")[1]).toBe("From caption,5,,,,,,2026-11-18T18:00:10+0000,,");
   });
 });

@@ -1,6 +1,7 @@
 import type { MediaRecord } from "../src/analytics/schemas";
 import type { DailySlotOptions, DailyViewData, NotificationData } from "../src/shared/daily";
 import type { CharacterFields } from "../src/shared/character-prompt";
+import type { PageRow } from "../src/analytics/page-types";
 import type { BrandSummary, IdeaBatchView, SkillsData, CalendarData, FactoryQuestion, Job, MoveInfo, Reel, ScheduleEntry, Settings, Slot } from "../src/shared/types";
 
 export class ApiError extends Error {
@@ -89,6 +90,7 @@ export interface InstagramInfo {
 export interface AnalyticsData {
   collectedAt: string | null; dates: string[]; warnings: string[]; reels: MediaRecord[];
   readout: { date: string; markdown: string } | null;
+  pages: { platform: string; rows: PageRow[] }[];
 }
 export interface SeriesItem { id: string; name: string; promise: string; cadence: string; exampleHooks: string[]; questionIds: string[]; createdAt: string }
 export interface SeriesQuestion { id: string; question: string; done: boolean; folder: string | null }

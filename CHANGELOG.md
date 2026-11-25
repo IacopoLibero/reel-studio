@@ -7,7 +7,9 @@
 - **No repeated ideas.** Ideas (Factory, Daily) are checked against the question list, every reel and carousel made (posted or not) and the hooks already posted; the prompts say so too.
 - **Daily loop always uses hook-mining**, reel-insights and best-time-scheduler (with a small data set it says so plainly); all six skills are listed as used or not called.
 - **Terminal:** permission level (ask, edit, plan, everything) chosen on the Terminal page, and every brand's data folder is within reach. Codex flags come from OpenAI's docs and are not tried.
-- **Series are episodes.** A series is a run of videos about one subject. "Plan a series" can write new episodes (up to 40) that go into the question list when you accept. Reels of a series are listed in Series (with posted/scheduled state) and no longer in Reels.
+- **Analytics: followers.** Followers gained per video and a daily history of the whole Instagram page (followers, reach, views, profile views), shown on the Analytics page and read by the daily readout. Threads and TikTok are not collected yet.
+- **Daily loop and reels:** the reel is made after `reel-research`, `ootto-hook-mining` and `reel-hooks`; the daily run refreshes the best times (best-time-scheduler) before proposing slots.
+- **Series are episodes.** A series is a run of videos about one subject. "Plan a series" can write new episodes (up to 40) that go into the question list when you accept. Pick several episodes and send them to the Factory in one go, then schedule the finished ones one a day. Reels of a series are listed in Series (with posted/scheduled state) and no longer in Reels.
 
 ## 1.0.2 (2026-11-24)
 
