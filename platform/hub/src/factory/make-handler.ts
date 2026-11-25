@@ -75,7 +75,7 @@ export const reelMake: Handler = async (job, ctx) => {
       throw new Error(`Reel not finished (missing ${missing.join(", ")}) in ${alloc.folder}. Last error: ${why}`);
     }
   } finally { clearInterval(poll); }
-  if (!skills.includes("reel-hooks")) ctx.update({ log: "Warning: reel-hooks was not called for the opening question." });
+  for (const sk of ["reel-research", "ootto-hook-mining", "reel-hooks"]) if (!skills.includes(sk)) ctx.update({ log: `Warning: ${sk} was not called while the reel was made.` });
   const ticked = await tickInFile(questionsFile(ctx.dataDir), lockDir, p.brand, p.question, alloc.folder, p.closing).catch((e: Error) => { ctx.update({ log: `Could not tick the question: ${e.message}` }); return false; });
   apply({ kind: "files", present: listFiles(alloc.path) });
   return { folder: alloc.folder, key: `${p.brand}/${alloc.folder}`, closing: p.closing, summary: state.summary, ticked, exists: existsSync(alloc.path), skillsUsed: skills };

@@ -8,6 +8,8 @@ import { NotificationStore } from "./notifications.js";
 import { parseAnalysis, parseDailyIdeas } from "./parse.js";
 import { readPlan, transition, updatePlan, writePlan } from "./plan.js";
 import { buildAnalysePrompt, buildDailyIdeasPrompt } from "./prompts.js";
+import { scheduleSuggest } from "../analytics/handlers.js";
+import { readBestTimes } from "../analytics/store.js";
 import { REQUIRED_SKILLS, type DailyPlan } from "./types.js";
 
 export const DAILY_STEPS = ["Collect", "Analyse", "Ideas", "Waiting for you"];
@@ -37,6 +39,18 @@ export const makeDailyRun = (collectFn: Collect = collectViaAdapter): Handler =>
     save((p) => transition({ ...p, collect }, "analysing", { warnings: collect.ok ? p.warnings : [...p.warnings, collect.note] }));
 
     step(1);
+    // best-time-scheduler: refresh the saved best times when they are older than a day, so the slots proposed below use them.
+    const saved = readBestTimes(ctx.dataDir);
+    if (!saved || Date.now() - Date.parse(saved.at) > 24 * 3600 * 1000) {
+      try {
+        const quiet = { ...ctx, update: (u: Parameters<typeof ctx.update>[0]) => ctx.update(u && "log" in u ? { log: u.log } : {}) } as typeof ctx;
+        await scheduleSuggest(job, quiet);
+        ctx.update({ log: "Best times refreshed (best-time-scheduler)." });
+      } catch (e) {
+        if (ctx.signal.aborted) throw e;
+        ctx.update({ log: `Best times not refreshed: ${(e as Error).message.slice(0, 200)}` });
+      }
+    }
     const rows = hooksRows(ctx.dataDir);
     let readout: DailyPlan["readout"] = null;
     let proposals: DailyPlan["proposals"] = [];

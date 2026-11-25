@@ -11,8 +11,8 @@ describe("buildReelPrompt", () => {
     expect(p).toContain(".claude/skills/reel/SKILL.md");
     expect(p).toContain("/d/brands/acme/identity/style.md");
   });
-  it("requires a real reel-hooks call before the script, and reel-research when there is no source", () => {
-    expect(p).toContain("Skill tool call to `reel-hooks`");
+  it("requires real calls to reel-research, hook-mining and reel-hooks before the script", () => {
+    expect(p).toContain("`reel-research`"); expect(p).toContain("`ootto-hook-mining`"); expect(p).toContain("`reel-hooks`");
     expect(p).toContain("Name the skills you called");
     const noSource = buildReelPrompt({ ...base, source: null, sourceKind: "needs-source" as const });
     expect(noSource).toContain("`reel-research`");

@@ -7,7 +7,14 @@ import { DailyError, type DailyDeps } from "./deps.js";
 import { offerOf, humanDay } from "../brands/offer.js";
 import { checkOffer, dropOfferLines, offerLines, slotAfterOffer } from "./offer.js";
 import { canRerun, markDropped, markRerun, markScheduling, PlanError, readPlan, updatePlan } from "./plan.js";
+import { readBestTimes } from "../analytics/store.js";
 import { suggestSlots, takenKeys } from "./slots.js";
+
+/** The best times to propose: the readout's, then the ones the schedule.suggest job (best-time-scheduler) saved. */
+export const bestTimeLines = (dataDir: string, fromReadout: readonly string[]): string[] => [
+  ...fromReadout,
+  ...(readBestTimes(dataDir)?.suggestions ?? []).map((s) => `${s.day} ${s.time}`),
+];
 import { MAX_RERUNS, type DailyPlan, type PlanReel } from "./types.js";
 
 const planOf = (d: DailyDeps, date: string): DailyPlan => {
@@ -36,7 +43,7 @@ export function slotOptions(d: DailyDeps, date: string, ideaId: string): SlotOpt
   const reel = reelOf(plan, ideaId);
   const active = d.store.list().filter((j) => j.type === "instagram.schedule" && j.brand === d.brand.slug && (j.status === "queued" || j.status === "running")).map((j) => `${j.params.date} ${j.params.time}`);
   const taken = takenKeys(Object.values(readScheduled(join(d.config.dataDir, "scheduled.json"))).map((e) => e.at), active);
-  const s = suggestSlots(d.settings.get().slotPattern, d.now(), taken, plan.readout?.bestTimes ?? []);
+  const s = suggestSlots(d.settings.get().slotPattern, d.now(), taken, bestTimeLines(d.brand.paths.dataDir, plan.readout?.bestTimes ?? []));
   const lines = reel.key ? offerLines(readCaption(d, reel.key), offerOf(d.brand.brand)) : [];
   return { slots: s.slots.map((x) => ({ ...x, offerExpired: slotAfterOffer(x.date, offerOf(d.brand.brand)) })), recommended: s.recommended, bestTimeNote: s.bestTimeNote, closing: reel.closing, offerLines: lines };
 }
