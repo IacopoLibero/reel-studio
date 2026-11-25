@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 1.0.4 (2026-11-25)
 
 - **New license: commercial, for one individual.** One person may use Reel Studio, also commercially (content for their own business or for clients). Organizations (companies, studios, agencies, teams) must contact the author for a license first. Versions 1.0.0 to 1.0.3 were published under MIT and stay so for those who have them; this license applies to what is published after. Third-party components keep their own licenses.
 

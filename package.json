@@ -1,6 +1,6 @@
 {
   "name": "reel-studio",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "Reel factory: Remotion compositions, an optional Blender character and the Reel Hub",
   "license": "SEE LICENSE IN LICENSE",
   "engines": {

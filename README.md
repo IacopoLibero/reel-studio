@@ -196,7 +196,7 @@ reel-studio                  # or open "Reel Studio" from your application menu
 
 The shortest way, from the website: `curl -fsSL https://reel-studio.iacopolibero.dev/install.sh | bash` ([`install.sh`](install.sh) in this repository). It checks that this is Arch Linux, downloads the release package and `SHA256SUMS` from GitHub, refuses to go on if they differ, and installs with `sudo pacman -U` (options: `--version X.Y.Z`, `--from DIR` for a package you built, `--yes`, `--dry-run`; read it before you run it).
 
-Or take the prebuilt package of the [latest release](https://github.com/IacopoLibero/reel-studio/releases/latest) (check it against `SHA256SUMS` there) and install it with `sudo pacman -U reel-studio-1.0.3-1-x86_64.pkg.tar.zst`. What changed in each version: [CHANGELOG.md](CHANGELOG.md).
+Or take the prebuilt package of the [latest release](https://github.com/IacopoLibero/reel-studio/releases/latest) (check it against `SHA256SUMS` there) and install it with `sudo pacman -U reel-studio-1.0.4-1-x86_64.pkg.tar.zst`. What changed in each version: [CHANGELOG.md](CHANGELOG.md).
 
 The first start shows a **setup screen**. It checks what your computer has (Node, Claude Code, Chromium, FFmpeg, Git, uv, your graphics card) and
 installs what the app can install itself:
