@@ -123,7 +123,7 @@ export interface Carousel { key: string; brand: string; folder: string; n: numbe
   hasAlt: boolean; schedule: ScheduleEntry | null; state: ReelStateName }
 export interface CarouselDetail extends Carousel { caption: string; plan: string; files: { name: string; size: number; dir: boolean }[] }
 export interface CarouselPageData { carousel: CarouselDetail; busy: boolean }
-export const carouselFileUrl = (folder: string, name: string): string => scoped(`/carousels/file?folder=${encodeURIComponent(folder)}&name=${encodeURIComponent(name)}`);
+export const carouselFileUrl = (folder: string, name: string, version?: number): string => scoped(`/carousels/file?folder=${encodeURIComponent(folder)}&name=${encodeURIComponent(name)}${version === undefined ? "" : `&v=${version}`}`);
 
 export interface ReelFile { name: string; size: number; dir: boolean }
 export interface ReelDetail {

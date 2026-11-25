@@ -49,7 +49,7 @@ export function contentRoutes(app: FastifyInstance, d: AppDeps, scope: Scope): v
     const b = scope(req);
     const c = readCarouselDetail(b.paths.carouselsDir, req.params.folder, b.slug, readScheduled(b.paths.scheduledFile), nowLocal(d.settings.get(b.slug).slotPattern.timezone));
     if (!c) return reply.code(404).send({ error: "Carousel not found." });
-    const busy = d.store.list().some((j) => j.type === "carousel.make" && j.brand === b.slug && j.params.rerunFolder === req.params.folder && (j.status === "queued" || j.status === "running"));
+    const busy = d.store.list().some((j) => ((j.type === "carousel.make" && j.params.rerunFolder === req.params.folder) || (j.type === "carousel.edit" && j.params.folder === req.params.folder)) && j.brand === b.slug && (j.status === "queued" || j.status === "running"));
     return { carousel: c, busy };
   });
 

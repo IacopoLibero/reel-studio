@@ -36,6 +36,7 @@ export const createSchema = z.discriminatedUnion("type", [
     closing: z.enum(["A", "B"]).default("B"),
     rerun: z.object({ folder: z.string().regex(/^\d+-[a-z0-9-]+$/), note: z.string().trim().min(1).max(1000) }).optional(),
   }) }),
+  z.object({ type: z.literal("carousel.edit"), params: z.object({ folder: z.string().regex(/^\d+-[A-Za-z0-9._-]+$/).max(120), slide: z.number().int().min(1).max(8), message: z.string().trim().min(3, "Say what to change on the slide.").max(2000) }) }),
   z.object({ type: z.literal("reel.edit"), params: z.object({ folder: z.string().regex(/^\d+-[A-Za-z0-9._-]+$/).max(120), message: z.string().trim().min(1, "Write what to change.").max(4000) }) }),
   z.object({ type: z.literal("daily.run"), params: z.object({ date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/) }) }),
   z.object({ type: z.literal("reel.ideas"), params: z.object({ count: countSchema }).default(() => ({ count: 10 })) }),
@@ -73,6 +74,19 @@ function ideasSpec(p: { count: number }, d: Deps): JobSpec {
   return { type: "reel.ideas", brand: d.brand.slug, title: `Find ${p.count} new ideas`, steps: IDEAS_STEPS, params: { count: p.count, brand: d.brand.slug } };
 }
 
+export const CAROUSEL_EDIT_JOB_STEPS = ["Reading the slide", "Changing it", "Rendering", "Checks", "Done"];
+
+function carouselEditSpec(p: { folder: string; slide: number; message: string }, d: Deps): JobSpec {
+  const c = scanCarousels(d.brand.paths.carouselsDir, d.brand.slug).find((x) => x.folder === p.folder);
+  if (!c) throw new JobRequestError("That carousel was not found.");
+  if (p.slide > c.slides.length) throw new JobRequestError(`This carousel has ${c.slides.length} slides: there is no slide ${p.slide}.`);
+  const mine = d.jobs.filter((j) => j.brand === d.brand.slug && (j.status === "queued" || j.status === "running"));
+  if (mine.some((j) => (j.type === "carousel.edit" && j.params.folder === p.folder) || (j.type === "carousel.make" && j.params.rerunFolder === p.folder))) throw new JobRequestError("This carousel is being changed right now. Wait for it to finish.");
+  if (mine.some((j) => j.type === "instagram.schedule" && j.params.reel === carouselScheduleKey(d.brand.slug, p.folder))) throw new JobRequestError("This carousel is being scheduled on Instagram right now. Try again when that is done.");
+  const short = p.message.length > 50 ? `${p.message.slice(0, 50)}…` : p.message;
+  return { type: "carousel.edit", brand: d.brand.slug, title: `Carousel ${c.n}, slide ${p.slide}: ${short}`, steps: CAROUSEL_EDIT_JOB_STEPS, params: { folder: p.folder, slide: p.slide, message: p.message } };
+}
+
 export const CAROUSEL_JOB_STEPS = [...CAROUSEL_STEPS] as string[];
 
 function carouselSpec(p: { topic: string; style: "2d" | "3d"; slides: number; closing: "A" | "B"; rerun?: { folder: string; note: string } }, d: Deps): JobSpec {
@@ -102,6 +116,7 @@ export function buildSpec(body: CreateBody, d: Deps): JobSpec {
   if (body.type === "reel.edit") return editSpec(body.params, d);
   if (body.type === "reel.make") return makeSpec(body.params, d);
   if (body.type === "carousel.make") return carouselSpec(body.params, d);
+  if (body.type === "carousel.edit") return carouselEditSpec(body.params, d);
   if (body.type === "daily.run") throw new JobRequestError("The daily run is started from the Daily page.");
   if (body.type === "reel.ideas") return ideasSpec(body.params, d);
   if (body.type === "analytics.collect" || body.type === "reel.insights" || body.type === "series.plan" || body.type === "schedule.suggest") {

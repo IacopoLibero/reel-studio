@@ -7,7 +7,9 @@ import { JobCard } from "../components/JobCard";
 /** One carousel: its slides side by side (swipe order), the caption to copy, the plan, and a way to make it again with a note. */
 export function CarouselPage({ folder, jobs }: { folder: string; jobs: Job[] }) {
   const { data, error, reload } = useLoad(() => api.carousel(folder));
-  const mine = jobs.filter((j) => j.type === "carousel.make" && j.params.rerunFolder === folder);
+  const mine = jobs.filter((j) => (j.type === "carousel.make" && j.params.rerunFolder === folder) || (j.type === "carousel.edit" && j.params.folder === folder));
+  const edits = jobs.filter((j) => j.type === "carousel.edit" && j.params.folder === folder);
+  const lastEdit = [...edits].filter((j) => j.status === "done" || j.status === "failed").sort((a, b) => Date.parse(b.finishedAt ?? "") - Date.parse(a.finishedAt ?? ""))[0];
   const active = mine.filter((j) => j.status === "queued" || j.status === "running");
   const doneCount = mine.filter((j) => j.status === "done").length;
   useEffect(reload, [doneCount, active.length]);
@@ -16,6 +18,17 @@ export function CarouselPage({ folder, jobs }: { folder: string; jobs: Job[] }) 
   const [msg, setMsg] = useState<string | null>(null);
   const [big, setBig] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [slide, setSlide] = useState(1);
+  const [change, setChange] = useState("");
+  /** A slide that was drawn again has another size: the address changes and the browser shows the new picture. */
+  const stamp = (name: string): number | undefined => c?.files.find((f) => f.name === name)?.size;
+  const editSlide = () => {
+    setBusy(true); setMsg(null);
+    api.createJob("carousel.edit", { folder, slide, message: change.trim() })
+      .then(() => { setChange(""); setMsg(`Started: slide ${slide} is changed, the others stay as they are.`); })
+      .catch((e: Error) => setMsg(e.message))
+      .finally(() => setBusy(false));
+  };
   const c = data?.carousel;
   const again = () => {
     if (!c) return;
@@ -35,9 +48,9 @@ export function CarouselPage({ folder, jobs }: { folder: string; jobs: Job[] }) 
           <h1>{c.n} · {c.title || c.name}</h1>
           <p className="sub"><span className="badge">{c.style.toUpperCase()}</span> {c.slides.length} slides · 1080 × 1350 · {c.topic}</p>
           <div className="carousel-strip" role="list" aria-label="The slides, in swipe order">
-            {c.slides.map((s, i) => <img key={s} role="listitem" alt={`Slide ${i + 1}`} loading="lazy" src={carouselFileUrl(folder, s)} onClick={() => setBig(s)} />)}
+            {c.slides.map((s, i) => <img key={s} role="listitem" alt={`Slide ${i + 1}`} loading="lazy" src={carouselFileUrl(folder, s, stamp(s))} onClick={() => setBig(s)} />)}
           </div>
-          {big && <div className="lightbox" role="dialog" aria-label="Slide" onClick={() => setBig(null)}><img alt="Slide" src={carouselFileUrl(folder, big)} /></div>}
+          {big && <div className="lightbox" role="dialog" aria-label="Slide" onClick={() => setBig(null)}><img alt="Slide" src={carouselFileUrl(folder, big, stamp(big))} /></div>}
           <div className="card">
             <div className="row"><strong className="grow">Caption</strong>
               <button type="button" className="btn" onClick={copy} disabled={!c.caption}>{copied ? "Copied" : "Copy"}</button>
@@ -51,9 +64,22 @@ export function CarouselPage({ folder, jobs }: { folder: string; jobs: Job[] }) 
           </div>
           {c.plan && <details className="card"><summary><strong>Plan</strong></summary><pre className="reel-text">{c.plan}</pre></details>}
           <div className="card">
+            <strong>Change one slide</strong>
+            <p className="muted" style={{ margin: "4px 0 8px" }}>Pick the slide and say what to change. Only that slide is drawn again; the other slides, the caption and the plan stay as they are (the alt text of the slide is updated if its picture changed). The old slides are kept in the <code>versions</code> folder of the carousel.</p>
+            <div className="row" role="radiogroup" aria-label="Which slide" style={{ marginBottom: 8 }}>
+              {c.slides.map((s, i) => <button key={s} type="button" role="radio" aria-checked={slide === i + 1} className={`btn small${slide === i + 1 ? " primary" : ""}`} disabled={active.length > 0} onClick={() => setSlide(i + 1)}>Slide {i + 1}</button>)}
+            </div>
+            {active.filter((j) => j.type === "carousel.edit").map((j) => <JobCard key={j.id} job={j} open />)}
+            <div className="row" style={{ alignItems: "flex-end" }}>
+              <textarea className="grow" rows={2} value={change} disabled={active.length > 0} aria-label={`What should change on slide ${slide}`} placeholder="Shorter title, move the phone to the right." onChange={(e) => setChange(e.target.value)} />
+              <button type="button" className="btn primary" disabled={busy || active.length > 0 || change.trim().length < 3} onClick={editSlide}>Change slide {slide}</button>
+            </div>
+            {lastEdit && active.length === 0 && <p className={lastEdit.status === "failed" ? "error" : "muted"} role="status">{lastEdit.status === "failed" ? `Slide ${String(lastEdit.params.slide)} was not changed: ${lastEdit.error ?? "the change failed"}` : String(lastEdit.result.summary ?? "Done.")}</p>}
+          </div>
+          <div className="card">
             <strong>Make it again</strong>
             <p className="muted" style={{ margin: "4px 0 8px" }}>Say what to change; the AI rebuilds the carousel in the same folder and replaces the slides, the caption and the plan.</p>
-            {active.map((j) => <JobCard key={j.id} job={j} open />)}
+            {active.filter((j) => j.type === "carousel.make").map((j) => <JobCard key={j.id} job={j} open />)}
             <div className="row" style={{ alignItems: "flex-end" }}>
               <textarea className="grow" rows={2} value={note} disabled={active.length > 0} aria-label="What should change in this carousel" placeholder="Bigger titles, make slide 3 about the kitchen screen." onChange={(e) => setNote(e.target.value)} />
               <button type="button" className="btn primary" disabled={busy || active.length > 0 || !note.trim()} onClick={again}>Make it again</button>

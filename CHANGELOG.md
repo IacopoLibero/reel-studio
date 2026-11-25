@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- **Change one slide of a carousel.** On the carousel's page, pick a slide and say what to change (`carousel.edit`): only that slide is drawn again (2D: its Remotion code; 3D: the scene is rendered again and only that strip is cut), the others are checked and put back if they changed, the new slide must be 1080 x 1350, the slide's alt text is updated if its picture changed, and the old slides, alt texts and caption are kept in `versions/` (newest ten).
+
 ## 1.0.3 (2026-11-25)
 
 - **Reels banner is true.** A reel is "Posted" once its Instagram slot has passed (Instagram publishes it), "Scheduled" before that, "Scheduling…" while a job runs. The Reels page reloads by itself (every 30 s, on focus, and when an Instagram job changes).

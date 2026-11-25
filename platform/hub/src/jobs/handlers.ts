@@ -9,6 +9,7 @@ import type { Job, JobPatch, Settings } from "../shared/types.js";
 import { runProcess } from "./process.js";
 import { reelMake } from "../factory/make-handler.js";
 import { carouselMake } from "../carousels/handler.js";
+import { carouselEdit } from "../carousels/edit-handler.js";
 import { reelEdit } from "../reels/edit-handler.js";
 import { reelIdeas } from "../ideas/handler.js";
 import { dailyRun } from "../daily/run-handler.js";
@@ -118,6 +119,7 @@ export const claudeTask: Handler = async (job, ctx) => {
 export const HANDLERS: Partial<Record<Job["type"], Handler>> = {
   "reel.make": reelMake,
   "carousel.make": carouselMake,
+  "carousel.edit": carouselEdit,
   "reel.edit": reelEdit,
   "reel.ideas": reelIdeas,
   "daily.run": dailyRun,
