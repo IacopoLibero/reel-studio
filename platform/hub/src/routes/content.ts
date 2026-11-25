@@ -1,13 +1,14 @@
 import { createReadStream, existsSync, statSync } from "node:fs";
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 import { countPngs, listMoves, moveDir } from "../character/gallery.js";
 import { folderOfKey, nowLocal, readScheduled, reelDirOf, resolveReelFile, scanReels } from "../reels/scanner.js";
 import { readReelDetail } from "../reels/detail.js";
 import { appendMessage, readChat } from "../reels/chat.js";
 import { listVersions, restoreVersion } from "../reels/versions.js";
-import { readCarouselDetail, resolveCarouselFile, scanCarousels } from "../carousels/scanner.js";
+import { carouselDirOf, carouselScheduleKey, readCarouselDetail, resolveCarouselFile, scanCarousels } from "../carousels/scanner.js";
+import { listVersions as listCarouselVersions, restoreVersion as restoreCarouselVersion, versionFile } from "../carousels/versions.js";
 import { parseRange } from "./range.js";
 import { nextSlots } from "../slots.js";
 import { settingsSchema } from "../settings.js";
@@ -36,14 +37,32 @@ export function contentRoutes(app: FastifyInstance, d: AppDeps, scope: Scope): v
     const b = scope(req);
     return scanCarousels(b.paths.carouselsDir, b.slug, readScheduled(b.paths.scheduledFile), activeCarousels(b.slug), nowLocal(d.settings.get(b.slug).slotPattern.timezone));
   });
-  app.get<{ Querystring: { folder?: string; name?: string } }>("/carousels/file", async (req, reply) => {
+  app.get<{ Querystring: { folder?: string; name?: string; version?: string } }>("/carousels/file", async (req, reply) => {
     const b = scope(req);
-    const q = z.object({ folder: z.string(), name: z.string() }).safeParse(req.query);
-    const file = q.success ? resolveCarouselFile(b.paths.carouselsDir, q.data.folder, q.data.name) : null;
+    const q = z.object({ folder: z.string(), name: z.string(), version: z.string().optional() }).safeParse(req.query);
+    // `version` names a kept version (versions/<id>/): its slides, alt texts and caption are served like the current ones.
+    const dir = q.success ? resolveCarouselFile(b.paths.carouselsDir, q.data.folder, "caption.md") ?? resolveCarouselFile(b.paths.carouselsDir, q.data.folder, "slide-1.png") : null;
+    const file = !q.success ? null : q.data.version
+      ? (dir ? versionFile(dirname(dir), q.data.version, q.data.name) : null)
+      : resolveCarouselFile(b.paths.carouselsDir, q.data.folder, q.data.name);
     if (!q.success || !file) return reply.code(404).send({ error: "File not found." });
     const isPng = file.endsWith(".png");
     return reply.type(isPng ? "image/png" : "text/markdown; charset=utf-8").header("Cache-Control", "private, no-cache").header("Content-Length", statSync(file).size)
       .header("Content-Disposition", `${isPng ? "inline" : "attachment"}; filename="${q.data.name}"`).send(createReadStream(file));
+  });
+  app.get<{ Params: { folder: string } }>("/carousels/:folder/versions", async (req, reply) => {
+    const b = scope(req);
+    if (!readCarouselDetail(b.paths.carouselsDir, req.params.folder, b.slug)) return reply.code(404).send({ error: "Carousel not found." });
+    return listCarouselVersions(carouselDirOf(b.paths.carouselsDir, req.params.folder));
+  });
+  app.post<{ Params: { folder: string; id: string } }>("/carousels/:folder/versions/:id/restore", async (req, reply) => {
+    const b = scope(req);
+    if (!readCarouselDetail(b.paths.carouselsDir, req.params.folder, b.slug)) return reply.code(404).send({ error: "Carousel not found." });
+    const busy = d.store.list().some((j) => j.brand === b.slug && (j.status === "queued" || j.status === "running")
+      && ((j.type === "carousel.make" && j.params.rerunFolder === req.params.folder) || (j.type === "carousel.edit" && j.params.folder === req.params.folder) || (j.type === "instagram.schedule" && j.params.reel === carouselScheduleKey(b.slug, req.params.folder))));
+    if (busy) return reply.code(409).send({ error: "This carousel is being changed or scheduled right now. Try again when that is done." });
+    const done = restoreCarouselVersion(carouselDirOf(b.paths.carouselsDir, req.params.folder), req.params.id);
+    return done ?? reply.code(404).send({ error: "That version was not found." });
   });
   app.get<{ Params: { folder: string } }>("/carousels/:folder", async (req, reply) => {
     const b = scope(req);

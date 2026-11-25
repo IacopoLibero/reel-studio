@@ -123,7 +123,9 @@ export interface Carousel { key: string; brand: string; folder: string; n: numbe
   hasAlt: boolean; hasSource: boolean; schedule: ScheduleEntry | null; state: ReelStateName }
 export interface CarouselDetail extends Carousel { caption: string; plan: string; files: { name: string; size: number; dir: boolean }[] }
 export interface CarouselPageData { carousel: CarouselDetail; busy: boolean }
-export const carouselFileUrl = (folder: string, name: string, version?: number): string => scoped(`/carousels/file?folder=${encodeURIComponent(folder)}&name=${encodeURIComponent(name)}${version === undefined ? "" : `&v=${version}`}`);
+export const carouselFileUrl = (folder: string, name: string, version?: number, kept?: string): string =>
+  scoped(`/carousels/file?folder=${encodeURIComponent(folder)}&name=${encodeURIComponent(name)}${version === undefined ? "" : `&v=${version}`}${kept ? `&version=${encodeURIComponent(kept)}` : ""}`);
+export interface CarouselVersion { id: string; at: string; label: string; slides: string[]; hasAlt: boolean; hasCaption: boolean }
 
 export interface ReelFile { name: string; size: number; dir: boolean }
 export interface ReelDetail {
@@ -179,6 +181,8 @@ export const api = {
   cancelJob: (id: string) => call<Job>("POST", `/api/jobs/${id}/cancel`),
   reels: () => call<Reel[]>("GET", scoped("/reels")),
   carousels: () => call<Carousel[]>("GET", scoped("/carousels")),
+  carouselVersions: (folder: string) => call<CarouselVersion[]>("GET", scoped(`/carousels/${encodeURIComponent(folder)}/versions`)),
+  restoreCarouselVersion: (folder: string, id: string) => call<{ kept: string; slides: number }>("POST", scoped(`/carousels/${encodeURIComponent(folder)}/versions/${encodeURIComponent(id)}/restore`)),
   carousel: (folder: string) => call<CarouselPageData>("GET", scoped(`/carousels/${encodeURIComponent(folder)}`)),
   setProductDir: (productDir: string) => call<{ productDir: string | null }>("PUT", scoped("/sources"), { productDir }),
   slots: (count = 14) => call<Slot[]>("GET", scoped(`/slots?count=${count}`)),

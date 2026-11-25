@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import type { Job } from "../../src/shared/types";
-import { api, carouselFileUrl, getBrand } from "../api";
+import { api, carouselFileUrl, getBrand, type CarouselVersion } from "../api";
 import { routeHash, useLoad } from "../hooks";
 import { JobCard } from "../components/JobCard";
 
@@ -19,6 +19,28 @@ export function CarouselPage({ folder, jobs }: { folder: string; jobs: Job[] }) 
   const [big, setBig] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [slide, setSlide] = useState(1);
+  // The switch: "current", or the id of a kept version whose slides, alt texts and caption are shown instead.
+  const versions = useLoad(() => api.carouselVersions(folder));
+  const [shown, setShown] = useState("current");
+  const kept: CarouselVersion | undefined = versions.data?.find((v) => v.id === shown);
+  useEffect(versions.reload, [doneCount, active.length]);
+  const [keptCaption, setKeptCaption] = useState<string | null>(null);
+  useEffect(() => {
+    setKeptCaption(null);
+    if (!kept?.hasCaption) return;
+    let live = true;
+    fetch(carouselFileUrl(folder, "caption.md", undefined, kept.id)).then((r) => (r.ok ? r.text() : "")).then((t) => { if (live) setKeptCaption(t); }).catch(() => undefined);
+    return () => { live = false; };
+  }, [shown, folder]);
+  const when = (iso: string) => new Date(iso).toLocaleString("en-GB", { dateStyle: "medium", timeStyle: "short" });
+  const useVersion = () => {
+    if (!kept) return;
+    setBusy(true); setMsg(null);
+    api.restoreCarouselVersion(folder, kept.id)
+      .then(() => { setShown("current"); setMsg("This version is now the current one. The one you had is kept in the list."); reload(); versions.reload(); })
+      .catch((e: Error) => setMsg(e.message))
+      .finally(() => setBusy(false));
+  };
   const [change, setChange] = useState("");
   /** A slide that was drawn again has another size: the address changes and the browser shows the new picture. */
   const stamp = (name: string): number | undefined => c?.files.find((f) => f.name === name)?.size;
@@ -47,15 +69,25 @@ export function CarouselPage({ folder, jobs }: { folder: string; jobs: Job[] }) 
         <>
           <h1>{c.n} · {c.title || c.name}</h1>
           <p className="sub"><span className="badge">{c.style.toUpperCase()}</span> {c.slides.length} slides · 1080 × 1350 · {c.topic}</p>
+          {(versions.data?.length ?? 0) > 0 && (
+            <div className="row" style={{ margin: "6px 0 10px", alignItems: "center" }}>
+              <label htmlFor="car-version" className="muted">Version</label>
+              <select id="car-version" value={shown} onChange={(e) => setShown(e.target.value)}>
+                <option value="current">Current</option>
+                {versions.data?.map((v) => <option key={v.id} value={v.id}>{when(v.at)}{v.label ? ` · ${v.label.slice(0, 60)}` : ""}</option>)}
+              </select>
+              {kept && <><span className="badge">Older version</span><button type="button" className="btn small primary" disabled={busy || active.length > 0} onClick={useVersion}>Use this version</button></>}
+            </div>
+          )}
           <div className="carousel-strip" role="list" aria-label="The slides, in swipe order">
-            {c.slides.map((s, i) => <img key={s} role="listitem" alt={`Slide ${i + 1}`} loading="lazy" src={carouselFileUrl(folder, s, stamp(s))} onClick={() => setBig(s)} />)}
+            {(kept ? kept.slides : c.slides).map((s, i) => <img key={`${shown}-${s}`} role="listitem" alt={`Slide ${i + 1}`} loading="lazy" src={carouselFileUrl(folder, s, kept ? undefined : stamp(s), kept?.id)} onClick={() => setBig(s)} />)}
           </div>
-          {big && <div className="lightbox" role="dialog" aria-label="Slide" onClick={() => setBig(null)}><img alt="Slide" src={carouselFileUrl(folder, big, stamp(big))} /></div>}
+          {big && <div className="lightbox" role="dialog" aria-label="Slide" onClick={() => setBig(null)}><img alt="Slide" src={carouselFileUrl(folder, big, kept ? undefined : stamp(big), kept?.id)} /></div>}
           <div className="card">
             <div className="row"><strong className="grow">Caption</strong>
               <button type="button" className="btn" onClick={copy} disabled={!c.caption}>{copied ? "Copied" : "Copy"}</button>
               <a className="btn" href={carouselFileUrl(folder, "caption.md")} download>Download</a></div>
-            <pre className="reel-text">{c.caption || "No caption yet."}</pre>
+            <pre className="reel-text">{kept ? (keptCaption ?? "Loading…") : (c.caption || "No caption yet.")}</pre>
             <p className="muted" style={{ fontSize: 12 }}>To post: download the slides (click one to enlarge, right-click to save), then add them in Instagram in this order. Scheduling a carousel from the Calendar is not available yet.</p>
           </div>
           <div className="card">

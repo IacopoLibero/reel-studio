@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- **Versions of a carousel, with a switch.** Every change keeps the carousel as it was (slides, alt texts, caption) in `versions/`, with a label: before "Change one slide" and before "Make it again" (newest twenty). The carousel page has a **Version** switch: pick an older one to see its slides and caption, and **Use this version** to go back to it (the version you had is kept first, so nothing is lost). The scene and the code are not part of a version.
+
 - **A carousel keeps its source, and says so when it does not.** The carousel job must leave in the folder what draws it (2D: `code/`; 3D: `scene.py`, `tex/`, `panorama.png`, `code/`) and the hub checks it. "Change one slide" looks for these files first: without them it stops before any run, says which are missing, and the carousel page shows the same message (a slide is one flat picture, so it cannot be fixed by hand). Carousels made before this have to be made again, or have the files put back.
 
 ## 1.0.3 (2026-11-25)

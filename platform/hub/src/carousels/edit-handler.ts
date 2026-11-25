@@ -41,7 +41,7 @@ export const carouselEdit: Handler = async (job, ctx) => {
   const schedule = readScheduled(brand.paths.scheduledFile)[carouselScheduleKey(brand.slug, p.folder)];
 
   ctx.update({ step: CAROUSEL_EDIT_STEPS[0], stepIndex: 0, progress: MARKS[0] as number, log: `Carousel ${p.folder}, slide ${p.slide}: ${short(p.message, 100)}` });
-  const snapshot = snapshotCarousel(dir);
+  const snapshot = snapshotCarousel(dir, new Date(), `Before changing slide ${p.slide}: ${short(p.message, 120)}`);
   const before = new Map(detail.slides.map((s) => [s, hashOf(join(dir, s))]));
   const productDir = brand.brand.sources.productDir?.trim() || null;
   const prompt = buildCarouselEditPrompt({ root: ctx.root, brand: brand.slug, brandDir: brand.paths.brandDir, folder: p.folder, style: detail.style, slide: p.slide, slides: detail.slides.length, message: p.message, scheduled: schedule?.at ?? null });

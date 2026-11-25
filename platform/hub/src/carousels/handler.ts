@@ -10,6 +10,7 @@ import { runProcess } from "../jobs/process.js";
 import { carouselDirOf } from "./scanner.js";
 import { buildCarouselPrompt, CAROUSEL_ALLOWED_TOOLS, carouselDenied } from "./prompt.js";
 import { sourceOf } from "./source.js";
+import { snapshotCarousel } from "./versions.js";
 import { CAROUSEL_MARKS, CAROUSEL_STEPS, carouselStepOf, missingCarouselOutputs } from "./stream.js";
 
 const execFileP = promisify(execFile);
@@ -28,6 +29,8 @@ export const carouselMake: Handler = async (job, ctx) => {
   const redo = typeof p.rerunFolder === "string" && /^\d+-[a-z0-9-]+$/.test(p.rerunFolder) ? p.rerunFolder : null;
   const alloc = redo ? { folder: redo, path: carouselDirOf(carouselsDir, redo) } : await allocateReelFolder(carouselsDir, p.topic, join(ctx.dataDir, "locks"), brand.slug, "carousel");
   if (redo && !existsSync(alloc.path)) throw new Error(`Folder ${redo} to redo does not exist.`);
+  // The version that is about to be replaced stays available in the carousel page (versions/).
+  if (redo) snapshotCarousel(alloc.path, new Date(), p.note ? `Before making it again: ${p.note}` : "Before making it again");
   ctx.update({ log: `Folder ${alloc.path}, style ${p.style}, ${p.slides} slides`, step: CAROUSEL_STEPS[0], progress: CAROUSEL_MARKS[0] as number });
 
   // The two Ootto skills are linked into the workspace before the run (a studio made before the carousels may have them off).
