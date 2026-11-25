@@ -3,7 +3,10 @@ import type { Reel } from "../../src/shared/types";
 import { api } from "../api";
 import { useLoad } from "../hooks";
 
-export function SlotPicker({ reel, onClose }: { reel: Reel; onClose: () => void }) {
+/** What can be scheduled: a reel, or a carousel (its key is "<brand>/carousels/<folder>"). */
+export type Schedulable = Pick<Reel, "key" | "n" | "name"> & { kind?: "reel" | "carousel" };
+
+export function SlotPicker({ reel, onClose }: { reel: Schedulable; onClose: () => void }) {
   const { data, error } = useLoad(() => api.slots(21));
   const [err, setErr] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -14,7 +17,7 @@ export function SlotPicker({ reel, onClose }: { reel: Reel; onClose: () => void 
   return (
     <div className="modal-bg" onClick={onClose}>
       <div className="modal" onClick={(e) => e.stopPropagation()}>
-        <h1>Schedule reel {reel.n}</h1>
+        <h1>Schedule {reel.kind === "carousel" ? "carousel" : "reel"} {reel.n}</h1>
         <p className="sub">{reel.name}. Pick a slot from your pattern.</p>
         {(error || err) && <p className="error">{error ?? err}</p>}
         {!data && !error && <p className="muted">Loading slots</p>}

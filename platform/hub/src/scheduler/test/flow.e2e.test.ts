@@ -192,4 +192,30 @@ describe('list / reschedule / delete against the local mock', () => {
     await writeFile(out, '<input name="username"><input type="password">');
     await expect(listScheduled({}, { url: pathToFileURL(out).href })).rejects.toMatchObject({ code: 'login_required' });
   });
+
+  it('schedules a carousel of images with alt texts, in order, and records it under its own key', async () => {
+    const { runScheduleJob } = await import('../index.js') as unknown as { runScheduleJob: (j: unknown, c: unknown, o: unknown) => Promise<{ verified: boolean; reel: string }> };
+    const dir = join(work, 'brands', 'acme', 'carousels', '3-price');
+    await mkdir(dir, { recursive: true });
+    for (const n of [1, 2, 3, 10]) await writeFile(join(dir, `slide-${n}.png`), 'png');
+    await writeFile(join(dir, 'caption.md'), CAPTION + '\n');
+    const alts = ['Menu with a changed price', 'Two menus side by side', 'A phone showing the menu', 'Last slide: follow for tips'];
+    const { getContext: ctxOf } = await import('../browser.js');
+    const page = (await ctxOf()).pages()[0] ?? (await (await ctxOf()).newPage());
+    await page.goto(mockUrl);
+    await page.evaluate(() => localStorage.removeItem('mock-posts'));
+    const now = new Date('2026-11-19T10:00:00Z');
+    const slides = ['slide-10.png', 'slide-1.png', 'slide-2.png', 'slide-3.png'];
+    // alts are given in the job's slide order: slide-10 first here, so its text is first.
+    const res = await runScheduleJob({ id: 'jc', params: { reelDir: dir, slot: '2026-12-11T17:30', slides, alts: [alts[3], alts[0], alts[1], alts[2]] } }, ctx(), { now, url: mockUrl });
+    expect(res.verified).toBe(true);
+    expect(res.reel).toBe('acme/carousels/3-price');
+    const posts = await page.evaluate(() => JSON.parse(localStorage.getItem('mock-posts') || '[]'));
+    expect(posts).toHaveLength(1);
+    expect(posts[0].n).toBe(4);
+    expect(posts[0].alts).toEqual(alts.slice(0, 3).concat(alts[3]));
+    const st = JSON.parse(await readFile(join(work, 'data', 'scheduled.json'), 'utf8'));
+    expect(st['acme/carousels/3-price'].verified).toBe(true);
+    await page.evaluate(() => localStorage.removeItem('mock-posts'));
+  });
 });

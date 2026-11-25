@@ -81,7 +81,7 @@ One scene as wide as all the slides together, rendered once, so objects cross th
 
 - `caption.md` follows the reel caption pattern (see step 11 of the `reel` skill): the opening hook with 👇, one short line per slide idea (📌 for facts, 1️⃣ 2️⃣ 3️⃣ for steps), the closing block (A: the 🎁 offer line with the codes and the valid-until date, then the brand's call-to-action; B: the follow line),
   one save-and-share line that ends with 📌, 10 to 11 hashtags on one line with a plain `#`. Same language as the carousel. Say nothing the slides do not support.
-- Files in the carousel folder: `slide-1.png` ... `slide-N.png` (the final slides, 1080 x 1350), `plan.md`, `caption.md`, `carousel.json` (`{"style":"2d"|"3d","topic":"...","title":"..."}`), `code/` (the Remotion code), `assets/` or `tex/` (what you used).
+- Files in the carousel folder: `slide-1.png` ... `slide-N.png` (the final slides, 1080 x 1350), `plan.md`, `caption.md`, `carousel.json` (`{"style":"2d"|"3d","topic":"...","title":"..."}`), `alt.json` (an array with one alt text per slide, in order: at most 100 characters each, what the image really shows in the words a person would search for, no hashtags or keyword lists), `code/` (the Remotion code), `assets/` or `tex/` (what you used).
 - Give the folder, the caption and one thing you would improve. Never post and never schedule: that is for the person.
 
 The rules for props, textures and Blender accuracy are the same ones as in the `reel` skill ("Props and 3D with Blender") and the rules for a good hook and for readable text are those of "Make it land" in that skill.

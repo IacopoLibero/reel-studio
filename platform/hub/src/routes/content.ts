@@ -31,7 +31,11 @@ export function contentRoutes(app: FastifyInstance, d: AppDeps, scope: Scope): v
   });
 
   // Carousels: the list, one carousel with its caption and plan, and its slides (PNG) and caption as files.
-  app.get("/carousels", async (req) => { const b = scope(req); return scanCarousels(b.paths.carouselsDir, b.slug); });
+  const activeCarousels = (slug: string) => new Set(d.store.list().filter((j) => j.type === "instagram.schedule" && j.brand === slug && (j.status === "queued" || j.status === "running")).map((j) => String(j.params.reel)));
+  app.get("/carousels", async (req) => {
+    const b = scope(req);
+    return scanCarousels(b.paths.carouselsDir, b.slug, readScheduled(b.paths.scheduledFile), activeCarousels(b.slug), nowLocal(d.settings.get(b.slug).slotPattern.timezone));
+  });
   app.get<{ Querystring: { folder?: string; name?: string } }>("/carousels/file", async (req, reply) => {
     const b = scope(req);
     const q = z.object({ folder: z.string(), name: z.string() }).safeParse(req.query);
@@ -43,7 +47,7 @@ export function contentRoutes(app: FastifyInstance, d: AppDeps, scope: Scope): v
   });
   app.get<{ Params: { folder: string } }>("/carousels/:folder", async (req, reply) => {
     const b = scope(req);
-    const c = readCarouselDetail(b.paths.carouselsDir, req.params.folder, b.slug);
+    const c = readCarouselDetail(b.paths.carouselsDir, req.params.folder, b.slug, readScheduled(b.paths.scheduledFile), nowLocal(d.settings.get(b.slug).slotPattern.timezone));
     if (!c) return reply.code(404).send({ error: "Carousel not found." });
     const busy = d.store.list().some((j) => j.type === "carousel.make" && j.brand === b.slug && j.params.rerunFolder === req.params.folder && (j.status === "queued" || j.status === "running"));
     return { carousel: c, busy };

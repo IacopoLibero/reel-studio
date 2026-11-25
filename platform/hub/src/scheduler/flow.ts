@@ -1,7 +1,7 @@
 import type { Page } from 'playwright';
 import { checkCaption } from './caption.js';
 import { captionStartOf, wallToIso } from './calendar.js';
-import { SchedulerError, STEPS, type JobContext } from './types.js';
+import { CAROUSEL_STEPS, SchedulerError, STEPS, type JobContext } from './types.js';
 
 export interface FlowInput {
   url: string;
@@ -226,5 +226,119 @@ async function verifyOnCalendar(page: Page, input: FlowInput, p: SlotParts): Pro
   const found = await findPostOnCalendar(page, input.url, captionStartOf(input.caption), iso);
   if (found !== 1) {
     throw new SchedulerError('verify_failed', found === 0 ? `Scheduled post not found on the calendar at ${p.dateLabel} ${p.timeLabel}` : `Found ${found} calendar items at ${p.dateLabel} ${p.timeLabel}, expected 1`);
+  }
+}
+
+export interface CarouselFlowInput {
+  url: string;
+  /** The slide images, in the order they are shown. */
+  slidePaths: string[];
+  caption: string;
+  /** Rome wall time "YYYY-MM-DDTHH:mm". */
+  slot: string;
+  onScheduled?: () => Promise<void>;
+  /** How long to wait for a step after the upload (default 90 s); tests shorten it. */
+  stepTimeoutMs?: number;
+  /** Alt text per slide (the same order as slidePaths). */
+  alts?: string[];
+}
+
+async function waitForStep(page: Page, dialog: () => ReturnType<Page['getByRole']>, title: string, timeoutMs: number): Promise<void> {
+  const deadline = Date.now() + timeoutMs;
+  while (Date.now() < deadline) {
+    if (await dismissKnownNotice(page)) continue;
+    if (await dialog().getByText(title, { exact: true }).first().isVisible().catch(() => false)) return;
+    await page.waitForTimeout(500);
+  }
+  throw new SchedulerError('ui_changed', `The "${title}" step did not appear (an unknown dialog may be covering it).`);
+}
+
+/** Opens Accessibility and types each slide's alt text into its own "Alt text" box, then reads every box back. */
+export async function fillAltTexts(page: Page, alts: string[]): Promise<void> {
+  const wanted = alts.map((a) => a.trim());
+  if (!wanted.some(Boolean)) return;
+  const dlg = () => page.getByRole('dialog').last();
+  const boxes = () => dlg().getByLabel('Alt text');
+  if ((await boxes().count()) === 0) {
+    await dlg().getByRole('button', { name: 'Accessibility' }).first().click();
+    await page.waitForTimeout(800);
+    if ((await boxes().count()) === 0) { await dlg().getByRole('button', { name: 'Accessibility' }).first().click(); await page.waitForTimeout(800); }
+  }
+  const n = await boxes().count();
+  if (n < wanted.length) throw new SchedulerError('ui_changed', `Instagram shows ${n} alt text boxes for ${wanted.length} images`);
+  for (let i = 0; i < wanted.length; i++) {
+    if (!wanted[i]) continue;
+    const box = boxes().nth(i);
+    await box.scrollIntoViewIfNeeded();
+    await box.fill(wanted[i]);
+    const got = await box.inputValue();
+    if (got.trim() !== wanted[i]) throw new SchedulerError('step_failed', `Alt text of image ${i + 1} reads back as "${got.slice(0, 60)}"`);
+  }
+}
+
+/**
+ * Schedules a post of several images (a carousel) in Instagram's own scheduler. Seen on the real page (25 Nov 2026): the images go
+ * in the same upload box as a video, then the steps are Crop (left as it is: the slides are 4:5), Edit (no filter), and the details page
+ * with the caption, the "Schedule content" switch and the date. There is no cover step.
+ */
+export async function runCarouselFlow(page: Page, input: CarouselFlowInput, ctx: JobContext): Promise<void> {
+  const p = slotParts(input.slot);
+  const timeout = input.stepTimeoutMs ?? 90000;
+  let stepIndex = 0;
+  const begin = async (i: number, log: string) => {
+    check(ctx);
+    stepIndex = i;
+    ctx.update({ progress: i / CAROUSEL_STEPS.length, step: CAROUSEL_STEPS[i], stepIndex: i, log });
+  };
+  const dialog = () => page.getByRole('dialog').last();
+  const next = () => dialog().getByRole('button', { name: 'Next', exact: true }).click();
+
+  try {
+    await begin(0, 'Opening the Schedule content dialog');
+    await page.goto(input.url, { waitUntil: 'domcontentloaded' });
+    await page.getByRole('button', { name: 'Schedule content' }).first().click();
+    await dialog().waitFor({ state: 'visible', timeout: 15000 });
+
+    await begin(1, `Uploading ${input.slidePaths.length} images`);
+    await dialog().locator('input[type=file]').first().setInputFiles(input.slidePaths);
+    await waitForCropStep(page, dialog, timeout);
+
+    await begin(2, 'Crop: kept as it is');
+    await next();
+    await begin(3, 'Edit: no filter');
+    await waitForStep(page, dialog, 'Edit', 30000);
+    await next();
+
+    await begin(4, 'Typing the caption');
+    const box = dialog().locator('div[contenteditable=true][role=textbox]').first();
+    await box.waitFor({ timeout: 30000 });
+    await box.click();
+    const lines = input.caption.split('\n');
+    for (let i = 0; i < lines.length; i++) {
+      if (i > 0) await page.keyboard.press('Enter');
+      if (lines[i]) await page.keyboard.insertText(lines[i]);
+    }
+    const text = await box.evaluate((el) => (el as HTMLElement).innerText);
+    const res = checkCaption(input.caption, text);
+    if (!res.ok) throw new SchedulerError('caption_mismatch', res.problems.join('; '));
+    ctx.update({ log: `Caption verified (${text.length} chars)` });
+
+    await begin(5, `Alt texts, then ${p.dateLabel} ${p.timeLabel}`);
+    if (input.alts?.some((a) => a.trim())) { await fillAltTexts(page, input.alts); ctx.update({ log: 'Alt texts written and read back' }); }
+    const toggle = dialog().getByRole('switch', { name: /schedule/i }).first();
+    if (await toggle.count() && !(await toggle.isChecked().catch(() => true))) await toggle.click();
+    await setDateTime(page, input.slot);
+
+    await begin(6, 'Pressing Schedule');
+    await dialog().getByRole('button', { name: 'Schedule', exact: true }).click();
+    await page.getByText(/Your (post|reel|content) has been scheduled/i).first().waitFor({ timeout: 45000 });
+    await input.onScheduled?.();
+    await page.getByRole('button', { name: 'Done', exact: true }).click().catch(() => undefined);
+
+    await begin(7, 'Verifying on the calendar');
+    await verifyOnCalendar(page, { url: input.url, caption: input.caption, slot: input.slot } as FlowInput, p);
+    ctx.update({ progress: 1, log: 'Scheduled and verified' });
+  } catch (e) {
+    throw e instanceof SchedulerError ? e : new SchedulerError('step_failed', `${CAROUSEL_STEPS[stepIndex]}: ${(e as Error).message}`);
   }
 }

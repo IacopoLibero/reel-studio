@@ -2,7 +2,7 @@ import type { MediaRecord } from "../src/analytics/schemas";
 import type { DailySlotOptions, DailyViewData, NotificationData } from "../src/shared/daily";
 import type { CharacterFields } from "../src/shared/character-prompt";
 import type { PageRow } from "../src/analytics/page-types";
-import type { BrandSummary, IdeaBatchView, SkillsData, CalendarData, FactoryQuestion, Job, MoveInfo, Reel, ScheduleEntry, Settings, Slot } from "../src/shared/types";
+import type { ReelStateName, BrandSummary, IdeaBatchView, SkillsData, CalendarData, FactoryQuestion, Job, MoveInfo, Reel, ScheduleEntry, Settings, Slot } from "../src/shared/types";
 
 export class ApiError extends Error {
   constructor(message: string, readonly status: number) { super(message); }
@@ -119,7 +119,8 @@ export interface AiState {
   codex: { access: AccessState };
 }
 
-export interface Carousel { key: string; brand: string; folder: string; n: number; name: string; style: "2d" | "3d"; topic: string; title: string; slides: string[]; hasCaption: boolean; captionStart: string; hasPlan: boolean }
+export interface Carousel { key: string; brand: string; folder: string; n: number; name: string; style: "2d" | "3d"; topic: string; title: string; slides: string[]; hasCaption: boolean; captionStart: string; hasPlan: boolean;
+  hasAlt: boolean; schedule: ScheduleEntry | null; state: ReelStateName }
 export interface CarouselDetail extends Carousel { caption: string; plan: string; files: { name: string; size: number; dir: boolean }[] }
 export interface CarouselPageData { carousel: CarouselDetail; busy: boolean }
 export const carouselFileUrl = (folder: string, name: string): string => scoped(`/carousels/file?folder=${encodeURIComponent(folder)}&name=${encodeURIComponent(name)}`);

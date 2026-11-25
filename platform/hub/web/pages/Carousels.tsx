@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import type { BrandSummary, Job } from "../../src/shared/types";
-import { api, carouselFileUrl, getBrand } from "../api";
-import { routeHash, useLoad } from "../hooks";
+import { api, carouselFileUrl, getBrand, type Carousel } from "../api";
+import { routeHash, useAutoReload, useLoad } from "../hooks";
+import { SlotPicker } from "../components/SlotPicker";
 import { EmptyState } from "../components/EmptyState";
 import { JobCard } from "../components/JobCard";
 
@@ -20,6 +21,10 @@ export function CarouselsPage({ jobs, brand }: { jobs: Job[]; brand: BrandSummar
   const [closing, setClosing] = useState<"A" | "B">("B");
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
+  const [picking, setPicking] = useState<Carousel | null>(null);
+  // A scheduled carousel becomes posted when its time passes, so the list is read again now and then and when an Instagram job changes.
+  const igKey = jobs.filter((j) => j.type.startsWith("instagram.")).map((j) => `${j.id}:${j.status}`).join(",");
+  useAutoReload(reload, [igKey], 30);
   const active = running(jobs);
   const doneCount = jobs.filter((j) => j.type === "carousel.make" && j.status === "done").length;
   useEffect(reload, [doneCount, active.length]);
@@ -73,10 +78,19 @@ export function CarouselsPage({ jobs, brand }: { jobs: Job[]; brand: BrandSummar
             <div className="chips" style={{ marginTop: 6 }}>
               <span className="badge">{c.style.toUpperCase()}</span><span className="badge">{c.slides.length} slides</span>
               <span className="badge">{c.hasCaption ? "caption" : "no caption"}</span>
+              <span className="badge">{c.hasAlt ? "alt texts" : "no alt texts"}</span>
             </div>
+          </div>
+          <div>
+            {c.state === "posted" ? <span className="badge done">Posted {c.schedule?.at}</span>
+              : c.state === "scheduled" ? <span className="badge scheduled">Scheduled {c.schedule?.at}</span>
+              : c.state === "scheduling" ? <span className="badge running">Scheduling…</span>
+              : c.state === "to-schedule" ? <button className="btn primary" onClick={() => setPicking(c)}>To schedule</button>
+              : <span className="badge">Not finished</span>}
           </div>
         </div>
       ))}
+      {picking && <SlotPicker reel={{ key: `${picking.brand}/carousels/${picking.folder}`, n: picking.n, name: picking.title || picking.name, kind: "carousel" }} onClose={() => { setPicking(null); reload(); }} />}
     </>
   );
 }

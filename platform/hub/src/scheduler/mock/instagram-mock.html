@@ -60,13 +60,15 @@ function dateTimeHtml(){
 }
 function draw(){
   const m=$('modal'); let h='<div role="dialog">';
-  if(st.step===0){h+=`<h2>Create new post</h2><input type="file" id="f1" accept="video/mp4">`}
-  if(st.step===1){h+=`<h2>Crop</h2><button aria-label="Select crop">crop</button>`;
+  if(st.step===0){h+=`<h2>Create new post</h2><input type="file" id="f1" multiple accept="video/mp4,image/*">`}
+  if(st.step===1&&st.kind==='image'){h+=`<h2>Crop</h2><div>${st.count} images</div><button id="next">Next</button>`}
+  else if(st.step===1){h+=`<h2>Crop</h2><button aria-label="Select crop">crop</button>`;
     if(st.menu)h+=`<ul><li>Original</li><li>1:1</li><li id="r916">9:16</li><li>16:9</li></ul>`;
     h+=`<div>${st.ratio||'none'}</div><button id="next">Next</button>`}
-  if(st.step===2){h+=`<h2>Edit</h2><div>Cover photo</div><input type="file" id="f2"><button id="share">Share</button><button id="next">Next</button>`}
-  if(st.step===3){h+=`<h2>New reel</h2><div contenteditable="true" role="textbox" id="cap" aria-label="Write a caption..."></div>`+dateTimeHtml()+`<button id="sch">Schedule</button> <button id="share">Share</button>`}
-  if(st.step===4){h+=`<p>Your reel has been scheduled.</p><button id="done">Done</button>`}
+  if(st.step===2&&st.kind==='image'){h+=`<h2>Edit</h2><div>Filters</div><button id="next">Next</button>`}
+  else if(st.step===2){h+=`<h2>Edit</h2><div>Cover photo</div><input type="file" id="f2"><button id="share">Share</button><button id="next">Next</button>`}
+  if(st.step===3){h+=`<h2>${st.kind==='image'?'Create new post':'New reel'}</h2><div contenteditable="true" role="textbox" id="cap" aria-label="Write a caption..."></div>`+dateTimeHtml()+(st.kind==='image'?`<button id="acc">Accessibility</button>`+(st.accOpen?[...Array(st.count)].map((_,i)=>`<input type="text" class="alt" data-i="${i}" aria-label="Alt text" placeholder="Alt text" value="${(st.alts&&st.alts[i]||'').replace(/"/g,'&quot;')}">`).join(''):''):'')+`<button id="sch">Schedule</button> <button id="share">Share</button>`}
+  if(st.step===4){h+=`<p>Your ${st.kind==='image'?'post':'reel'} has been scheduled.</p><button id="done">Done</button>`}
   if(st.step===5){h+=`<h2>Edit</h2><div contenteditable="true" role="textbox" id="cap" aria-label="Add a caption..."></div>`+dateTimeHtml()+
      `<div role="button" id="del">Delete scheduled content</div><div role="button" id="share">Share</div><div role="button" id="save">Save</div>`}
   h+='</div>';
@@ -86,11 +88,13 @@ function wire(){
     cap.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();document.execCommand('insertLineBreak')}});
     cap.addEventListener('input',()=>st.cap=cap.innerText)}
   document.querySelectorAll('#share').forEach(b=>b.onclick=()=>{window.__share++});
-  if($('f1'))$('f1').onchange=()=>{st.step=1;draw()};
+  if($('f1'))$('f1').onchange=()=>{const fs=[...$('f1').files];st.kind=fs.length&&fs.every(f=>f.type.startsWith('image/'))?'image':'video';st.count=fs.length;st.step=1;draw()};
   if($('f2'))$('f2').onchange=()=>{st.cover=true};
   const sc=document.querySelector('[aria-label="Select crop"]'); if(sc)sc.onclick=()=>{st.menu=!st.menu;draw()};
   if($('r916'))$('r916').onclick=()=>{st.ratio='9:16';st.menu=false;draw()};
-  if($('next'))$('next').onclick=()=>{ if(st.step===1&&st.ratio!=='9:16')return; if(st.step===2&&!st.cover)return; st.step++;draw()};
+  if($('next'))$('next').onclick=()=>{ if(st.step===1&&st.kind!=='image'&&st.ratio!=='9:16')return; if(st.step===2&&st.kind!=='image'&&!st.cover)return; st.step++;draw()};
+  if($('acc'))$('acc').onclick=()=>{st.accOpen=!st.accOpen;draw()};
+  document.querySelectorAll('.alt').forEach(e=>e.oninput=()=>{st.alts=st.alts||[];st.alts[+e.dataset.i]=e.value});
   if($('sw'))$('sw').onclick=()=>{st.sched=!st.sched;draw()};
   if($('datebtn'))$('datebtn').onclick=()=>{st.picker=!st.picker;draw()};
   document.querySelectorAll('[aria-label="Next month"]').forEach(b=>b.onclick=()=>{st.view.m++;if(st.view.m>11){st.view.m=0;st.view.y++}draw()});
@@ -107,7 +111,7 @@ function wire(){
         if(key==='h'){st.h=(n%12)+(st.ap==='PM'?12:0)}else st.mi=n;
         el.setAttribute('aria-valuenow',n)} };
   }
-  const rec=()=>({date:ymd(Date.UTC(st.date.y,st.date.m,st.date.d)),h:st.ap==='PM'?(st.h%12)+12:(st.h%12),mi:st.mi,caption:st.cap});
+  const rec=()=>({date:ymd(Date.UTC(st.date.y,st.date.m,st.date.d)),h:st.ap==='PM'?(st.h%12)+12:(st.h%12),mi:st.mi,caption:st.cap,n:st.kind==='image'?st.count:0,alts:st.alts||[]});
   if($('sch'))$('sch').onclick=()=>{ if(!st.sched)return; const a=posts(); a.push(rec()); save(a); st.step=4;draw()};
   if($('done'))$('done').onclick=close;
   if($('save'))$('save').onclick=()=>{const a=posts(); const r=rec(); r.caption=a[st.idx].caption; a[st.idx]=r; save(a); close()};

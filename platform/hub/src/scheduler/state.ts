@@ -21,6 +21,13 @@ export function reelKey(reelDir: string): string {
   return m ? `${m[1]}/${m[2]}` : clean.split('/').pop()!;
 }
 
+/** State key "<brand>/carousels/<folder>" of a carousel folder .../brands/<brand>/carousels/<folder>: it cannot meet a reel folder's key. */
+export function carouselKey(dir: string): string {
+  const clean = dir.replace(/\/+$/, '');
+  const m = /\/brands?\/([^/]+)\/carousels\/([^/]+)$/.exec(clean);
+  return m ? `${m[1]}/carousels/${m[2]}` : `carousels/${clean.split('/').pop()}`;
+}
+
 export async function readState(file = scheduledFile()): Promise<ScheduledState> {
   try {
     const parsed = JSON.parse(await readFile(file, 'utf8'));

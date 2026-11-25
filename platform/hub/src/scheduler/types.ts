@@ -33,6 +33,10 @@ export interface ScheduleJobParams {
   video?: string;
   /** Optional caption file name inside reelDir (default: caption.md), e.g. a copy without an expired offer line. */
   captionFile?: string;
+  /** Set for a carousel: the slide files (slide-1.png, ...) in reelDir, in order. reelDir is then the carousel folder. */
+  slides?: string[];
+  /** Alt text of each slide, in the same order (Instagram's Accessibility section). Empty entries are left blank. */
+  alts?: string[];
 }
 
 export interface ScheduleJob {
@@ -67,6 +71,17 @@ export class SchedulerError extends Error {
     this.name = 'SchedulerError';
   }
 }
+
+export const CAROUSEL_STEPS = [
+  'Open dialog',
+  'Upload images',
+  'Crop',
+  'Edit',
+  'Caption',
+  'Date and time',
+  'Schedule',
+  'Verify',
+] as const;
 
 export const STEPS = [
   'Open dialog',

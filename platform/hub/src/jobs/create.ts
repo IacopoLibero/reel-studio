@@ -1,4 +1,5 @@
-import { CAROUSEL_STYLES, scanCarousels } from "../carousels/scanner.js";
+import { readAltTexts } from "../carousels/alt.js";
+import { carouselDirOf, carouselScheduleKey, CAROUSEL_STYLES, scanCarousels } from "../carousels/scanner.js";
 import { CAROUSEL_STEPS } from "../carousels/stream.js";
 import type { BrandCtx } from "../brands/context.js";
 import { z } from "zod";
@@ -18,6 +19,7 @@ import type { Job, Settings } from "../shared/types.js";
 import type { JobSpec } from "./store.js";
 import { basename } from "node:path";
 
+export const CAROUSEL_SCHEDULE_STEPS = ["Open dialog", "Upload images", "Crop", "Edit", "Caption", "Date and time", "Schedule", "Verify"];
 export const SCHEDULE_STEPS = ["Open dialog", "Upload video", "Crop 9:16", "Upload cover", "Caption", "Date and time", "Schedule", "Verify"];
 
 const move = z.string().refine(validMoveName, "Use a name like high_five: lowercase letters, digits and underscores.");
@@ -125,7 +127,38 @@ export function buildSpec(body: CreateBody, d: Deps): JobSpec {
   return scheduleSpec(body.params, d);
 }
 
+const CAROUSEL_KEY = /^[^/]+\/carousels\/([A-Za-z0-9._-]+)$/;
+
+/** The same checks as a reel: a free slot, at least 20 minutes ahead, not scheduled or queued already. */
+function checkSlot(p: { reel: string; date: string; time: string }, d: Deps, scheduled: ReturnType<typeof readScheduled>): void {
+  const active = d.jobs.filter((j) => j.type === "instagram.schedule" && j.brand === d.brand.slug && (j.status === "queued" || j.status === "running"));
+  if (active.some((j) => j.params.reel === p.reel)) throw new JobRequestError("This is already waiting in the queue.");
+  if (active.some((j) => j.params.date === p.date && j.params.time === p.time) || Object.values(scheduled).some((e) => e.at === `${p.date} ${p.time}`)) {
+    throw new JobRequestError("Another post already uses that slot.");
+  }
+  if (minutesAhead(p.date, p.time, d.settings.slotPattern.timezone, d.now ?? new Date()) < MIN_LEAD_MINUTES) throw new JobRequestError(`Instagram needs the time to be at least ${MIN_LEAD_MINUTES} minutes ahead.`);
+}
+
+/** A carousel posted as images: its slides in order, its caption and the alt text of each slide. */
+function carouselScheduleSpec(p: { reel: string; date: string; time: string }, folder: string, d: Deps): JobSpec {
+  const scheduled = readScheduled(d.brand.paths.scheduledFile);
+  const c = scanCarousels(d.brand.paths.carouselsDir, d.brand.slug).find((x) => x.folder === folder);
+  if (!c) throw new JobRequestError("That carousel was not found.");
+  if (c.slides.length < 2 || !c.hasCaption) throw new JobRequestError("The carousel needs at least two slides and a caption before it can be scheduled.");
+  if (scheduled[carouselScheduleKey(d.brand.slug, folder)]) throw new JobRequestError(`This carousel is already scheduled for ${scheduled[carouselScheduleKey(d.brand.slug, folder)]?.at}.`);
+  checkSlot(p, d, scheduled);
+  const dir = carouselDirOf(d.brand.paths.carouselsDir, folder);
+  const alts = readAltTexts(dir, c.slides.length);
+  const day = new Date(`${p.date}T12:00:00Z`).toLocaleDateString("en-GB", { weekday: "short", day: "numeric", timeZone: "UTC" });
+  return {
+    type: "instagram.schedule", brand: d.brand.slug, title: `Carousel ${c.n} · ${day} ${p.time}`, steps: CAROUSEL_SCHEDULE_STEPS,
+    params: { reel: p.reel, date: p.date, time: p.time, slot: `${p.date}T${p.time}`, reelDir: dir, slides: c.slides, ...(alts ? { alts } : {}), timezone: d.settings.slotPattern.timezone },
+  };
+}
+
 function scheduleSpec(p: { reel: string; date: string; time: string }, d: Deps): JobSpec {
+  const carousel = CAROUSEL_KEY.exec(p.reel);
+  if (carousel) return carouselScheduleSpec(p, carousel[1] as string, d);
   const scheduled = readScheduled(d.brand.paths.scheduledFile);
   const reel = scanReels(d.brand.paths.reelsDir, d.brand.slug, scheduled).find((r) => r.key === p.reel);
   if (!reel) throw new JobRequestError("That reel was not found.");

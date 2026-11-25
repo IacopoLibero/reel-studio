@@ -3,10 +3,10 @@ import { join } from 'node:path';
 import { closeBrowser, DEFAULT_PROFILE, detectLogin, getContext, IG_URL, openProfile, requireLogin } from './browser.js';
 import { dropExpiredOffer, readCaption } from './caption.js';
 import { humanDay } from '../brands/offer.js';
-import { runFlow } from './flow.js';
+import { runCarouselFlow, runFlow } from './flow.js';
 import { isValidSlotFormat, minutesAhead, MIN_LEAD_MINUTES } from './slots.js';
 import {
-  hubDataDir, isReelScheduled, isSlotTaken, readState, recordScheduled, reelKey, scheduledFile,
+  carouselKey, hubDataDir, isReelScheduled, isSlotTaken, readState, recordScheduled, reelKey, scheduledFile,
 } from './state.js';
 import { withLock } from './lock.js';
 import { deleteImpl, listScheduledImpl, rescheduleImpl } from './ops.js';
@@ -39,12 +39,14 @@ async function runScheduleJobLocked(
   if (minutesAhead(slot, opts.now ?? new Date()) < MIN_LEAD_MINUTES) {
     throw new SchedulerError('too_soon', `Slot ${slot} is less than ${MIN_LEAD_MINUTES} minutes ahead`);
   }
-  const key = reelKey(reelDir);
+  const slides = Array.isArray(job.params.slides) ? job.params.slides.filter((n) => /^slide-\d+\.png$/.test(n)) : null;
+  const key = slides ? carouselKey(reelDir) : reelKey(reelDir);
   const file = scheduledFile(ctx.target?.dataDir);
   const state = await readState(file);
   if (isReelScheduled(state, key)) throw new SchedulerError('already_scheduled', `${key} is already scheduled`);
   if (isSlotTaken(state, slot)) throw new SchedulerError('slot_taken', `Slot ${slot} is already taken`);
 
+  if (slides) return runCarouselLocked(job, ctx, opts, { key, slides, file, state });
   const videoPath = await findVideo(reelDir, video);
   const coverPath = join(reelDir, 'cover.png');
   await access(coverPath).catch(() => { throw new SchedulerError('bad_input', `Missing ${coverPath}`); });
@@ -64,6 +66,44 @@ async function runScheduleJobLocked(
     }, ctx);
     await recordScheduled(key, { slot, scheduledAt, verified: true }, file);
     return { reel: key, slot, scheduledAt, verified: true };
+  } finally {
+    await page.close().catch(() => undefined);
+  }
+}
+
+/** The alt texts in the order of the sorted slides (the job gives them in slide order). */
+const orderedAlts = (slides: string[], alts: string[] | undefined): string[] => {
+  if (!alts) return [];
+  const order = slides.map((s, i) => ({ n: Number(/\d+/.exec(s)?.[0]), i })).sort((a, b) => a.n - b.n);
+  return order.map((o) => String(alts[o.i] ?? ''));
+};
+
+interface CarouselArgs { key: string; slides: string[]; file: string; state: Awaited<ReturnType<typeof readState>> }
+
+/** A carousel: the slides in order and the caption, scheduled as one post. Same checks and the same state file as a reel. */
+async function runCarouselLocked(
+  job: ScheduleJob, ctx: JobContext, opts: { now?: Date; url?: string; cropTimeoutMs?: number }, a: CarouselArgs,
+): Promise<ScheduleResult> {
+  const { reelDir, slot } = job.params;
+  const url = opts.url ?? IG_URL;
+  if (a.slides.length < 2) throw new SchedulerError('bad_input', 'A carousel needs at least two slides');
+  const slidePaths = [...a.slides].sort((x, y) => Number(/\d+/.exec(x)?.[0]) - Number(/\d+/.exec(y)?.[0])).map((n) => join(reelDir, n));
+  for (const f of slidePaths) await access(f).catch(() => { throw new SchedulerError('bad_input', `Missing ${f}`); });
+  const capName = typeof job.params.captionFile === 'string' && /^caption[A-Za-z0-9._-]*\.md$/.test(job.params.captionFile) ? job.params.captionFile : 'caption.md';
+  const { caption, dropped: offerLines } = dropExpiredOffer(await readCaption(join(reelDir, capName)), slot, ctx.target?.offer);
+
+  const page = await (await getContext(ctx.target?.profileDir, { visible: true, minimized: true })).newPage();
+  try {
+    await requireLogin(page, url);
+    const scheduledAt = new Date().toISOString();
+    if (offerLines.length) ctx.update({ log: 'The offer had ended: the offer line was left out of the Instagram caption (caption.md is unchanged).' });
+    await runCarouselFlow(page, {
+      url, slidePaths, caption, slot, stepTimeoutMs: opts.cropTimeoutMs,
+      alts: orderedAlts(job.params.slides ?? [], job.params.alts),
+      onScheduled: async () => { await recordScheduled(a.key, { slot, scheduledAt, verified: false }, a.file); },
+    }, ctx);
+    await recordScheduled(a.key, { slot, scheduledAt, verified: true }, a.file);
+    return { reel: a.key, slot, scheduledAt, verified: true };
   } finally {
     await page.close().catch(() => undefined);
   }
