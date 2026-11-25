@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 1.0.3 (2026-11-25)
 
 - **Reels banner is true.** A reel is "Posted" once its Instagram slot has passed (Instagram publishes it), "Scheduled" before that, "Scheduling…" while a job runs. The Reels page reloads by itself (every 30 s, on focus, and when an Instagram job changes).
 - **Character page:** the builder shows only for a brand that has no character yet.

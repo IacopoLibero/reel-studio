@@ -1,6 +1,6 @@
 {
   "name": "reel-studio-desktop",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "private": true,
   "description": "The Reel Studio window: starts the hub, shows it, sits in the tray and shows its notifications.",
   "main": "main.cjs",

@@ -70,10 +70,10 @@ Every page is for the brand chosen in the switcher; the address is `#/<brand>/<p
 | **Jobs** | The job list with a progress bar each (live through server-sent events), a log, cancel. |
 | **Daily** | The daily loop: readout, proposals, three ideas to approve, review of each finished reel. See DAILY.md. |
 | **Calendar** | Posts scheduled on Instagram (read by the scheduler), free slots of the pattern, drag to reschedule, delete, best-time suggestion. |
-| **Terminal** | xterm.js over WebSocket, backed by node-pty running `claude` (or `codex`, the tool chosen in Settings) in the project folder inside tmux, so it survives reloads. |
+| **Terminal** | xterm.js over WebSocket, backed by node-pty running `claude` (or `codex`, the tool chosen in Settings) in the project folder inside tmux (one session per tool and permission level), so it survives reloads. `src/terminal-access.ts` maps the level (`terminalPermission` in the global settings: ask, edit, plan, full) to Claude `--permission-mode` or Codex `--sandbox`/`--ask-for-approval` (Codex not tried) and adds the brands' data folder with `--add-dir`. |
 | **Factory** | Questions from `reel-questions.md`, make reels, find new ideas. See below. |
-| **Analytics** | Results of the reels (Composio, read-only), a chart, a table, a plain-language readout. |
-| **Series** | Recurring formats, plan a series, assign questions. |
+| **Analytics** | Results of the reels (Composio, read-only), a chart, a table with followers gained per video, the whole page (`analytics/pages/<platform>.csv`: followers, reach, views, profile views, accounts engaged; Instagram only for now; `src/analytics/page.ts`), a plain-language readout. |
+| **Series** | Recurring formats; every question is an episode. Plan a series (up to 40 episodes, new ones are added to the question list on accept: `POST /series/from-plan`), send picked episodes to the Factory, schedule the finished ones one a day. A series' reels carry `series` in `GET /reels` and are hidden from the Reels page. |
 | **Reels** | Every reel folder with its files and Instagram state; Schedule opens a slot picker and creates an `instagram.schedule` job. A click opens the page of one reel (`#/<brand>/reels/<folder>`): video (served with `Range`, so it seeks), cover, caption, script, plan, files, and the chat that edits it (see *Editing a reel by chat*). |
 | **Carousels** | The carousel job (see *Carousels* below): a form (topic, **2D or 3D**, 4 to 8 slides, last slide: offer or follow), the list with miniatures, and the page of one carousel (`#/<brand>/carousels/<folder>`): the slides side by side in swipe order with a full-size view, the caption (copy, download), the plan and "make it again with a note". Scheduling a carousel on Instagram is not available. |
 | **Character** | The moves of the brand's character (PNG sequences in `<brand>/mascot/movements/<move>/`), add a move with Claude and Blender, re-render one. For a brand without one: the experimental character-from-a-picture steps (previews, then the moves). |
@@ -97,7 +97,7 @@ startup becomes `failed: interrupted`.
 
 ## Instagram scheduler (`platform/hub/src/scheduler`)
 
-Playwright (the system Chromium, headless for reads and with a window for the login and the schedule flow, persistent profile per brand) doing what was first done by hand. The flow on
+Playwright (the system Chromium, headless for reads and for the reel schedule flow, with a window for the login and for a carousel (and as the fallback when a background reel run stops before scheduling; `SCHED_VISIBLE=1` forces the window), persistent profile per brand) doing what was first done by hand. The flow on
 `https://www.instagram.com/scheduled_content/`:
 
 1. **Schedule content** opens "Create new post". The only `input[type=file]` in the dialog takes the MP4. Wait for the "Crop" step.
@@ -202,4 +202,5 @@ Swipe posts, 1080 x 1350 (4:5). `POST /api/brands/:slug/jobs` with `{ "type": "c
 - **3D:** one Blender scene as wide as all the slides (Cycles, OptiX, a shadow-catcher or wood table, a key, a rim and a fill light per slide, a long lens with depth of field), rendered once with a transparent background, cut with `slice-panorama.sh`, and composed with the text in Remotion as in 2D.
   The kit is `scripts/carousel/blender/`: `kit.py` (props, materials `real()` and `wood()`, studio, camera, `four_views`, `detail_views`, `metrics`, `grid`), `textures.py` (wood, paper, cloth, grain with numpy inside Blender), `check.py` (one object: four views or four close-ups, with `WARN` lines for floating, sunk or zero-area parts).
   Every object is checked before it goes into the scene, and textures are judged at 100%. Blender runs headless through `blender-run`; the grid is built with ffmpeg (no PIL in Blender).
-- **Not done:** scheduling on Instagram (the scheduler uploads one MP4), per-carousel analytics, a chat that edits one slide (today: make it again with a note), Codex (not tried).
+- **Scheduling:** `instagram.schedule` with `params.reel = "<brand>/carousels/<folder>"` builds a carousel job (`slides`, `alts`); the scheduler's `runCarouselFlow` uploads the images in the same file box, leaves Crop and Edit as they are (no cover step), types the caption, writes the alt texts into the "Accessibility" boxes and reads them back, then Schedule and verify. State key `<brand>/carousels/<folder>` in `scheduled.json`. `alt.json` is written by the carousel job (one text per slide, 100 characters). Tried on the real page (a far-off test post, deleted afterwards). It needs a window: without a GPU the Edit step answers "Something went wrong".
+- **Not done:** per-carousel analytics, a chat that edits one slide (today: make it again with a note), Codex (not tried).

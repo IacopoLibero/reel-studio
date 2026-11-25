@@ -106,14 +106,16 @@ The daily loop ends its automatic part here and waits for you. Nothing is made b
 ![Analytics: summary cards, plays per reel, the table and the readout](docs/images/analytics-readout.png)
 
 - **Refresh from Instagram** reads your results through Composio (read-only). **Write the readout** asks Claude what to repeat and what to stop.
-- Cards show the best and worst reels; the chart shows plays (bars) and reach (line) per reel.
+- Cards show the best and worst reels; the chart shows plays (bars) and reach (line) per reel. The table also has **Followers gained** per video.
+- **The whole page:** followers, reach, views, profile views and accounts engaged, one reading a day (kept in `analytics/pages/instagram.csv`). Threads and TikTok are not read yet.
 
 ### Series
 
 ![Series: named recurring formats with their questions](docs/images/series-formats.png)
 
 - A series is a recurring format: a promise, a cadence, example hooks and the questions assigned to it.
-- **Plan a series** asks Claude to propose one from your results; edit it before you keep it.
+- **Plan a series** asks Claude to propose one from your results; edit it before you keep it. For a run such as "30 days, one a day" it also writes the new episodes (up to 40); they go into the question list when you accept.
+- Each question of a series is an **episode**. Tick several and **Send to the Factory** to make them together, then **Schedule finished, one a day** puts them on the first free slot of different days. A series' reels are listed here, with their state (Not made, Scheduled, Posted), and not among the single reels in **Reels**.
 
 ### Reels
 
@@ -151,7 +153,7 @@ Swipe posts for Instagram, 1080 × 1350 (4:5). On the **Carousels** page you wri
 - **3D:** one wide scene in Blender (Cycles on the GPU: lights, shadows, depth of field, real materials, a wooden table) rendered once and cut into slides, so objects cross from one slide to the next when you swipe; the text, the tags and the frame go over it in Remotion. The program ships a Blender kit with detailed props and checks (`scripts/carousel/blender/`).
 - **Built on two Ootto skills,** both called every time: `ootto-viral-carousel` (which structure carousels in the niche save, never copying slides) and `ootto-carousel-builder` (the words of every slide: a scroll stopper, one idea per slide, a slide worth saving, one ask). A job fails if the AI did not call them.
 - **The product:** set the brand's **product folder** in Settings > Product (a folder on this computer). It is read-only: the AI looks there for the real screens, images and words, and never changes anything in it. Without one, the slides draw the idea. Reels do not use it.
-- **The result** is in `data/brands/<slug>/carousels/<n>-<name>/`: `slide-1.png` ... , `caption.md`, `plan.md`, `carousel.json` and the code. Click a carousel to see the slides side by side, copy the caption, download the slides, or make it again with a note. **Scheduling a carousel on Instagram from the Calendar is not available yet:** download the slides and post them.
+- **The result** is in `data/brands/<slug>/carousels/<n>-<name>/`: `slide-1.png` ... , `caption.md`, `plan.md`, `carousel.json` and the code. Click a carousel to see the slides side by side, copy the caption, download the slides, or make it again with a note. **To schedule** puts it in Instagram's own scheduler as an image post (slot picker as for a reel; the banner goes Scheduled, then Posted once the slot has passed). Every slide gets an **alt text** (`alt.json`, at most 100 characters, what the image shows in words people search for). A carousel is scheduled with a minimized window: Instagram's Edit step for images does not work without a real GPU. Per-carousel analytics are not built.
 
 ![One carousel: the slides side by side, the caption to copy, download and make it again](docs/images/carousel-page.png)
 
@@ -164,7 +166,7 @@ Swipe posts for Instagram, 1080 × 1350 (4:5). On the **Carousels** page you wri
 - Blender device, Claude model, which content skills are on, the brand assistant, and deleting a brand (it goes to a trash folder).
 - **Claude and Codex:** how each signs in, with its own login or with an API key (saved in a file only you can read; the page shows the last four characters), and a **Test** button. The **sidebar** shows the Claude usage: session and week bars with their reset times, or the cost with an API key.
 
-The hub also has **Terminal** (a terminal in the page running Claude Code, or Codex if you chose it), the login to Instagram (in **Settings**: its state, and a button that opens a Chromium window to log in) and
+The hub also has **Terminal** (a terminal in the page running Claude Code, or Codex if you chose it, with a **permission level** you pick: ask each time, edit files, plan only, or everything; every brand's data folder is within reach), the login to Instagram (in **Settings**: its state, and a button that opens a Chromium window to log in) and
 **Character** (the moves of a brand's character).
 
 ## How it works
@@ -192,7 +194,7 @@ cd packaging/arch && makepkg -si     # builds the package from this repository a
 reel-studio                  # or open "Reel Studio" from your application menu
 ```
 
-Or take the prebuilt package of the [latest release](https://github.com/IacopoLibero/reel-studio/releases/latest) (check it against `SHA256SUMS` there) and install it with `sudo pacman -U reel-studio-1.0.2-1-x86_64.pkg.tar.zst`. What changed in each version: [CHANGELOG.md](CHANGELOG.md).
+Or take the prebuilt package of the [latest release](https://github.com/IacopoLibero/reel-studio/releases/latest) (check it against `SHA256SUMS` there) and install it with `sudo pacman -U reel-studio-1.0.3-1-x86_64.pkg.tar.zst`. What changed in each version: [CHANGELOG.md](CHANGELOG.md).
 
 The first start shows a **setup screen**. It checks what your computer has (Node, Claude Code, Chromium, FFmpeg, Git, uv, your graphics card) and
 installs what the app can install itself:

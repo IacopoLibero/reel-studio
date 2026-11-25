@@ -1,7 +1,7 @@
 # Maintainer: the Reel Studio authors
 # Builds from the repository this file lives in (packaging/arch). For a release, replace `_srcdir` with a source tarball of a tag.
 pkgname=reel-studio
-pkgver=1.0.2
+pkgver=1.0.3
 pkgrel=1
 pkgdesc='Make and schedule short videos for your brands (Remotion, Blender character, VoiceStudio, Instagram)'
 arch=('x86_64')
