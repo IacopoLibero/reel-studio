@@ -1,15 +1,12 @@
 # Changelog
 
-## Unreleased
+## 1.0.3 (2026-11-25)
 
 - **`install.sh`** for the website: one command that installs the release package on Arch Linux after checking it against `SHA256SUMS` (see the README). It never runs anything from the package before pacman installs it.
 
 - **Versions of a carousel, with a switch.** Every change keeps the carousel as it was (slides, alt texts, caption) in `versions/`, with a label: before "Change one slide" and before "Make it again" (newest twenty). The carousel page has a **Version** switch: pick an older one to see its slides and caption, and **Use this version** to go back to it (the version you had is kept first, so nothing is lost). The scene and the code are not part of a version.
 
 - **A carousel keeps its source, and says so when it does not.** The carousel job must leave in the folder what draws it (2D: `code/`; 3D: `scene.py`, `tex/`, `panorama.png`, `code/`) and the hub checks it. "Change one slide" looks for these files first: without them it stops before any run, says which are missing, and the carousel page shows the same message (a slide is one flat picture, so it cannot be fixed by hand). Carousels made before this have to be made again, or have the files put back.
-
-## 1.0.3 (2026-11-25)
-
 - **Change one slide of a carousel.** On the carousel's page, pick a slide and say what to change (`carousel.edit`): only that slide is drawn again (2D: its Remotion code; 3D: the scene is rendered again and only that strip is cut), the others are checked and put back if they changed, the new slide must be 1080 x 1350, the slide's alt text is updated if its picture changed, and the old slides, alt texts and caption are kept in `versions/` (newest ten).
 - **Reels banner is true.** A reel is "Posted" once its Instagram slot has passed (Instagram publishes it), "Scheduled" before that, "Scheduling…" while a job runs. The Reels page reloads by itself (every 30 s, on focus, and when an Instagram job changes).
 - **Character page:** the builder shows only for a brand that has no character yet.
